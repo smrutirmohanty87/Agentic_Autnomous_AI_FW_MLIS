@@ -182,6 +182,20 @@ export class CommercialReferralDetailsPage {
     await insuredPostcode.fill('EC3A 2BJ');
     await insuredPostcode.press('Tab');
 
+    const enterManually = this.page
+      .getByRole('button', { name: /enter manually/i })
+      .or(this.page.getByRole('link', { name: /enter manually/i }))
+      .or(this.page.getByText(/^enter manually$/i))
+      .first();
+
+    await enterManually
+      .waitFor({ state: 'visible', timeout: 7000 })
+      .then(async () => {
+        await enterManually.scrollIntoViewIfNeeded().catch(() => {});
+        await enterManually.click({ timeout: 7000 });
+      })
+      .catch(() => {});
+
     await expect(addressLine1).toBeVisible({ timeout: 30000 });
     await addressLine1.scrollIntoViewIfNeeded();
     await addressLine1.fill('52-54 Leadenhall Street');
@@ -285,11 +299,17 @@ export class CommercialFinalPolicyDetailsPage {
     const enterManually = this.page
       .getByRole('button', { name: /enter manually/i })
       .or(this.page.getByRole('link', { name: /enter manually/i }))
+      .or(this.page.getByText(/^enter manually$/i))
       .first();
 
-    if (await enterManually.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await enterManually.click();
-    }
+    await enterManually
+      .waitFor({ state: 'visible', timeout: 7000 })
+      .then(async () => {
+        await enterManually.scrollIntoViewIfNeeded().catch(() => {});
+        await expect(enterManually).toBeEnabled({ timeout: 7000 });
+        await enterManually.click({ timeout: 7000 });
+      })
+      .catch(() => {});
 
     requiredInputs = this.page.locator('input[required]');
     await expect(requiredInputs.nth(2)).toBeVisible({ timeout: 20000 });
