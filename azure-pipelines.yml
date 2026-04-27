@@ -1,0 +1,531 @@
+﻿# =============================================================================
+# MLIS Test Automation Framework — Azure DevOps Pipeline
+#
+# Prerequisites (set as pipeline secret variables in Azure DevOps UI):
+#
+#   UAT2 (active / unprefixed keys):
+#     MLIS_PORTAL_URL, SALESFORCE_LIGHTNING_URL,
+#     BROKER_USERNAME, BROKER_PASSWORD,
+#     SALESFORCE_USERNAME, SALESFORCE_PASSWORD
+#
+#   SIT2 (SIT2_* prefixed keys):
+#     SIT2_MLIS_PORTAL_URL, SIT2_SALESFORCE_LIGHTNING_URL,
+#     SIT2_BROKER_USERNAME, SIT2_BROKER_PASSWORD,
+#     SIT2_SALESFORCE_USERNAME, SIT2_SALESFORCE_PASSWORD
+#
+# Select environment at queue time via the testEnv parameter below.
+# =============================================================================
+
+trigger:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+  paths:
+    include:
+      - tests/**
+      - src/**
+      - playwright.config.ts
+      - package.json
+
+pr:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+
+parameters:
+  - name: testEnv
+    displayName: 'Target Environment'
+    type: string
+    default: 'UAT2'
+    values:
+      - UAT2
+      - SIT2
+
+  - name: testSuite
+    displayName: 'Test Suite'
+    type: string
+    default: 'all'
+    values:
+      - all
+      - sanity
+      - regression
+      - bdx
+
+  - name: browser
+    displayName: 'Browser'
+    type: string
+    default: 'chrome'
+    values:
+      - chrome
+      - chromium
+      - msedge
+
+variables:
+  - name: nodeVersion
+    value: '18.x'
+  - name: CI
+    value: 'true'
+  - name: TEST_ENV
+    value: ${{ parameters.testEnv }}
+  - name: BROWSER
+    value: ${{ parameters.browser }}
+
+stages:
+  # ---------------------------------------------------------------------------
+  # STAGE 1 — Sanity Tests (12 tests)
+  # ---------------------------------------------------------------------------
+  - stage: Sanity_Tests
+    displayName: 'Sanity Tests (12 tests)'
+    condition: |
+      or(
+        eq('${{ parameters.testSuite }}', 'sanity'),
+        eq('${{ parameters.testSuite }}', 'all')
+      )
+    jobs:
+      - job: RunSanityTests
+        displayName: 'Run Sanity Tests — $(TEST_ENV)'
+        pool:
+          vmImage: 'ubuntu-latest'
+        timeoutInMinutes: 60
+        steps:
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install Node dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browsers'
+
+          - script: npx playwright test tests/sanity/ --project=$(BROWSER) --workers=1 --reporter=list,html
+            displayName: 'Run Sanity tests'
+            env:
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Sanity HTML Report'
+            condition: always()
+            inputs:
+              targetPath: 'playwright-report'
+              artifact: 'sanity-report-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Sanity Test Results'
+            condition: always()
+            inputs:
+              targetPath: 'test-results'
+              artifact: 'sanity-results-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+  # ---------------------------------------------------------------------------
+  # STAGE 2 — Regression Tests (19 tests)
+  # ---------------------------------------------------------------------------
+  - stage: Regression_Tests
+    displayName: 'Regression Tests (19 tests)'
+    dependsOn: Sanity_Tests
+    condition: |
+      and(
+        succeededOrFailed(),
+        or(
+          eq('${{ parameters.testSuite }}', 'regression'),
+          eq('${{ parameters.testSuite }}', 'all')
+        )
+      )
+    jobs:
+      - job: RunRegressionTests
+        displayName: 'Run Regression Tests — $(TEST_ENV)'
+        pool:
+          vmImage: 'ubuntu-latest'
+        timeoutInMinutes: 150
+        steps:
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install Node dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browsers'
+
+          - script: npx playwright test tests/regression/ --project=$(BROWSER) --workers=1 --reporter=list,html
+            displayName: 'Run Regression tests'
+            env:
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Regression HTML Report'
+            condition: always()
+            inputs:
+              targetPath: 'playwright-report'
+              artifact: 'regression-report-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Regression Test Results'
+            condition: always()
+            inputs:
+              targetPath: 'test-results'
+              artifact: 'regression-results-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+  # ---------------------------------------------------------------------------
+  # STAGE 3a — BDX Core Tests (TC_BDX_001–004)
+  # ---------------------------------------------------------------------------
+  - stage: BDX_Core_Tests
+    displayName: 'BDX Core Tests (TC_BDX_001–004)'
+    dependsOn: Regression_Tests
+    condition: |
+      and(
+        succeededOrFailed(),
+        or(
+          eq('${{ parameters.testSuite }}', 'bdx'),
+          eq('${{ parameters.testSuite }}', 'all')
+        )
+      )
+    jobs:
+      - job: RunBDX_001
+        displayName: 'TC_BDX_001 — INTRO Cancel Full Premium Return'
+        pool:
+          vmImage: 'ubuntu-latest'
+        timeoutInMinutes: 30
+        steps:
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install Node dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browsers'
+
+          - script: npx playwright test tests/BDX/TC_BDX_001_INTRO_cancel_full_premium_return.spec.ts --project=$(BROWSER) --workers=1 --reporter=list,html
+            displayName: 'Run TC_BDX_001'
+            env:
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish TC_BDX_001 Report'
+            condition: always()
+            inputs:
+              targetPath: 'playwright-report'
+              artifact: 'bdx-001-report-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish TC_BDX_001 Results'
+            condition: always()
+            inputs:
+              targetPath: 'test-results'
+              artifact: 'bdx-001-results-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+      - job: RunBDX_002_003_004
+        displayName: 'TC_BDX_002–004 — INTER / BDE / NO COMM Policy BDX Lines'
+        pool:
+          vmImage: 'ubuntu-latest'
+        timeoutInMinutes: 60
+        steps:
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install Node dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browsers'
+
+          - script: |
+              npx playwright test \
+                tests/BDX/TC_BDX_002_INTER_COMM_policy_bdx_lines.spec.ts \
+                tests/BDX/TC_BDX_003_BDE_COMM_policy_bdx_lines.spec.ts \
+                tests/BDX/TC_BDX_004_NO_COMM_policy_bdx_lines.spec.ts \
+                --project=$(BROWSER) --workers=1 --reporter=list,html
+            displayName: 'Run TC_BDX_002 / 003 / 004'
+            env:
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish TC_BDX_002-004 Report'
+            condition: always()
+            inputs:
+              targetPath: 'playwright-report'
+              artifact: 'bdx-002-004-report-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish TC_BDX_002-004 Results'
+            condition: always()
+            inputs:
+              targetPath: 'test-results'
+              artifact: 'bdx-002-004-results-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+  # ---------------------------------------------------------------------------
+  # STAGE 3b — BDX Advanced Tests (TC_BDX_005–006)
+  # ---------------------------------------------------------------------------
+  - stage: BDX_Advanced_Tests
+    displayName: 'BDX Advanced Tests (TC_BDX_005–006)'
+    dependsOn: BDX_Core_Tests
+    condition: |
+      and(
+        succeededOrFailed(),
+        or(
+          eq('${{ parameters.testSuite }}', 'bdx'),
+          eq('${{ parameters.testSuite }}', 'all')
+        )
+      )
+    jobs:
+      - job: RunBDX_005
+        displayName: 'TC_BDX_005 — NB MTA Cancellation Mid-Term Adjustment'
+        pool:
+          vmImage: 'ubuntu-latest'
+        timeoutInMinutes: 30
+        steps:
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install Node dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browsers'
+
+          - script: npx playwright test tests/BDX/TC_BDX_005_NB_MTA_Cancellation_mid_term_adjustment.spec.ts --project=$(BROWSER) --workers=1 --reporter=list,html
+            displayName: 'Run TC_BDX_005 — NB MTA Cancellation'
+            env:
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish TC_BDX_005 Report'
+            condition: always()
+            inputs:
+              targetPath: 'playwright-report'
+              artifact: 'bdx-005-report-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish TC_BDX_005 Results'
+            condition: always()
+            inputs:
+              targetPath: 'test-results'
+              artifact: 'bdx-005-results-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+      - job: RunBDX_006
+        displayName: 'TC_BDX_006 — BDE Cancel & Reissue Then Cancel'
+        pool:
+          vmImage: 'ubuntu-latest'
+        timeoutInMinutes: 30
+        steps:
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install Node dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browsers'
+
+          - script: npx playwright test tests/BDX/TC_BDX_006_BDE_new_cancel_and_reissue_then_cancel_policy.spec.ts --project=$(BROWSER) --workers=1 --reporter=list,html
+            displayName: 'Run TC_BDX_006 — BDE Cancel & Reissue then Cancel'
+            env:
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish TC_BDX_006 Report'
+            condition: always()
+            inputs:
+              targetPath: 'playwright-report'
+              artifact: 'bdx-006-report-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish TC_BDX_006 Results'
+            condition: always()
+            inputs:
+              targetPath: 'test-results'
+              artifact: 'bdx-006-results-$(TEST_ENV)-$(BROWSER)'
+              publishLocation: 'pipeline'
+
+  # ---------------------------------------------------------------------------
+  # STAGE 4 — Publish Consolidated Results
+  # ---------------------------------------------------------------------------
+  - stage: Publish_Results
+    displayName: 'Publish Consolidated Results'
+    dependsOn:
+      - Sanity_Tests
+      - Regression_Tests
+      - BDX_Core_Tests
+      - BDX_Advanced_Tests
+    condition: always()
+    jobs:
+      - job: ConsolidateResults
+        displayName: 'Consolidate and Summarise Results'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download all artifacts'
+            inputs:
+              buildType: 'current'
+              targetPath: '$(Pipeline.Workspace)/artifacts'
+
+          - script: |
+              echo "========================================"
+              echo "  MLIS Test Automation — Run Summary"
+              echo "========================================"
+              echo "  Environment : $(TEST_ENV)"
+              echo "  Browser     : $(BROWSER)"
+              echo "========================================"
+            displayName: 'Display run summary'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Dashboard Report'
+            condition: always()
+            inputs:
+              targetPath: 'reports/dashboard'
+              artifact: 'test-dashboard-$(TEST_ENV)'
+              publishLocation: 'pipeline'

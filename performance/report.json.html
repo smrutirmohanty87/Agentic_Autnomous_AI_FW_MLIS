@@ -1,0 +1,5377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Artillery report</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.0/chart.min.js"
+    integrity="sha384-scMuAXtFmPAlw0+pXLvnpHCt6VHh7AknTPdNrwiph5BA6MJWysg5WgSDl7r63txN"
+    crossorigin="anonymous"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.min.js"
+    integrity="sha384-v7eExOYhwaHa3+GhP+lHytJsMcidazNdjiaggRhdbvVTVTCjweLpa23t37ZKxaCf"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"
+    integrity="sha384-H6KKS1H1WwuERMSm+54dYLzjg0fKqRK5ZRyASdbrI/lwrCc6bXEmtGYr5SwvP1pZ"
+    crossorigin="anonymous"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.5.3/ace.js" charset="utf=8"
+    integrity="sha512-NofUHaTd/uaO1GXfw0JvXptI9XdO5LLrfjl7jVqnFlbxdgqVlE3SmuXAUoqRTB5GQKd82yzhchaDlc6C6+SylA=="
+    crossorigin="anonymous"></script>
+
+  <link href="https://artilleryio.github.io/artillery-tailwind/src/build.css" rel="stylesheet" type="text/css"
+    crossorigin="anonymous" />
+
+  <style>
+    html {
+      --bg-dark: #161616;
+      --bg: #202020;
+      --text: #ffffff;
+      --text-faded: #9b9b9b;
+      --border: #383838;
+      height: 100%;
+    }
+
+
+    .tab {
+      color: #9B9B9B;
+      border-color: transparent;
+    }
+
+    .tab:hover {
+      color: #FFFFFF;
+    }
+
+    .tab.active {
+      color: #FFFFFF;
+      border-color: #FFFFFF;
+    }
+
+    .tab.active:hover {
+      color: #FFFFFF;
+    }
+
+    .tab:hover span:first-child,
+    .tab.active:hover span:first-child {
+      background: #000000;
+    }
+
+    #errorsContainer>p {
+      color: var(--green);
+    }
+
+    #editor {
+      font-size: 10pt;
+    }
+
+    #editor input,
+    button {
+      color: var(--bg-dark);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .border-gray {
+      border: 1px solid var(--border);
+    }
+
+    .border-bottom-gray {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chevron-down span {
+      transform: rotate(180deg);
+    }
+
+    .cursor-pointer {
+      cursor: pointer;
+    }
+
+    .index-tree-wrapper {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .index-tree-wrapper {
+        display: inline-flex;
+      }
+    }
+
+  </style>
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('_uzX-_WJoVmE_tsLvu0OFD2tpd0HGz72D5sU1zM2hbs', {api_host: 'https://app.posthog.com', autocapture: false});
+    posthog.capture('report view', { });
+  </script>
+</head>
+
+<body>
+
+    <header class="header bg-black-default border-b border-gray-700 mb-9">
+      <div class="container m-auto relative flex items-center justify-between py-3 px-4 md:px-8">
+        <div class="flex items-center">
+          <div
+            class="group-hover:border-black-200 flex overflow-hidden rounded-md border-2 border-gray-800 transition mr-2">
+            <svg width="32" height="32" viewBox="0 0 300 306" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M177.235 169.156L138.632 132.074L107.952 144.704L93.2929 130.623L228.213 75.9894L180.953 214.829L166.06 200.523L177.235 169.156ZM183.738 150.815L199.254 106.778L156.348 124.505L183.738 150.815Z"
+                fill="white" />
+              <path
+                d="M136.138 135.974L175.036 173.339L208.275 137.452L221.883 150.524L136.914 242.26L123.306 229.189L162.984 186.35L124.087 148.986L84.4087 191.824L70.8005 178.752L155.769 87.0157L169.378 100.088L136.138 135.974Z"
+                fill="white" />
+            </svg>
+          </div>
+          <div class="flex flex-col">
+            <h1 class="font-medium text-sm" id="report-name">
+              Artillery Report
+            </h1>
+            <div class="text-gray-default my-0 block text-xs transition group-hover:text-gray-700" id="timestamp"></div>
+          </div>
+        </div>
+        <div class="text-xsm">
+          <a target="_blank" rel="nofollow noopener" class="focus:text-beige text-gray-default transition-colors hover:text-gray-300 flex items-center space-x-1" href="https://artillery.io/docs">
+            <span>Docs</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" aria-label="External link" aria-labelledby="icon_external_1" x="0px" y="0px" role="img"><title id="icon_external_1" lang="en">External link</title><g fill="currentColor"><path d="M19 19H5V5H12V3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V12H19V19ZM14 3V5H17.59L7.76 14.83L9.17 16.24L19 6.41V10H21V3H14Z"></path></g></svg>
+          </a>
+        </div>
+      </div>
+      <!-- tabs -->
+      <div class="bg-black-default relative pt-4 text-sm">
+        <div class="container m-auto flex items-center space-x-2 px-4 md:px-8">
+          <button id="charts-tab" class="tab active group border-b border-b-2 py-2 transition-all">
+            <span class="text-xsm flex items-center space-x-2 rounded py-1.5 px-2.5 transition-all">
+              
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2.33331 12.3267L6.33331 8.32001L8.99998 10.9867L14.6666 4.61334L13.7266 3.67334L8.99998 8.98667L6.33331 6.32001L1.33331 11.3267L2.33331 12.3267Z" fill="currentColor"/>
+                  </svg>
+              <span class="leading-4">Reports</span>
+            </span>
+          </button>
+          <button id="json-tab" class="tab group border-b border-b-2 py-2 transition-all">
+            <span class="text-xsm flex items-center space-x-2 rounded py-1.5 px-2.5 transition-all">
+              
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6.26665 11.0667L3.19998 8L6.26665 4.93333L5.33331 4L1.33331 8L5.33331 12L6.26665 11.0667ZM9.73331 11.0667L12.8 8L9.73331 4.93333L10.6666 4L14.6666 8L10.6666 12L9.73331 11.0667V11.0667Z" fill="currentColor"/>
+                </svg>  
+              <span class="leading-4">JSON Output</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </header>
+    <main style="margin-bottom: 2.5rem;">
+      <div class="container text-sm m-auto px-4 md:px-8">
+        <!-- summary blocks -->
+        <div class="app-test-stats w-full">
+          <ul class="flex flex-wrap space-x-3.5" id="summary-blocks">
+          </ul>
+        </div>
+        <div class="flex items-start w-full flex-row space-x-0 md:space-x-4 mt-1">
+          <!-- counters summary -->
+          <div class="w-full" id="charts-col">
+            <div class="overflow-x-auto overflow-y-hidden rounded border-gray mb-4">
+              <table class="w-full border-collapse text-left">
+                <thead class="text-gray-default bg-black-200 border-b border-gray-800" style="background-color: #2b2b2b;">
+                  <tr>
+                    <th class="whitespace-nowrap p-2" colspan="6">
+                      <span class="text-xsm" style="font-weight: 500 !important;">Metric</span>
+                    </th>
+                    <th class="whitespace-nowrap p-2" colspan="6">
+                      <span class="text-xsm" style="font-weight: 500 !important;">Value</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800" id="customCountersTable">
+                </tbody>
+              </table>
+            </div>
+            <div id="errorsChartsRow">
+              <h4><i class="fas fa-chart-area"></i> Errors at intervals</h4>
+              <canvas id="errorsAtIntervalsChart"></canvas>
+            </div>
+            <!-- charts -->
+            <div id="customCountersAtIntervalsChart" class="space-y-4"></div>
+          </div>
+          <div class="index-tree-wrapper w-56 text-xsm sticky top-3">
+            <div id="index-tree">
+            </div>
+          </div>
+        </div>
+
+        <!-- json text output -->
+        <div>
+          <div class="hidden border-gray rounded" style="overflow: hidden;" id="json-output">
+            <div class="p-2 text-gray-default text-xsm flex items-center justify-between text-gray-default" style="border-bottom: 1px solid #383838; background-color: #2b2b2b; font-weight: 500;">JSON Output
+              <button id="copy-json" class="flex justify-center items-center space-x-2 font-medium text-center rounded transition-all p-1.5 text-xsm hover:text-gray-300 focus:text-gray-300 bg-transparent focus:ring hover:bg-black-700 text-gray-default focus:ring-black-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-label="" aria-labelledby="icon_copy" x="0px" y="0px" role="img" class="inline false"><title id="icon_copy" lang="en"></title><g fill="#9b9b9b"><path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"></path></g></svg>
+              </button>
+            </div>
+            <div id="editor"></div>
+          </div>
+        </div>
+      </div> <!-- /.row -->
+
+
+      <div class="row">
+        <div class="codes-line text-center col-lg-12"></div>
+      </div>
+      <div class="row">
+        <div class="errors-line text-center col-lg-12"></div>
+      </div>
+  </div>
+  </main>
+  <footer id="footer" class="bg-black-default py-4 text-xsm text-gray-default" style="margin-top: 2rem;">
+    <div class="container m-auto px-4 md:px-8">
+      <a href="https://www.artillery.io">Artillery</a> &bull; move fast, stay fast, stay reliable &bull; <a href="https://www.artillery.io">www.artillery.io</a>
+    </div>
+  </footer>
+
+
+
+  <script charset="utf-8">
+    const Report = {
+  "aggregate": {
+    "counters": {
+      "vusers.created_by_name.Browsers": 221,
+      "vusers.created": 582,
+      "vusers.created_by_name.Checkout Users": 114,
+      "vusers.created_by_name.Buyers": 191,
+      "vusers.created_by_name.Light Users": 56,
+      "browser.page.codes.200": 2571,
+      "browser.http_requests": 2746,
+      "browser.page.codes.401": 206,
+      "vusers.failed": 521,
+      "vusers.completed": 79,
+      "errors.page.waitForSelector: Timeout 30000ms exceeded.": 61,
+      "errors.page.goto: Timeout 30000ms exceeded.": 336,
+      "errors.page.goto: net::ERR_CONNECTION_REFUSED at https://www.saucedemo.com/": 79,
+      "errors.page.goto: net::ERR_CONNECTION_ABORTED at https://www.saucedemo.com/": 44,
+      "errors.page.click: Timeout 30000ms exceeded.": 1
+    },
+    "rates": {},
+    "firstCounterAt": 1774266785573,
+    "firstHistogramAt": 1774266833366,
+    "lastCounterAt": 1774267133002,
+    "lastHistogramAt": 1774267115776,
+    "firstMetricAt": 1774266785573,
+    "lastMetricAt": 1774267133002,
+    "period": 1774267130000,
+    "summaries": {
+      "browser.page.FCP.https://www.saucedemo.com/": {
+        "min": 2744,
+        "max": 31416,
+        "count": 215,
+        "mean": 14110.8,
+        "p50": 10617.5,
+        "median": 10617.5,
+        "p75": 22703.7,
+        "p90": 25091.6,
+        "p95": 27730.6,
+        "p99": 29445.4,
+        "p999": 30040.3
+      },
+      "browser.page.TTFB.https://www.saucedemo.com/": {
+        "min": 650.2,
+        "max": 27130.1,
+        "count": 146,
+        "mean": 4255.7,
+        "p50": 2893.5,
+        "median": 2893.5,
+        "p75": 4770.6,
+        "p90": 9047.6,
+        "p95": 9999.2,
+        "p99": 15839.7,
+        "p999": 27181.5
+      },
+      "browser.page.LCP.https://www.saucedemo.com/": {
+        "min": 2760,
+        "max": 28340,
+        "count": 141,
+        "mean": 9896.2,
+        "p50": 7117,
+        "median": 7117,
+        "p75": 11501.8,
+        "p90": 21813.5,
+        "p95": 23162.4,
+        "p99": 25598.5,
+        "p999": 27181.5
+      },
+      "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+        "min": 1.6,
+        "max": 30.3,
+        "count": 141,
+        "mean": 3.6,
+        "p50": 3.2,
+        "median": 3.2,
+        "p75": 4,
+        "p90": 5,
+        "p95": 5.4,
+        "p99": 7.2,
+        "p999": 12.6
+      },
+      "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+        "min": 80,
+        "max": 1232,
+        "count": 26,
+        "mean": 240.3,
+        "p50": 144,
+        "median": 144,
+        "p75": 223.7,
+        "p90": 290.1,
+        "p95": 399.5,
+        "p99": 907,
+        "p999": 907
+      },
+      "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+        "min": 0,
+        "max": 0.9,
+        "count": 26,
+        "mean": 0,
+        "p50": 0,
+        "median": 0,
+        "p75": 0,
+        "p90": 0,
+        "p95": 0,
+        "p99": 0,
+        "p999": 0
+      },
+      "vusers.session_length": {
+        "min": 25576,
+        "max": 283431.6,
+        "count": 79,
+        "mean": 150155.3,
+        "p50": 101756.1,
+        "median": 101756.1,
+        "p75": 231043.6,
+        "p90": 260502,
+        "p95": 271133.6,
+        "p99": 276611.1,
+        "p999": 276611.1
+      },
+      "browser.page.INP.https://www.saucedemo.com/cart.html": {
+        "min": 72,
+        "max": 384,
+        "count": 42,
+        "mean": 171,
+        "p50": 153,
+        "median": 153,
+        "p75": 183.1,
+        "p90": 247.2,
+        "p95": 273.2,
+        "p99": 347.3,
+        "p999": 347.3
+      },
+      "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+        "min": 0,
+        "max": 0,
+        "count": 42,
+        "mean": 0,
+        "p50": 0,
+        "median": 0,
+        "p75": 0,
+        "p90": 0,
+        "p95": 0,
+        "p99": 0,
+        "p999": 0
+      },
+      "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+        "min": 112,
+        "max": 376,
+        "count": 11,
+        "mean": 199.3,
+        "p50": 159.2,
+        "median": 159.2,
+        "p75": 223.7,
+        "p90": 278.7,
+        "p95": 278.7,
+        "p99": 278.7,
+        "p999": 278.7
+      },
+      "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+        "min": 0,
+        "max": 0,
+        "count": 11,
+        "mean": 0,
+        "p50": 0,
+        "median": 0,
+        "p75": 0,
+        "p90": 0,
+        "p95": 0,
+        "p99": 0,
+        "p999": 0
+      }
+    },
+    "histograms": {
+      "browser.page.FCP.https://www.saucedemo.com/": {
+        "min": 2744,
+        "max": 31416,
+        "count": 215,
+        "mean": 14110.8,
+        "p50": 10617.5,
+        "median": 10617.5,
+        "p75": 22703.7,
+        "p90": 25091.6,
+        "p95": 27730.6,
+        "p99": 29445.4,
+        "p999": 30040.3
+      },
+      "browser.page.TTFB.https://www.saucedemo.com/": {
+        "min": 650.2,
+        "max": 27130.1,
+        "count": 146,
+        "mean": 4255.7,
+        "p50": 2893.5,
+        "median": 2893.5,
+        "p75": 4770.6,
+        "p90": 9047.6,
+        "p95": 9999.2,
+        "p99": 15839.7,
+        "p999": 27181.5
+      },
+      "browser.page.LCP.https://www.saucedemo.com/": {
+        "min": 2760,
+        "max": 28340,
+        "count": 141,
+        "mean": 9896.2,
+        "p50": 7117,
+        "median": 7117,
+        "p75": 11501.8,
+        "p90": 21813.5,
+        "p95": 23162.4,
+        "p99": 25598.5,
+        "p999": 27181.5
+      },
+      "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+        "min": 1.6,
+        "max": 30.3,
+        "count": 141,
+        "mean": 3.6,
+        "p50": 3.2,
+        "median": 3.2,
+        "p75": 4,
+        "p90": 5,
+        "p95": 5.4,
+        "p99": 7.2,
+        "p999": 12.6
+      },
+      "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+        "min": 80,
+        "max": 1232,
+        "count": 26,
+        "mean": 240.3,
+        "p50": 144,
+        "median": 144,
+        "p75": 223.7,
+        "p90": 290.1,
+        "p95": 399.5,
+        "p99": 907,
+        "p999": 907
+      },
+      "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+        "min": 0,
+        "max": 0.9,
+        "count": 26,
+        "mean": 0,
+        "p50": 0,
+        "median": 0,
+        "p75": 0,
+        "p90": 0,
+        "p95": 0,
+        "p99": 0,
+        "p999": 0
+      },
+      "vusers.session_length": {
+        "min": 25576,
+        "max": 283431.6,
+        "count": 79,
+        "mean": 150155.3,
+        "p50": 101756.1,
+        "median": 101756.1,
+        "p75": 231043.6,
+        "p90": 260502,
+        "p95": 271133.6,
+        "p99": 276611.1,
+        "p999": 276611.1
+      },
+      "browser.page.INP.https://www.saucedemo.com/cart.html": {
+        "min": 72,
+        "max": 384,
+        "count": 42,
+        "mean": 171,
+        "p50": 153,
+        "median": 153,
+        "p75": 183.1,
+        "p90": 247.2,
+        "p95": 273.2,
+        "p99": 347.3,
+        "p999": 347.3
+      },
+      "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+        "min": 0,
+        "max": 0,
+        "count": 42,
+        "mean": 0,
+        "p50": 0,
+        "median": 0,
+        "p75": 0,
+        "p90": 0,
+        "p95": 0,
+        "p99": 0,
+        "p999": 0
+      },
+      "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+        "min": 112,
+        "max": 376,
+        "count": 11,
+        "mean": 199.3,
+        "p50": 159.2,
+        "median": 159.2,
+        "p75": 223.7,
+        "p90": 278.7,
+        "p95": 278.7,
+        "p99": 278.7,
+        "p999": 278.7
+      },
+      "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+        "min": 0,
+        "max": 0,
+        "count": 11,
+        "mean": 0,
+        "p50": 0,
+        "median": 0,
+        "p75": 0,
+        "p90": 0,
+        "p95": 0,
+        "p99": 0,
+        "p999": 0
+      }
+    }
+  },
+  "intermediate": [
+    {
+      "counters": {
+        "vusers.created_by_name.Browsers": 7,
+        "vusers.created": 17,
+        "vusers.created_by_name.Buyers": 6,
+        "vusers.created_by_name.Checkout Users": 3,
+        "vusers.created_by_name.Light Users": 1
+      },
+      "rates": {},
+      "firstCounterAt": 1774266785573,
+      "lastCounterAt": 1774266788059,
+      "firstMetricAt": 1774266785573,
+      "lastMetricAt": 1774266788059,
+      "period": "1774266780000",
+      "summaries": {},
+      "histograms": {}
+    },
+    {
+      "counters": {
+        "vusers.created_by_name.Buyers": 15,
+        "vusers.created": 38,
+        "vusers.created_by_name.Browsers": 12,
+        "vusers.created_by_name.Checkout Users": 9,
+        "vusers.created_by_name.Light Users": 2
+      },
+      "rates": {},
+      "firstCounterAt": 1774266790528,
+      "lastCounterAt": 1774266798487,
+      "firstMetricAt": 1774266790528,
+      "lastMetricAt": 1774266798487,
+      "period": "1774266790000",
+      "summaries": {},
+      "histograms": {}
+    },
+    {
+      "counters": {
+        "vusers.created_by_name.Checkout Users": 4,
+        "vusers.created": 16,
+        "vusers.created_by_name.Browsers": 10,
+        "vusers.created_by_name.Buyers": 1,
+        "vusers.created_by_name.Light Users": 1
+      },
+      "rates": {},
+      "firstCounterAt": 1774266800493,
+      "lastCounterAt": 1774266809310,
+      "firstMetricAt": 1774266800493,
+      "lastMetricAt": 1774266809310,
+      "period": "1774266800000",
+      "summaries": {},
+      "histograms": {}
+    },
+    {
+      "counters": {
+        "vusers.created_by_name.Checkout Users": 6,
+        "vusers.created": 37,
+        "vusers.created_by_name.Browsers": 13,
+        "vusers.created_by_name.Buyers": 13,
+        "vusers.created_by_name.Light Users": 5
+      },
+      "rates": {},
+      "firstCounterAt": 1774266812585,
+      "lastCounterAt": 1774266819661,
+      "firstMetricAt": 1774266812585,
+      "lastMetricAt": 1774266819661,
+      "period": "1774266810000",
+      "summaries": {},
+      "histograms": {}
+    },
+    {
+      "counters": {
+        "vusers.created_by_name.Browsers": 38,
+        "vusers.created": 85,
+        "vusers.created_by_name.Light Users": 11,
+        "vusers.created_by_name.Buyers": 23,
+        "vusers.created_by_name.Checkout Users": 13
+      },
+      "rates": {},
+      "firstCounterAt": 1774266820656,
+      "lastCounterAt": 1774266829931,
+      "firstMetricAt": 1774266820656,
+      "lastMetricAt": 1774266829931,
+      "period": "1774266820000",
+      "summaries": {},
+      "histograms": {}
+    },
+    {
+      "counters": {
+        "vusers.created_by_name.Browsers": 49,
+        "vusers.created": 164,
+        "vusers.created_by_name.Light Users": 13,
+        "vusers.created_by_name.Buyers": 60,
+        "vusers.created_by_name.Checkout Users": 42,
+        "browser.page.codes.200": 155,
+        "browser.http_requests": 162,
+        "vusers.failed": 0,
+        "vusers.completed": 3,
+        "browser.page.codes.401": 8
+      },
+      "rates": {},
+      "firstCounterAt": 1774266830011,
+      "firstHistogramAt": 1774266833366,
+      "lastCounterAt": 1774266839994,
+      "lastHistogramAt": 1774266839202,
+      "firstMetricAt": 1774266830011,
+      "lastMetricAt": 1774266839994,
+      "period": "1774266830000",
+      "summaries": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 2992,
+          "max": 6208,
+          "count": 13,
+          "mean": 4447.7,
+          "p50": 4065.2,
+          "median": 4065.2,
+          "p75": 4965.3,
+          "p90": 5711.5,
+          "p95": 5826.9,
+          "p99": 5826.9,
+          "p999": 5826.9
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1150.6,
+          "max": 3875.7,
+          "count": 12,
+          "mean": 2270.2,
+          "p50": 1826.6,
+          "median": 1826.6,
+          "p75": 2515.5,
+          "p90": 3605.5,
+          "p95": 3678.4,
+          "p99": 3678.4,
+          "p999": 3678.4
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 3000,
+          "max": 6216,
+          "count": 9,
+          "mean": 4708,
+          "p50": 4492.8,
+          "median": 4492.8,
+          "p75": 5711.5,
+          "p90": 5944.6,
+          "p95": 5944.6,
+          "p99": 5944.6,
+          "p999": 5944.6
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2.1,
+          "max": 5.1,
+          "count": 9,
+          "mean": 3.1,
+          "p50": 3,
+          "median": 3,
+          "p75": 3.3,
+          "p90": 3.9,
+          "p95": 3.9,
+          "p99": 3.9,
+          "p999": 3.9
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 112,
+          "max": 144,
+          "count": 3,
+          "mean": 125.3,
+          "p50": 120.3,
+          "median": 120.3,
+          "p75": 120.3,
+          "p90": 120.3,
+          "p95": 120.3,
+          "p99": 120.3,
+          "p999": 120.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 44927.9,
+          "max": 49890.1,
+          "count": 3,
+          "mean": 48155.3,
+          "p50": 49528.8,
+          "median": 49528.8,
+          "p75": 49528.8,
+          "p90": 49528.8,
+          "p95": 49528.8,
+          "p99": 49528.8,
+          "p999": 49528.8
+        }
+      },
+      "histograms": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 2992,
+          "max": 6208,
+          "count": 13,
+          "mean": 4447.7,
+          "p50": 4065.2,
+          "median": 4065.2,
+          "p75": 4965.3,
+          "p90": 5711.5,
+          "p95": 5826.9,
+          "p99": 5826.9,
+          "p999": 5826.9
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1150.6,
+          "max": 3875.7,
+          "count": 12,
+          "mean": 2270.2,
+          "p50": 1826.6,
+          "median": 1826.6,
+          "p75": 2515.5,
+          "p90": 3605.5,
+          "p95": 3678.4,
+          "p99": 3678.4,
+          "p999": 3678.4
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 3000,
+          "max": 6216,
+          "count": 9,
+          "mean": 4708,
+          "p50": 4492.8,
+          "median": 4492.8,
+          "p75": 5711.5,
+          "p90": 5944.6,
+          "p95": 5944.6,
+          "p99": 5944.6,
+          "p999": 5944.6
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2.1,
+          "max": 5.1,
+          "count": 9,
+          "mean": 3.1,
+          "p50": 3,
+          "median": 3,
+          "p75": 3.3,
+          "p90": 3.9,
+          "p95": 3.9,
+          "p99": 3.9,
+          "p999": 3.9
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 112,
+          "max": 144,
+          "count": 3,
+          "mean": 125.3,
+          "p50": 120.3,
+          "median": 120.3,
+          "p75": 120.3,
+          "p90": 120.3,
+          "p95": 120.3,
+          "p99": 120.3,
+          "p999": 120.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 44927.9,
+          "max": 49890.1,
+          "count": 3,
+          "mean": 48155.3,
+          "p50": 49528.8,
+          "median": 49528.8,
+          "p75": 49528.8,
+          "p90": 49528.8,
+          "p95": 49528.8,
+          "p99": 49528.8,
+          "p999": 49528.8
+        }
+      }
+    },
+    {
+      "counters": {
+        "vusers.created_by_name.Browsers": 56,
+        "vusers.created": 129,
+        "vusers.created_by_name.Buyers": 41,
+        "vusers.created_by_name.Light Users": 16,
+        "vusers.created_by_name.Checkout Users": 16,
+        "browser.page.codes.200": 114,
+        "browser.http_requests": 126,
+        "browser.page.codes.401": 13,
+        "vusers.failed": 0,
+        "vusers.completed": 4
+      },
+      "rates": {},
+      "firstCounterAt": 1774266840010,
+      "firstHistogramAt": 1774266840360,
+      "lastCounterAt": 1774266849941,
+      "lastHistogramAt": 1774266849841,
+      "firstMetricAt": 1774266840010,
+      "lastMetricAt": 1774266849941,
+      "period": "1774266840000",
+      "summaries": {
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 650.2,
+          "max": 1824.7,
+          "count": 8,
+          "mean": 1415.1,
+          "p50": 1465.9,
+          "median": 1465.9,
+          "p75": 1686.1,
+          "p90": 1720.2,
+          "p95": 1720.2,
+          "p99": 1720.2,
+          "p999": 1720.2
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 2880,
+          "max": 4696,
+          "count": 9,
+          "mean": 3471.6,
+          "p50": 3262.4,
+          "median": 3262.4,
+          "p75": 3828.5,
+          "p90": 3828.5,
+          "p95": 3828.5,
+          "p99": 3828.5,
+          "p999": 3828.5
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 2928,
+          "max": 3988,
+          "count": 5,
+          "mean": 3271.2,
+          "p50": 3197.8,
+          "median": 3197.8,
+          "p75": 3262.4,
+          "p90": 3262.4,
+          "p95": 3262.4,
+          "p99": 3262.4,
+          "p999": 3262.4
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2,
+          "max": 30.3,
+          "count": 5,
+          "mean": 7.9,
+          "p50": 2.3,
+          "median": 2.3,
+          "p75": 3.1,
+          "p90": 3.1,
+          "p95": 3.1,
+          "p99": 3.1,
+          "p999": 3.1
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 96,
+          "max": 168,
+          "count": 3,
+          "mean": 133.3,
+          "p50": 135.7,
+          "median": 135.7,
+          "p75": 135.7,
+          "p90": 135.7,
+          "p95": 135.7,
+          "p99": 135.7,
+          "p999": 135.7
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 25576,
+          "max": 56489.4,
+          "count": 4,
+          "mean": 45275.7,
+          "p50": 49528.8,
+          "median": 49528.8,
+          "p75": 49528.8,
+          "p90": 49528.8,
+          "p95": 49528.8,
+          "p99": 49528.8,
+          "p999": 49528.8
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 72,
+          "max": 72,
+          "count": 1,
+          "mean": 72,
+          "p50": 71.5,
+          "median": 71.5,
+          "p75": 71.5,
+          "p90": 71.5,
+          "p95": 71.5,
+          "p99": 71.5,
+          "p999": 71.5
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 1,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      },
+      "histograms": {
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 650.2,
+          "max": 1824.7,
+          "count": 8,
+          "mean": 1415.1,
+          "p50": 1465.9,
+          "median": 1465.9,
+          "p75": 1686.1,
+          "p90": 1720.2,
+          "p95": 1720.2,
+          "p99": 1720.2,
+          "p999": 1720.2
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 2880,
+          "max": 4696,
+          "count": 9,
+          "mean": 3471.6,
+          "p50": 3262.4,
+          "median": 3262.4,
+          "p75": 3828.5,
+          "p90": 3828.5,
+          "p95": 3828.5,
+          "p99": 3828.5,
+          "p999": 3828.5
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 2928,
+          "max": 3988,
+          "count": 5,
+          "mean": 3271.2,
+          "p50": 3197.8,
+          "median": 3197.8,
+          "p75": 3262.4,
+          "p90": 3262.4,
+          "p95": 3262.4,
+          "p99": 3262.4,
+          "p999": 3262.4
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2,
+          "max": 30.3,
+          "count": 5,
+          "mean": 7.9,
+          "p50": 2.3,
+          "median": 2.3,
+          "p75": 3.1,
+          "p90": 3.1,
+          "p95": 3.1,
+          "p99": 3.1,
+          "p999": 3.1
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 96,
+          "max": 168,
+          "count": 3,
+          "mean": 133.3,
+          "p50": 135.7,
+          "median": 135.7,
+          "p75": 135.7,
+          "p90": 135.7,
+          "p95": 135.7,
+          "p99": 135.7,
+          "p999": 135.7
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 25576,
+          "max": 56489.4,
+          "count": 4,
+          "mean": 45275.7,
+          "p50": 49528.8,
+          "median": 49528.8,
+          "p75": 49528.8,
+          "p90": 49528.8,
+          "p95": 49528.8,
+          "p99": 49528.8,
+          "p999": 49528.8
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 72,
+          "max": 72,
+          "count": 1,
+          "mean": 72,
+          "p50": 71.5,
+          "median": 71.5,
+          "p75": 71.5,
+          "p90": 71.5,
+          "p95": 71.5,
+          "p99": 71.5,
+          "p999": 71.5
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 1,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 248,
+        "browser.http_requests": 270,
+        "browser.page.codes.401": 24,
+        "vusers.failed": 0,
+        "vusers.completed": 7,
+        "vusers.created_by_name.Buyers": 18,
+        "vusers.created": 49,
+        "vusers.created_by_name.Checkout Users": 10,
+        "vusers.created_by_name.Browsers": 16,
+        "vusers.created_by_name.Light Users": 5
+      },
+      "rates": {},
+      "firstCounterAt": 1774266850007,
+      "firstHistogramAt": 1774266850001,
+      "lastCounterAt": 1774266859965,
+      "lastHistogramAt": 1774266859897,
+      "firstMetricAt": 1774266850001,
+      "lastMetricAt": 1774266859965,
+      "period": "1774266850000",
+      "summaries": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 4092,
+          "max": 9944,
+          "count": 22,
+          "mean": 6555.1,
+          "p50": 6187.2,
+          "median": 6187.2,
+          "p75": 8024.5,
+          "p90": 8692.8,
+          "p95": 8868.4,
+          "p99": 8868.4,
+          "p999": 8868.4
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1047.6,
+          "max": 3427.2,
+          "count": 18,
+          "mean": 2163.2,
+          "p50": 2101.1,
+          "median": 2101.1,
+          "p75": 2322.1,
+          "p90": 3011.6,
+          "p95": 3134.5,
+          "p99": 3134.5,
+          "p999": 3134.5
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 3728,
+          "max": 6700,
+          "count": 15,
+          "mean": 4916.3,
+          "p50": 4676.2,
+          "median": 4676.2,
+          "p75": 5711.5,
+          "p90": 6187.2,
+          "p95": 6312.2,
+          "p99": 6312.2,
+          "p999": 6312.2
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2,
+          "max": 12.5,
+          "count": 15,
+          "mean": 3.7,
+          "p50": 3.1,
+          "median": 3.1,
+          "p75": 3.7,
+          "p90": 4,
+          "p95": 5.2,
+          "p99": 5.2,
+          "p999": 5.2
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 72,
+          "max": 128,
+          "count": 3,
+          "mean": 106.7,
+          "p50": 120.3,
+          "median": 120.3,
+          "p75": 120.3,
+          "p90": 120.3,
+          "p95": 120.3,
+          "p99": 120.3,
+          "p999": 120.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 37656,
+          "max": 69734.9,
+          "count": 7,
+          "mean": 59956.5,
+          "p50": 62964,
+          "median": 62964,
+          "p75": 65533.7,
+          "p90": 66857.6,
+          "p95": 66857.6,
+          "p99": 66857.6,
+          "p999": 66857.6
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 112,
+          "max": 112,
+          "count": 1,
+          "mean": 112,
+          "p50": 111.1,
+          "median": 111.1,
+          "p75": 111.1,
+          "p90": 111.1,
+          "p95": 111.1,
+          "p99": 111.1,
+          "p999": 111.1
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 1,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 112,
+          "max": 1232,
+          "count": 3,
+          "mean": 528,
+          "p50": 242.3,
+          "median": 242.3,
+          "p75": 242.3,
+          "p90": 242.3,
+          "p95": 242.3,
+          "p99": 242.3,
+          "p999": 242.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      },
+      "histograms": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 4092,
+          "max": 9944,
+          "count": 22,
+          "mean": 6555.1,
+          "p50": 6187.2,
+          "median": 6187.2,
+          "p75": 8024.5,
+          "p90": 8692.8,
+          "p95": 8868.4,
+          "p99": 8868.4,
+          "p999": 8868.4
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1047.6,
+          "max": 3427.2,
+          "count": 18,
+          "mean": 2163.2,
+          "p50": 2101.1,
+          "median": 2101.1,
+          "p75": 2322.1,
+          "p90": 3011.6,
+          "p95": 3134.5,
+          "p99": 3134.5,
+          "p999": 3134.5
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 3728,
+          "max": 6700,
+          "count": 15,
+          "mean": 4916.3,
+          "p50": 4676.2,
+          "median": 4676.2,
+          "p75": 5711.5,
+          "p90": 6187.2,
+          "p95": 6312.2,
+          "p99": 6312.2,
+          "p999": 6312.2
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2,
+          "max": 12.5,
+          "count": 15,
+          "mean": 3.7,
+          "p50": 3.1,
+          "median": 3.1,
+          "p75": 3.7,
+          "p90": 4,
+          "p95": 5.2,
+          "p99": 5.2,
+          "p999": 5.2
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 72,
+          "max": 128,
+          "count": 3,
+          "mean": 106.7,
+          "p50": 120.3,
+          "median": 120.3,
+          "p75": 120.3,
+          "p90": 120.3,
+          "p95": 120.3,
+          "p99": 120.3,
+          "p999": 120.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 37656,
+          "max": 69734.9,
+          "count": 7,
+          "mean": 59956.5,
+          "p50": 62964,
+          "median": 62964,
+          "p75": 65533.7,
+          "p90": 66857.6,
+          "p95": 66857.6,
+          "p99": 66857.6,
+          "p999": 66857.6
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 112,
+          "max": 112,
+          "count": 1,
+          "mean": 112,
+          "p50": 111.1,
+          "median": 111.1,
+          "p75": 111.1,
+          "p90": 111.1,
+          "p95": 111.1,
+          "p99": 111.1,
+          "p999": 111.1
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 1,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 112,
+          "max": 1232,
+          "count": 3,
+          "mean": 528,
+          "p50": 242.3,
+          "median": 242.3,
+          "p75": 242.3,
+          "p90": 242.3,
+          "p95": 242.3,
+          "p99": 242.3,
+          "p999": 242.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.http_requests": 193,
+        "browser.page.codes.200": 177,
+        "vusers.failed": 4,
+        "vusers.completed": 10,
+        "browser.page.codes.401": 17,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 4,
+        "vusers.created_by_name.Checkout Users": 1,
+        "vusers.created": 1
+      },
+      "rates": {},
+      "firstCounterAt": 1774266860028,
+      "firstHistogramAt": 1774266860373,
+      "lastCounterAt": 1774266869981,
+      "lastHistogramAt": 1774266869915,
+      "firstMetricAt": 1774266860028,
+      "lastMetricAt": 1774266869981,
+      "period": "1774266860000",
+      "summaries": {
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1746.5,
+          "max": 6182.5,
+          "count": 11,
+          "mean": 3386.1,
+          "p50": 2951.9,
+          "median": 2951.9,
+          "p75": 3905.8,
+          "p90": 4965.3,
+          "p95": 4965.3,
+          "p99": 4965.3,
+          "p999": 4965.3
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 3680,
+          "max": 10924,
+          "count": 14,
+          "mean": 6638.9,
+          "p50": 6187.2,
+          "median": 6187.2,
+          "p75": 8186.6,
+          "p90": 8868.4,
+          "p95": 8868.4,
+          "p99": 8868.4,
+          "p999": 8868.4
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 120,
+          "max": 272,
+          "count": 5,
+          "mean": 177.6,
+          "p50": 159.2,
+          "median": 159.2,
+          "p75": 183.1,
+          "p90": 183.1,
+          "p95": 183.1,
+          "p99": 183.1,
+          "p999": 183.1
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 5,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 34170.2,
+          "max": 80244.2,
+          "count": 10,
+          "mean": 66849.1,
+          "p50": 70992,
+          "median": 70992,
+          "p75": 73889.3,
+          "p90": 78458.5,
+          "p95": 78458.5,
+          "p99": 78458.5,
+          "p999": 78458.5
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 1.7,
+          "max": 7.2,
+          "count": 14,
+          "mean": 3.5,
+          "p50": 3.1,
+          "median": 3.1,
+          "p75": 4.5,
+          "p90": 4.5,
+          "p95": 4.6,
+          "p99": 4.6,
+          "p999": 4.6
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 5492,
+          "max": 14212,
+          "count": 14,
+          "mean": 8902.3,
+          "p50": 7865.6,
+          "median": 7865.6,
+          "p75": 10201.2,
+          "p90": 12213.1,
+          "p95": 12968.3,
+          "p99": 12968.3,
+          "p999": 12968.3
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 96,
+          "max": 912,
+          "count": 5,
+          "mean": 316.8,
+          "p50": 223.7,
+          "median": 223.7,
+          "p75": 242.3,
+          "p90": 242.3,
+          "p95": 242.3,
+          "p99": 242.3,
+          "p999": 242.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 5,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      },
+      "histograms": {
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1746.5,
+          "max": 6182.5,
+          "count": 11,
+          "mean": 3386.1,
+          "p50": 2951.9,
+          "median": 2951.9,
+          "p75": 3905.8,
+          "p90": 4965.3,
+          "p95": 4965.3,
+          "p99": 4965.3,
+          "p999": 4965.3
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 3680,
+          "max": 10924,
+          "count": 14,
+          "mean": 6638.9,
+          "p50": 6187.2,
+          "median": 6187.2,
+          "p75": 8186.6,
+          "p90": 8868.4,
+          "p95": 8868.4,
+          "p99": 8868.4,
+          "p999": 8868.4
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 120,
+          "max": 272,
+          "count": 5,
+          "mean": 177.6,
+          "p50": 159.2,
+          "median": 159.2,
+          "p75": 183.1,
+          "p90": 183.1,
+          "p95": 183.1,
+          "p99": 183.1,
+          "p999": 183.1
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 5,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 34170.2,
+          "max": 80244.2,
+          "count": 10,
+          "mean": 66849.1,
+          "p50": 70992,
+          "median": 70992,
+          "p75": 73889.3,
+          "p90": 78458.5,
+          "p95": 78458.5,
+          "p99": 78458.5,
+          "p999": 78458.5
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 1.7,
+          "max": 7.2,
+          "count": 14,
+          "mean": 3.5,
+          "p50": 3.1,
+          "median": 3.1,
+          "p75": 4.5,
+          "p90": 4.5,
+          "p95": 4.6,
+          "p99": 4.6,
+          "p999": 4.6
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 5492,
+          "max": 14212,
+          "count": 14,
+          "mean": 8902.3,
+          "p50": 7865.6,
+          "median": 7865.6,
+          "p75": 10201.2,
+          "p90": 12213.1,
+          "p95": 12968.3,
+          "p99": 12968.3,
+          "p999": 12968.3
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 96,
+          "max": 912,
+          "count": 5,
+          "mean": 316.8,
+          "p50": 223.7,
+          "median": 223.7,
+          "p75": 242.3,
+          "p90": 242.3,
+          "p95": 242.3,
+          "p99": 242.3,
+          "p999": 242.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 5,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 96,
+        "browser.http_requests": 106,
+        "browser.page.codes.401": 9,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 2,
+        "vusers.failed": 2
+      },
+      "rates": {},
+      "firstCounterAt": 1774266870288,
+      "firstHistogramAt": 1774266870199,
+      "lastCounterAt": 1774266878774,
+      "lastHistogramAt": 1774266879868,
+      "firstMetricAt": 1774266870199,
+      "lastMetricAt": 1774266879868,
+      "period": "1774266870000",
+      "summaries": {
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 2646,
+          "max": 3863.8,
+          "count": 8,
+          "mean": 3141.2,
+          "p50": 3072.4,
+          "median": 3072.4,
+          "p75": 3197.8,
+          "p90": 3328.3,
+          "p95": 3328.3,
+          "p99": 3328.3,
+          "p999": 3328.3
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 10272,
+          "max": 15096,
+          "count": 8,
+          "mean": 12511.5,
+          "p50": 12459.8,
+          "median": 12459.8,
+          "p75": 12968.3,
+          "p90": 12968.3,
+          "p95": 12968.3,
+          "p99": 12968.3,
+          "p999": 12968.3
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 2888,
+          "max": 10316,
+          "count": 9,
+          "mean": 7605.3,
+          "p50": 7117,
+          "median": 7117,
+          "p75": 9607.1,
+          "p90": 9999.2,
+          "p95": 9999.2,
+          "p99": 9999.2,
+          "p999": 9999.2
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 1.6,
+          "max": 6.4,
+          "count": 8,
+          "mean": 3.6,
+          "p50": 2.9,
+          "median": 2.9,
+          "p75": 4.1,
+          "p90": 5.2,
+          "p95": 5.2,
+          "p99": 5.2,
+          "p999": 5.2
+        }
+      },
+      "histograms": {
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 2646,
+          "max": 3863.8,
+          "count": 8,
+          "mean": 3141.2,
+          "p50": 3072.4,
+          "median": 3072.4,
+          "p75": 3197.8,
+          "p90": 3328.3,
+          "p95": 3328.3,
+          "p99": 3328.3,
+          "p999": 3328.3
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 10272,
+          "max": 15096,
+          "count": 8,
+          "mean": 12511.5,
+          "p50": 12459.8,
+          "median": 12459.8,
+          "p75": 12968.3,
+          "p90": 12968.3,
+          "p95": 12968.3,
+          "p99": 12968.3,
+          "p999": 12968.3
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 2888,
+          "max": 10316,
+          "count": 9,
+          "mean": 7605.3,
+          "p50": 7117,
+          "median": 7117,
+          "p75": 9607.1,
+          "p90": 9999.2,
+          "p95": 9999.2,
+          "p99": 9999.2,
+          "p999": 9999.2
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 1.6,
+          "max": 6.4,
+          "count": 8,
+          "mean": 3.6,
+          "p50": 2.9,
+          "median": 2.9,
+          "p75": 4.1,
+          "p90": 5.2,
+          "p95": 5.2,
+          "p99": 5.2,
+          "p999": 5.2
+        }
+      }
+    },
+    {
+      "counters": {
+        "vusers.created_by_name.Checkout Users": 1,
+        "vusers.created": 4,
+        "vusers.created_by_name.Browsers": 2,
+        "vusers.created_by_name.Buyers": 1,
+        "browser.page.codes.200": 127,
+        "browser.http_requests": 119,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 6,
+        "vusers.failed": 10,
+        "vusers.completed": 7,
+        "errors.page.goto: Timeout 30000ms exceeded.": 4
+      },
+      "rates": {},
+      "firstCounterAt": 1774266880024,
+      "firstHistogramAt": 1774266880123,
+      "lastCounterAt": 1774266889995,
+      "lastHistogramAt": 1774266889807,
+      "firstMetricAt": 1774266880024,
+      "lastMetricAt": 1774266889995,
+      "period": "1774266880000",
+      "summaries": {
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 7896,
+          "max": 12288,
+          "count": 4,
+          "mean": 9411,
+          "p50": 8692.8,
+          "median": 8692.8,
+          "p75": 8692.8,
+          "p90": 8692.8,
+          "p95": 8692.8,
+          "p99": 8692.8,
+          "p999": 8692.8
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2,
+          "max": 4.1,
+          "count": 5,
+          "mean": 3,
+          "p50": 3.2,
+          "median": 3.2,
+          "p75": 3.2,
+          "p90": 3.2,
+          "p95": 3.2,
+          "p99": 3.2,
+          "p999": 3.2
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 18508,
+          "max": 27112,
+          "count": 10,
+          "mean": 23452,
+          "p50": 23630.3,
+          "median": 23630.3,
+          "p75": 24594.7,
+          "p90": 26115.6,
+          "p95": 26115.6,
+          "p99": 26115.6,
+          "p999": 26115.6
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 96,
+          "max": 216,
+          "count": 4,
+          "mean": 162,
+          "p50": 159.2,
+          "median": 159.2,
+          "p75": 175.9,
+          "p90": 175.9,
+          "p95": 175.9,
+          "p99": 175.9,
+          "p999": 175.9
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 4,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 50285.6,
+          "max": 97513.8,
+          "count": 7,
+          "mean": 81536.5,
+          "p50": 92072.4,
+          "median": 92072.4,
+          "p75": 93932.5,
+          "p90": 93932.5,
+          "p95": 93932.5,
+          "p99": 93932.5,
+          "p999": 93932.5
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 80,
+          "max": 224,
+          "count": 3,
+          "mean": 144,
+          "p50": 127.8,
+          "median": 127.8,
+          "p75": 127.8,
+          "p90": 127.8,
+          "p95": 127.8,
+          "p99": 127.8,
+          "p999": 127.8
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      },
+      "histograms": {
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 7896,
+          "max": 12288,
+          "count": 4,
+          "mean": 9411,
+          "p50": 8692.8,
+          "median": 8692.8,
+          "p75": 8692.8,
+          "p90": 8692.8,
+          "p95": 8692.8,
+          "p99": 8692.8,
+          "p999": 8692.8
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2,
+          "max": 4.1,
+          "count": 5,
+          "mean": 3,
+          "p50": 3.2,
+          "median": 3.2,
+          "p75": 3.2,
+          "p90": 3.2,
+          "p95": 3.2,
+          "p99": 3.2,
+          "p999": 3.2
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 18508,
+          "max": 27112,
+          "count": 10,
+          "mean": 23452,
+          "p50": 23630.3,
+          "median": 23630.3,
+          "p75": 24594.7,
+          "p90": 26115.6,
+          "p95": 26115.6,
+          "p99": 26115.6,
+          "p999": 26115.6
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 96,
+          "max": 216,
+          "count": 4,
+          "mean": 162,
+          "p50": 159.2,
+          "median": 159.2,
+          "p75": 175.9,
+          "p90": 175.9,
+          "p95": 175.9,
+          "p99": 175.9,
+          "p999": 175.9
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 4,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 50285.6,
+          "max": 97513.8,
+          "count": 7,
+          "mean": 81536.5,
+          "p50": 92072.4,
+          "median": 92072.4,
+          "p75": 93932.5,
+          "p90": 93932.5,
+          "p95": 93932.5,
+          "p99": 93932.5,
+          "p999": 93932.5
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 80,
+          "max": 224,
+          "count": 3,
+          "mean": 144,
+          "p50": 127.8,
+          "median": 127.8,
+          "p75": 127.8,
+          "p90": 127.8,
+          "p95": 127.8,
+          "p99": 127.8,
+          "p999": 127.8
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.http_requests": 69,
+        "errors.page.goto: Timeout 30000ms exceeded.": 27,
+        "vusers.failed": 31,
+        "browser.page.codes.200": 60,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 4,
+        "vusers.created_by_name.Checkout Users": 6,
+        "vusers.created": 19,
+        "vusers.created_by_name.Buyers": 5,
+        "vusers.created_by_name.Light Users": 1,
+        "vusers.created_by_name.Browsers": 7
+      },
+      "rates": {},
+      "firstCounterAt": 1774266890005,
+      "firstHistogramAt": 1774266890251,
+      "lastCounterAt": 1774266899948,
+      "lastHistogramAt": 1774266899820,
+      "firstMetricAt": 1774266890005,
+      "lastMetricAt": 1774266899948,
+      "period": "1774266890000",
+      "summaries": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 22864,
+          "max": 29468,
+          "count": 13,
+          "mean": 25420.3,
+          "p50": 25091.6,
+          "median": 25091.6,
+          "p75": 26643.2,
+          "p90": 27181.5,
+          "p95": 28290.8,
+          "p99": 28290.8,
+          "p999": 28290.8
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 3848.3,
+          "max": 3848.3,
+          "count": 1,
+          "mean": 3848.3,
+          "p50": 3828.5,
+          "median": 3828.5,
+          "p75": 3828.5,
+          "p90": 3828.5,
+          "p95": 3828.5,
+          "p99": 3828.5,
+          "p999": 3828.5
+        }
+      },
+      "histograms": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 22864,
+          "max": 29468,
+          "count": 13,
+          "mean": 25420.3,
+          "p50": 25091.6,
+          "median": 25091.6,
+          "p75": 26643.2,
+          "p90": 27181.5,
+          "p95": 28290.8,
+          "p99": 28290.8,
+          "p999": 28290.8
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 3848.3,
+          "max": 3848.3,
+          "count": 1,
+          "mean": 3848.3,
+          "p50": 3828.5,
+          "median": 3828.5,
+          "p75": 3828.5,
+          "p90": 3828.5,
+          "p95": 3828.5,
+          "p99": 3828.5,
+          "p999": 3828.5
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 74,
+        "browser.http_requests": 77,
+        "errors.page.goto: Timeout 30000ms exceeded.": 23,
+        "vusers.failed": 26,
+        "browser.page.codes.401": 5,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 3,
+        "vusers.created_by_name.Buyers": 8,
+        "vusers.created": 23,
+        "vusers.created_by_name.Browsers": 11,
+        "vusers.created_by_name.Light Users": 1,
+        "vusers.created_by_name.Checkout Users": 3
+      },
+      "rates": {},
+      "firstCounterAt": 1774266900310,
+      "firstHistogramAt": 1774266901086,
+      "lastCounterAt": 1774266909939,
+      "lastHistogramAt": 1774266904878,
+      "firstMetricAt": 1774266900310,
+      "lastMetricAt": 1774266909939,
+      "period": "1774266900000",
+      "summaries": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 26532,
+          "max": 31416,
+          "count": 6,
+          "mean": 28593.3,
+          "p50": 28290.8,
+          "median": 28290.8,
+          "p75": 28290.8,
+          "p90": 29445.4,
+          "p95": 29445.4,
+          "p99": 29445.4,
+          "p999": 29445.4
+        }
+      },
+      "histograms": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 26532,
+          "max": 31416,
+          "count": 6,
+          "mean": 28593.3,
+          "p50": 28290.8,
+          "median": 28290.8,
+          "p75": 28290.8,
+          "p90": 29445.4,
+          "p95": 29445.4,
+          "p99": 29445.4,
+          "p999": 29445.4
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 157,
+        "browser.http_requests": 157,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 6,
+        "vusers.failed": 7,
+        "errors.page.goto: Timeout 30000ms exceeded.": 1,
+        "vusers.completed": 1
+      },
+      "rates": {},
+      "firstCounterAt": 1774266910061,
+      "firstHistogramAt": 1774266913623,
+      "lastCounterAt": 1774266919938,
+      "lastHistogramAt": 1774266919966,
+      "firstMetricAt": 1774266910061,
+      "lastMetricAt": 1774266919966,
+      "period": "1774266910000",
+      "summaries": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 18836,
+          "max": 24596,
+          "count": 39,
+          "mean": 22266.5,
+          "p50": 22703.7,
+          "median": 22703.7,
+          "p75": 23162.4,
+          "p90": 24107.7,
+          "p95": 24107.7,
+          "p99": 24107.7,
+          "p999": 24107.7
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 7140.2,
+          "max": 11028.1,
+          "count": 9,
+          "mean": 8587.9,
+          "p50": 8024.5,
+          "median": 8024.5,
+          "p75": 9230.4,
+          "p90": 9801.2,
+          "p95": 9801.2,
+          "p99": 9801.2,
+          "p999": 9801.2
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 10320,
+          "max": 22724,
+          "count": 6,
+          "mean": 19234.7,
+          "p50": 20958.1,
+          "median": 20958.1,
+          "p75": 20958.1,
+          "p90": 21381.5,
+          "p95": 21381.5,
+          "p99": 21381.5,
+          "p999": 21381.5
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2,
+          "max": 5.1,
+          "count": 6,
+          "mean": 3,
+          "p50": 2.3,
+          "median": 2.3,
+          "p75": 2.8,
+          "p90": 3.8,
+          "p95": 3.8,
+          "p99": 3.8,
+          "p999": 3.8
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 152,
+          "max": 152,
+          "count": 1,
+          "mean": 152,
+          "p50": 153,
+          "median": 153,
+          "p75": 153,
+          "p90": 153,
+          "p95": 153,
+          "p99": 153,
+          "p999": 153
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 1,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 125677.3,
+          "max": 125677.3,
+          "count": 1,
+          "mean": 125677.3,
+          "p50": 126796.9,
+          "median": 126796.9,
+          "p75": 126796.9,
+          "p90": 126796.9,
+          "p95": 126796.9,
+          "p99": 126796.9,
+          "p999": 126796.9
+        }
+      },
+      "histograms": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 18836,
+          "max": 24596,
+          "count": 39,
+          "mean": 22266.5,
+          "p50": 22703.7,
+          "median": 22703.7,
+          "p75": 23162.4,
+          "p90": 24107.7,
+          "p95": 24107.7,
+          "p99": 24107.7,
+          "p999": 24107.7
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 7140.2,
+          "max": 11028.1,
+          "count": 9,
+          "mean": 8587.9,
+          "p50": 8024.5,
+          "median": 8024.5,
+          "p75": 9230.4,
+          "p90": 9801.2,
+          "p95": 9801.2,
+          "p99": 9801.2,
+          "p999": 9801.2
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 10320,
+          "max": 22724,
+          "count": 6,
+          "mean": 19234.7,
+          "p50": 20958.1,
+          "median": 20958.1,
+          "p75": 20958.1,
+          "p90": 21381.5,
+          "p95": 21381.5,
+          "p99": 21381.5,
+          "p999": 21381.5
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2,
+          "max": 5.1,
+          "count": 6,
+          "mean": 3,
+          "p50": 2.3,
+          "median": 2.3,
+          "p75": 2.8,
+          "p90": 3.8,
+          "p95": 3.8,
+          "p99": 3.8,
+          "p999": 3.8
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 152,
+          "max": 152,
+          "count": 1,
+          "mean": 152,
+          "p50": 153,
+          "median": 153,
+          "p75": 153,
+          "p90": 153,
+          "p95": 153,
+          "p99": 153,
+          "p999": 153
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 1,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 125677.3,
+          "max": 125677.3,
+          "count": 1,
+          "mean": 125677.3,
+          "p50": 126796.9,
+          "median": 126796.9,
+          "p75": 126796.9,
+          "p90": 126796.9,
+          "p95": 126796.9,
+          "p99": 126796.9,
+          "p999": 126796.9
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 58,
+        "browser.http_requests": 50,
+        "errors.page.goto: Timeout 30000ms exceeded.": 24,
+        "vusers.failed": 24,
+        "vusers.completed": 9
+      },
+      "rates": {},
+      "firstCounterAt": 1774266920030,
+      "firstHistogramAt": 1774266920140,
+      "lastCounterAt": 1774266929982,
+      "lastHistogramAt": 1774266925446,
+      "firstMetricAt": 1774266920030,
+      "lastMetricAt": 1774266929982,
+      "period": "1774266920000",
+      "summaries": {
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 7741,
+          "max": 10046.2,
+          "count": 7,
+          "mean": 8654.1,
+          "p50": 8352,
+          "median": 8352,
+          "p75": 8520.7,
+          "p90": 9607.1,
+          "p95": 9607.1,
+          "p99": 9607.1,
+          "p999": 9607.1
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 19276,
+          "max": 23836,
+          "count": 11,
+          "mean": 22083.3,
+          "p50": 22254.1,
+          "median": 22254.1,
+          "p75": 22703.7,
+          "p90": 23162.4,
+          "p95": 23162.4,
+          "p99": 23162.4,
+          "p999": 23162.4
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2,
+          "max": 4.8,
+          "count": 11,
+          "mean": 3.2,
+          "p50": 3.3,
+          "median": 3.3,
+          "p75": 3.3,
+          "p90": 4.2,
+          "p95": 4.2,
+          "p99": 4.2,
+          "p999": 4.2
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 128,
+          "max": 160,
+          "count": 4,
+          "mean": 140,
+          "p50": 135.7,
+          "median": 135.7,
+          "p75": 135.7,
+          "p90": 135.7,
+          "p95": 135.7,
+          "p99": 135.7,
+          "p999": 135.7
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 4,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 74143.2,
+          "max": 101319.7,
+          "count": 9,
+          "mean": 91425.1,
+          "p50": 90249.2,
+          "median": 90249.2,
+          "p75": 99741.2,
+          "p90": 101756.1,
+          "p95": 101756.1,
+          "p99": 101756.1,
+          "p999": 101756.1
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 128,
+          "max": 256,
+          "count": 3,
+          "mean": 176,
+          "p50": 144,
+          "median": 144,
+          "p75": 144,
+          "p90": 144,
+          "p95": 144,
+          "p99": 144,
+          "p999": 144
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 152,
+          "max": 280,
+          "count": 2,
+          "mean": 216,
+          "p50": 153,
+          "median": 153,
+          "p75": 153,
+          "p90": 153,
+          "p95": 153,
+          "p99": 153,
+          "p999": 153
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      },
+      "histograms": {
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 7741,
+          "max": 10046.2,
+          "count": 7,
+          "mean": 8654.1,
+          "p50": 8352,
+          "median": 8352,
+          "p75": 8520.7,
+          "p90": 9607.1,
+          "p95": 9607.1,
+          "p99": 9607.1,
+          "p999": 9607.1
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 19276,
+          "max": 23836,
+          "count": 11,
+          "mean": 22083.3,
+          "p50": 22254.1,
+          "median": 22254.1,
+          "p75": 22703.7,
+          "p90": 23162.4,
+          "p95": 23162.4,
+          "p99": 23162.4,
+          "p999": 23162.4
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2,
+          "max": 4.8,
+          "count": 11,
+          "mean": 3.2,
+          "p50": 3.3,
+          "median": 3.3,
+          "p75": 3.3,
+          "p90": 4.2,
+          "p95": 4.2,
+          "p99": 4.2,
+          "p999": 4.2
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 128,
+          "max": 160,
+          "count": 4,
+          "mean": 140,
+          "p50": 135.7,
+          "median": 135.7,
+          "p75": 135.7,
+          "p90": 135.7,
+          "p95": 135.7,
+          "p99": 135.7,
+          "p999": 135.7
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 4,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 74143.2,
+          "max": 101319.7,
+          "count": 9,
+          "mean": 91425.1,
+          "p50": 90249.2,
+          "median": 90249.2,
+          "p75": 99741.2,
+          "p90": 101756.1,
+          "p95": 101756.1,
+          "p99": 101756.1,
+          "p999": 101756.1
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 128,
+          "max": 256,
+          "count": 3,
+          "mean": 176,
+          "p50": 144,
+          "median": 144,
+          "p75": 144,
+          "p90": 144,
+          "p95": 144,
+          "p99": 144,
+          "p999": 144
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 152,
+          "max": 280,
+          "count": 2,
+          "mean": 216,
+          "p50": 153,
+          "median": 153,
+          "p75": 153,
+          "p90": 153,
+          "p95": 153,
+          "p99": 153,
+          "p999": 153
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 42,
+        "browser.http_requests": 56,
+        "browser.page.codes.401": 5
+      },
+      "rates": {},
+      "firstCounterAt": 1774266930000,
+      "lastCounterAt": 1774266932729,
+      "firstMetricAt": 1774266930000,
+      "lastMetricAt": 1774266932729,
+      "period": "1774266930000",
+      "summaries": {},
+      "histograms": {}
+    },
+    {
+      "counters": {
+        "browser.page.codes.401": 13,
+        "browser.http_requests": 13,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 1,
+        "vusers.failed": 1
+      },
+      "rates": {},
+      "firstCounterAt": 1774266941954,
+      "lastCounterAt": 1774266949242,
+      "firstMetricAt": 1774266941954,
+      "lastMetricAt": 1774266949242,
+      "period": "1774266940000",
+      "summaries": {},
+      "histograms": {}
+    },
+    {
+      "counters": {
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 6,
+        "vusers.failed": 6
+      },
+      "rates": {},
+      "firstCounterAt": 1774266951583,
+      "lastCounterAt": 1774266955012,
+      "firstMetricAt": 1774266951583,
+      "lastMetricAt": 1774266955012,
+      "period": "1774266950000",
+      "summaries": {},
+      "histograms": {}
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 107,
+        "browser.http_requests": 106
+      },
+      "rates": {},
+      "firstCounterAt": 1774267022385,
+      "firstHistogramAt": 1774267024001,
+      "lastCounterAt": 1774267029985,
+      "lastHistogramAt": 1774267029819,
+      "firstMetricAt": 1774267022385,
+      "lastMetricAt": 1774267029985,
+      "period": "1774267020000",
+      "summaries": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 2844,
+          "max": 9908,
+          "count": 13,
+          "mean": 6548.9,
+          "p50": 6976.1,
+          "median": 6976.1,
+          "p75": 8692.8,
+          "p90": 9416.8,
+          "p95": 9607.1,
+          "p99": 9607.1,
+          "p999": 9607.1
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 929.3,
+          "max": 1338.3,
+          "count": 2,
+          "mean": 1133.8,
+          "p50": 925.4,
+          "median": 925.4,
+          "p75": 925.4,
+          "p90": 925.4,
+          "p95": 925.4,
+          "p99": 925.4,
+          "p999": 925.4
+        }
+      },
+      "histograms": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 2844,
+          "max": 9908,
+          "count": 13,
+          "mean": 6548.9,
+          "p50": 6976.1,
+          "median": 6976.1,
+          "p75": 8692.8,
+          "p90": 9416.8,
+          "p95": 9607.1,
+          "p99": 9607.1,
+          "p999": 9607.1
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 929.3,
+          "max": 1338.3,
+          "count": 2,
+          "mean": 1133.8,
+          "p50": 925.4,
+          "median": 925.4,
+          "p75": 925.4,
+          "p90": 925.4,
+          "p95": 925.4,
+          "p99": 925.4,
+          "p999": 925.4
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 348,
+        "browser.http_requests": 405,
+        "browser.page.codes.401": 57,
+        "vusers.failed": 0,
+        "vusers.completed": 2
+      },
+      "rates": {},
+      "firstCounterAt": 1774267030080,
+      "firstHistogramAt": 1774267030300,
+      "lastCounterAt": 1774267039951,
+      "lastHistogramAt": 1774267039963,
+      "firstMetricAt": 1774267030080,
+      "lastMetricAt": 1774267039963,
+      "period": "1774267030000",
+      "summaries": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 6808,
+          "max": 15964,
+          "count": 19,
+          "mean": 8576.2,
+          "p50": 7709.8,
+          "median": 7709.8,
+          "p75": 8520.7,
+          "p90": 10407.3,
+          "p95": 11734.2,
+          "p99": 11734.2,
+          "p999": 11734.2
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1271.7,
+          "max": 6542.3,
+          "count": 30,
+          "mean": 3158.9,
+          "p50": 2951.9,
+          "median": 2951.9,
+          "p75": 4316.6,
+          "p90": 4492.8,
+          "p95": 4676.2,
+          "p99": 4770.6,
+          "p999": 4770.6
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 2856,
+          "max": 10064,
+          "count": 26,
+          "mean": 7165.1,
+          "p50": 7260.8,
+          "median": 7260.8,
+          "p75": 8186.6,
+          "p90": 9416.8,
+          "p95": 9607.1,
+          "p99": 9999.2,
+          "p999": 9999.2
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2.3,
+          "max": 4.5,
+          "count": 24,
+          "mean": 3.1,
+          "p50": 3.1,
+          "median": 3.1,
+          "p75": 3.3,
+          "p90": 3.8,
+          "p95": 4,
+          "p99": 4.3,
+          "p999": 4.3
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 152,
+          "max": 184,
+          "count": 2,
+          "mean": 168,
+          "p50": 153,
+          "median": 153,
+          "p75": 153,
+          "p90": 153,
+          "p95": 153,
+          "p99": 153,
+          "p999": 153
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 187925.5,
+          "max": 213891.5,
+          "count": 2,
+          "mean": 200908.5,
+          "p50": 189161.2,
+          "median": 189161.2,
+          "p75": 189161.2,
+          "p90": 189161.2,
+          "p95": 189161.2,
+          "p99": 189161.2,
+          "p999": 189161.2
+        }
+      },
+      "histograms": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 6808,
+          "max": 15964,
+          "count": 19,
+          "mean": 8576.2,
+          "p50": 7709.8,
+          "median": 7709.8,
+          "p75": 8520.7,
+          "p90": 10407.3,
+          "p95": 11734.2,
+          "p99": 11734.2,
+          "p999": 11734.2
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1271.7,
+          "max": 6542.3,
+          "count": 30,
+          "mean": 3158.9,
+          "p50": 2951.9,
+          "median": 2951.9,
+          "p75": 4316.6,
+          "p90": 4492.8,
+          "p95": 4676.2,
+          "p99": 4770.6,
+          "p999": 4770.6
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 2856,
+          "max": 10064,
+          "count": 26,
+          "mean": 7165.1,
+          "p50": 7260.8,
+          "median": 7260.8,
+          "p75": 8186.6,
+          "p90": 9416.8,
+          "p95": 9607.1,
+          "p99": 9999.2,
+          "p999": 9999.2
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2.3,
+          "max": 4.5,
+          "count": 24,
+          "mean": 3.1,
+          "p50": 3.1,
+          "median": 3.1,
+          "p75": 3.3,
+          "p90": 3.8,
+          "p95": 4,
+          "p99": 4.3,
+          "p999": 4.3
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 152,
+          "max": 184,
+          "count": 2,
+          "mean": 168,
+          "p50": 153,
+          "median": 153,
+          "p75": 153,
+          "p90": 153,
+          "p95": 153,
+          "p99": 153,
+          "p999": 153
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 187925.5,
+          "max": 213891.5,
+          "count": 2,
+          "mean": 200908.5,
+          "p50": 189161.2,
+          "median": 189161.2,
+          "p75": 189161.2,
+          "p90": 189161.2,
+          "p95": 189161.2,
+          "p99": 189161.2,
+          "p999": 189161.2
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.401": 21,
+        "browser.http_requests": 179,
+        "browser.page.codes.200": 161,
+        "vusers.failed": 0,
+        "vusers.completed": 13
+      },
+      "rates": {},
+      "firstCounterAt": 1774267040070,
+      "firstHistogramAt": 1774267040035,
+      "lastCounterAt": 1774267049746,
+      "lastHistogramAt": 1774267048806,
+      "firstMetricAt": 1774267040035,
+      "lastMetricAt": 1774267049746,
+      "period": "1774267040000",
+      "summaries": {
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 2760,
+          "max": 19744,
+          "count": 8,
+          "mean": 10740.5,
+          "p50": 9607.1,
+          "median": 9607.1,
+          "p75": 11734.2,
+          "p90": 16159.7,
+          "p95": 16159.7,
+          "p99": 16159.7,
+          "p999": 16159.7
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2.7,
+          "max": 5.3,
+          "count": 10,
+          "mean": 3.8,
+          "p50": 3.6,
+          "median": 3.6,
+          "p75": 3.9,
+          "p90": 4.9,
+          "p95": 4.9,
+          "p99": 4.9,
+          "p999": 4.9
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 128,
+          "max": 384,
+          "count": 8,
+          "mean": 226,
+          "p50": 175.9,
+          "median": 175.9,
+          "p75": 247.2,
+          "p90": 347.3,
+          "p95": 347.3,
+          "p99": 347.3,
+          "p999": 347.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 8,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 191336.2,
+          "max": 236216.9,
+          "count": 13,
+          "mean": 209558.6,
+          "p50": 209056.2,
+          "median": 209056.2,
+          "p75": 217588.2,
+          "p90": 217588.2,
+          "p95": 221983.9,
+          "p99": 221983.9,
+          "p999": 221983.9
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 120,
+          "max": 144,
+          "count": 3,
+          "mean": 130.7,
+          "p50": 127.8,
+          "median": 127.8,
+          "p75": 127.8,
+          "p90": 127.8,
+          "p95": 127.8,
+          "p99": 127.8,
+          "p999": 127.8
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 2744,
+          "max": 19728,
+          "count": 2,
+          "mean": 11236,
+          "p50": 2725,
+          "median": 2725,
+          "p75": 2725,
+          "p90": 2725,
+          "p95": 2725,
+          "p99": 2725,
+          "p999": 2725
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1075.4,
+          "max": 15125.9,
+          "count": 2,
+          "mean": 8100.6,
+          "p50": 1085.9,
+          "median": 1085.9,
+          "p75": 1085.9,
+          "p90": 1085.9,
+          "p95": 1085.9,
+          "p99": 1085.9,
+          "p999": 1085.9
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 160,
+          "max": 160,
+          "count": 2,
+          "mean": 160,
+          "p50": 159.2,
+          "median": 159.2,
+          "p75": 159.2,
+          "p90": 159.2,
+          "p95": 159.2,
+          "p99": 159.2,
+          "p999": 159.2
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      },
+      "histograms": {
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 2760,
+          "max": 19744,
+          "count": 8,
+          "mean": 10740.5,
+          "p50": 9607.1,
+          "median": 9607.1,
+          "p75": 11734.2,
+          "p90": 16159.7,
+          "p95": 16159.7,
+          "p99": 16159.7,
+          "p999": 16159.7
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2.7,
+          "max": 5.3,
+          "count": 10,
+          "mean": 3.8,
+          "p50": 3.6,
+          "median": 3.6,
+          "p75": 3.9,
+          "p90": 4.9,
+          "p95": 4.9,
+          "p99": 4.9,
+          "p999": 4.9
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 128,
+          "max": 384,
+          "count": 8,
+          "mean": 226,
+          "p50": 175.9,
+          "median": 175.9,
+          "p75": 247.2,
+          "p90": 347.3,
+          "p95": 347.3,
+          "p99": 347.3,
+          "p999": 347.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 8,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 191336.2,
+          "max": 236216.9,
+          "count": 13,
+          "mean": 209558.6,
+          "p50": 209056.2,
+          "median": 209056.2,
+          "p75": 217588.2,
+          "p90": 217588.2,
+          "p95": 221983.9,
+          "p99": 221983.9,
+          "p999": 221983.9
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 120,
+          "max": 144,
+          "count": 3,
+          "mean": 130.7,
+          "p50": 127.8,
+          "median": 127.8,
+          "p75": 127.8,
+          "p90": 127.8,
+          "p95": 127.8,
+          "p99": 127.8,
+          "p999": 127.8
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 2744,
+          "max": 19728,
+          "count": 2,
+          "mean": 11236,
+          "p50": 2725,
+          "median": 2725,
+          "p75": 2725,
+          "p90": 2725,
+          "p95": 2725,
+          "p99": 2725,
+          "p999": 2725
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1075.4,
+          "max": 15125.9,
+          "count": 2,
+          "mean": 8100.6,
+          "p50": 1085.9,
+          "median": 1085.9,
+          "p75": 1085.9,
+          "p90": 1085.9,
+          "p95": 1085.9,
+          "p99": 1085.9,
+          "p999": 1085.9
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 160,
+          "max": 160,
+          "count": 2,
+          "mean": 160,
+          "p50": 159.2,
+          "median": 159.2,
+          "p75": 159.2,
+          "p90": 159.2,
+          "p95": 159.2,
+          "p99": 159.2,
+          "p999": 159.2
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.401": 25,
+        "browser.http_requests": 52,
+        "browser.page.codes.200": 29,
+        "vusers.failed": 2,
+        "vusers.completed": 1,
+        "errors.page.goto: Timeout 30000ms exceeded.": 2
+      },
+      "rates": {},
+      "firstCounterAt": 1774267050156,
+      "firstHistogramAt": 1774267055857,
+      "lastCounterAt": 1774267057818,
+      "lastHistogramAt": 1774267057818,
+      "firstMetricAt": 1774267050156,
+      "lastMetricAt": 1774267057818,
+      "period": "1774267050000",
+      "summaries": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 4584,
+          "max": 28672,
+          "count": 3,
+          "mean": 20637.3,
+          "p50": 28862.3,
+          "median": 28862.3,
+          "p75": 28862.3,
+          "p90": 28862.3,
+          "p95": 28862.3,
+          "p99": 28862.3,
+          "p999": 28862.3
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 3226.8,
+          "max": 27130.1,
+          "count": 3,
+          "mean": 19160.1,
+          "p50": 27181.5,
+          "median": 27181.5,
+          "p75": 27181.5,
+          "p90": 27181.5,
+          "p95": 27181.5,
+          "p99": 27181.5,
+          "p999": 27181.5
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 4600,
+          "max": 4600,
+          "count": 1,
+          "mean": 4600,
+          "p50": 4583.6,
+          "median": 4583.6,
+          "p75": 4583.6,
+          "p90": 4583.6,
+          "p95": 4583.6,
+          "p99": 4583.6,
+          "p999": 4583.6
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 4.5,
+          "max": 4.5,
+          "count": 1,
+          "mean": 4.5,
+          "p50": 4.5,
+          "median": 4.5,
+          "p75": 4.5,
+          "p90": 4.5,
+          "p95": 4.5,
+          "p99": 4.5,
+          "p999": 4.5
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 120,
+          "max": 120,
+          "count": 1,
+          "mean": 120,
+          "p50": 120.3,
+          "median": 120.3,
+          "p75": 120.3,
+          "p90": 120.3,
+          "p95": 120.3,
+          "p99": 120.3,
+          "p999": 120.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 1,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 231838,
+          "max": 231838,
+          "count": 1,
+          "mean": 231838,
+          "p50": 231043.6,
+          "median": 231043.6,
+          "p75": 231043.6,
+          "p90": 231043.6,
+          "p95": 231043.6,
+          "p99": 231043.6,
+          "p999": 231043.6
+        }
+      },
+      "histograms": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 4584,
+          "max": 28672,
+          "count": 3,
+          "mean": 20637.3,
+          "p50": 28862.3,
+          "median": 28862.3,
+          "p75": 28862.3,
+          "p90": 28862.3,
+          "p95": 28862.3,
+          "p99": 28862.3,
+          "p999": 28862.3
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 3226.8,
+          "max": 27130.1,
+          "count": 3,
+          "mean": 19160.1,
+          "p50": 27181.5,
+          "median": 27181.5,
+          "p75": 27181.5,
+          "p90": 27181.5,
+          "p95": 27181.5,
+          "p99": 27181.5,
+          "p999": 27181.5
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 4600,
+          "max": 4600,
+          "count": 1,
+          "mean": 4600,
+          "p50": 4583.6,
+          "median": 4583.6,
+          "p75": 4583.6,
+          "p90": 4583.6,
+          "p95": 4583.6,
+          "p99": 4583.6,
+          "p999": 4583.6
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 4.5,
+          "max": 4.5,
+          "count": 1,
+          "mean": 4.5,
+          "p50": 4.5,
+          "median": 4.5,
+          "p75": 4.5,
+          "p90": 4.5,
+          "p95": 4.5,
+          "p99": 4.5,
+          "p999": 4.5
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 120,
+          "max": 120,
+          "count": 1,
+          "mean": 120,
+          "p50": 120.3,
+          "median": 120.3,
+          "p75": 120.3,
+          "p90": 120.3,
+          "p95": 120.3,
+          "p99": 120.3,
+          "p999": 120.3
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 1,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 231838,
+          "max": 231838,
+          "count": 1,
+          "mean": 231838,
+          "p50": 231043.6,
+          "median": 231043.6,
+          "p75": 231043.6,
+          "p90": 231043.6,
+          "p95": 231043.6,
+          "p99": 231043.6,
+          "p999": 231043.6
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 68,
+        "browser.http_requests": 68,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 5,
+        "vusers.failed": 5,
+        "browser.page.codes.401": 1
+      },
+      "rates": {},
+      "firstCounterAt": 1774267061779,
+      "firstHistogramAt": 1774267063708,
+      "lastCounterAt": 1774267069951,
+      "lastHistogramAt": 1774267069951,
+      "firstMetricAt": 1774267061779,
+      "lastMetricAt": 1774267069951,
+      "period": "1774267060000",
+      "summaries": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 2852,
+          "max": 5836,
+          "count": 10,
+          "mean": 5031.6,
+          "p50": 5487.5,
+          "median": 5487.5,
+          "p75": 5711.5,
+          "p90": 5711.5,
+          "p95": 5711.5,
+          "p99": 5711.5,
+          "p999": 5711.5
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 900.1,
+          "max": 900.1,
+          "count": 1,
+          "mean": 900.1,
+          "p50": 907,
+          "median": 907,
+          "p75": 907,
+          "p90": 907,
+          "p95": 907,
+          "p99": 907,
+          "p999": 907
+        }
+      },
+      "histograms": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 2852,
+          "max": 5836,
+          "count": 10,
+          "mean": 5031.6,
+          "p50": 5487.5,
+          "median": 5487.5,
+          "p75": 5711.5,
+          "p90": 5711.5,
+          "p95": 5711.5,
+          "p99": 5711.5,
+          "p999": 5711.5
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 900.1,
+          "max": 900.1,
+          "count": 1,
+          "mean": 900.1,
+          "p50": 907,
+          "median": 907,
+          "p75": 907,
+          "p90": 907,
+          "p95": 907,
+          "p99": 907,
+          "p999": 907
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 203,
+        "browser.http_requests": 203,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 14,
+        "vusers.failed": 14,
+        "vusers.completed": 5,
+        "browser.page.codes.401": 4
+      },
+      "rates": {},
+      "firstCounterAt": 1774267070082,
+      "firstHistogramAt": 1774267070082,
+      "lastCounterAt": 1774267079951,
+      "lastHistogramAt": 1774267079467,
+      "firstMetricAt": 1774267070082,
+      "lastMetricAt": 1774267079951,
+      "period": "1774267070000",
+      "summaries": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 5320,
+          "max": 11348,
+          "count": 12,
+          "mean": 7550,
+          "p50": 6064.7,
+          "median": 6064.7,
+          "p75": 9416.8,
+          "p90": 9801.2,
+          "p95": 10617.5,
+          "p99": 10617.5,
+          "p999": 10617.5
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 915.6,
+          "max": 1404.3,
+          "count": 16,
+          "mean": 1163.6,
+          "p50": 1153.1,
+          "median": 1153.1,
+          "p75": 1274.3,
+          "p90": 1326.4,
+          "p95": 1380.5,
+          "p99": 1380.5,
+          "p999": 1380.5
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 2872,
+          "max": 6280,
+          "count": 17,
+          "mean": 5400.2,
+          "p50": 5711.5,
+          "median": 5711.5,
+          "p75": 5826.9,
+          "p90": 5944.6,
+          "p95": 6064.7,
+          "p99": 6064.7,
+          "p999": 6064.7
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 1.8,
+          "max": 6,
+          "count": 17,
+          "mean": 3.4,
+          "p50": 2.8,
+          "median": 2.8,
+          "p75": 4.3,
+          "p90": 4.7,
+          "p95": 5.4,
+          "p99": 5.4,
+          "p999": 5.4
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 136,
+          "max": 224,
+          "count": 3,
+          "mean": 184,
+          "p50": 190.6,
+          "median": 190.6,
+          "p75": 190.6,
+          "p90": 190.6,
+          "p95": 190.6,
+          "p99": 190.6,
+          "p999": 190.6
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 234877,
+          "max": 256758.6,
+          "count": 5,
+          "mean": 243619.2,
+          "p50": 240473,
+          "median": 240473,
+          "p75": 245331,
+          "p90": 245331,
+          "p95": 245331,
+          "p99": 245331,
+          "p999": 245331
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 128,
+          "max": 192,
+          "count": 2,
+          "mean": 160,
+          "p50": 127.8,
+          "median": 127.8,
+          "p75": 127.8,
+          "p90": 127.8,
+          "p95": 127.8,
+          "p99": 127.8,
+          "p999": 127.8
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      },
+      "histograms": {
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 5320,
+          "max": 11348,
+          "count": 12,
+          "mean": 7550,
+          "p50": 6064.7,
+          "median": 6064.7,
+          "p75": 9416.8,
+          "p90": 9801.2,
+          "p95": 10617.5,
+          "p99": 10617.5,
+          "p999": 10617.5
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 915.6,
+          "max": 1404.3,
+          "count": 16,
+          "mean": 1163.6,
+          "p50": 1153.1,
+          "median": 1153.1,
+          "p75": 1274.3,
+          "p90": 1326.4,
+          "p95": 1380.5,
+          "p99": 1380.5,
+          "p999": 1380.5
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 2872,
+          "max": 6280,
+          "count": 17,
+          "mean": 5400.2,
+          "p50": 5711.5,
+          "median": 5711.5,
+          "p75": 5826.9,
+          "p90": 5944.6,
+          "p95": 6064.7,
+          "p99": 6064.7,
+          "p999": 6064.7
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 1.8,
+          "max": 6,
+          "count": 17,
+          "mean": 3.4,
+          "p50": 2.8,
+          "median": 2.8,
+          "p75": 4.3,
+          "p90": 4.7,
+          "p95": 5.4,
+          "p99": 5.4,
+          "p999": 5.4
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 136,
+          "max": 224,
+          "count": 3,
+          "mean": 184,
+          "p50": 190.6,
+          "median": 190.6,
+          "p75": 190.6,
+          "p90": 190.6,
+          "p95": 190.6,
+          "p99": 190.6,
+          "p999": 190.6
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 234877,
+          "max": 256758.6,
+          "count": 5,
+          "mean": 243619.2,
+          "p50": 240473,
+          "median": 240473,
+          "p75": 245331,
+          "p90": 245331,
+          "p95": 245331,
+          "p99": 245331,
+          "p999": 245331
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 128,
+          "max": 192,
+          "count": 2,
+          "mean": 160,
+          "p50": 127.8,
+          "median": 127.8,
+          "p75": 127.8,
+          "p90": 127.8,
+          "p95": 127.8,
+          "p99": 127.8,
+          "p999": 127.8
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 197,
+        "browser.http_requests": 193,
+        "errors.page.goto: net::ERR_CONNECTION_REFUSED at https://www.saucedemo.com/": 79,
+        "vusers.failed": 96,
+        "vusers.completed": 6,
+        "errors.page.goto: net::ERR_CONNECTION_ABORTED at https://www.saucedemo.com/": 17
+      },
+      "rates": {},
+      "firstCounterAt": 1774267080150,
+      "firstHistogramAt": 1774267080159,
+      "lastCounterAt": 1774267089997,
+      "lastHistogramAt": 1774267089936,
+      "firstMetricAt": 1774267080150,
+      "lastMetricAt": 1774267089997,
+      "period": "1774267080000",
+      "summaries": {
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1520.5,
+          "max": 10793.1,
+          "count": 9,
+          "mean": 6630.1,
+          "p50": 7407.5,
+          "median": 7407.5,
+          "p75": 8024.5,
+          "p90": 10832,
+          "p95": 10832,
+          "p99": 10832,
+          "p999": 10832
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 13908,
+          "max": 22768,
+          "count": 10,
+          "mean": 19476,
+          "p50": 20136.3,
+          "median": 20136.3,
+          "p75": 20543.1,
+          "p90": 20543.1,
+          "p95": 20543.1,
+          "p99": 20543.1,
+          "p999": 20543.1
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 11400,
+          "max": 13908,
+          "count": 2,
+          "mean": 12654,
+          "p50": 11501.8,
+          "median": 11501.8,
+          "p75": 11501.8,
+          "p90": 11501.8,
+          "p95": 11501.8,
+          "p99": 11501.8,
+          "p999": 11501.8
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2.8,
+          "max": 5.7,
+          "count": 2,
+          "mean": 4.2,
+          "p50": 2.8,
+          "median": 2.8,
+          "p75": 2.8,
+          "p90": 2.8,
+          "p95": 2.8,
+          "p99": 2.8,
+          "p999": 2.8
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 136,
+          "max": 160,
+          "count": 4,
+          "mean": 148,
+          "p50": 144,
+          "median": 144,
+          "p75": 153,
+          "p90": 153,
+          "p95": 153,
+          "p99": 153,
+          "p999": 153
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 4,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 229267.5,
+          "max": 254087.1,
+          "count": 6,
+          "mean": 236060.8,
+          "p50": 231043.6,
+          "median": 231043.6,
+          "p75": 231043.6,
+          "p90": 245331,
+          "p95": 245331,
+          "p99": 245331,
+          "p999": 245331
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 144,
+          "max": 144,
+          "count": 2,
+          "mean": 144,
+          "p50": 144,
+          "median": 144,
+          "p75": 144,
+          "p90": 144,
+          "p95": 144,
+          "p99": 144,
+          "p999": 144
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      },
+      "histograms": {
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 1520.5,
+          "max": 10793.1,
+          "count": 9,
+          "mean": 6630.1,
+          "p50": 7407.5,
+          "median": 7407.5,
+          "p75": 8024.5,
+          "p90": 10832,
+          "p95": 10832,
+          "p99": 10832,
+          "p999": 10832
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 13908,
+          "max": 22768,
+          "count": 10,
+          "mean": 19476,
+          "p50": 20136.3,
+          "median": 20136.3,
+          "p75": 20543.1,
+          "p90": 20543.1,
+          "p95": 20543.1,
+          "p99": 20543.1,
+          "p999": 20543.1
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 11400,
+          "max": 13908,
+          "count": 2,
+          "mean": 12654,
+          "p50": 11501.8,
+          "median": 11501.8,
+          "p75": 11501.8,
+          "p90": 11501.8,
+          "p95": 11501.8,
+          "p99": 11501.8,
+          "p999": 11501.8
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2.8,
+          "max": 5.7,
+          "count": 2,
+          "mean": 4.2,
+          "p50": 2.8,
+          "median": 2.8,
+          "p75": 2.8,
+          "p90": 2.8,
+          "p95": 2.8,
+          "p99": 2.8,
+          "p999": 2.8
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 136,
+          "max": 160,
+          "count": 4,
+          "mean": 148,
+          "p50": 144,
+          "median": 144,
+          "p75": 153,
+          "p90": 153,
+          "p95": 153,
+          "p99": 153,
+          "p999": 153
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 4,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 229267.5,
+          "max": 254087.1,
+          "count": 6,
+          "mean": 236060.8,
+          "p50": 231043.6,
+          "median": 231043.6,
+          "p75": 231043.6,
+          "p90": 245331,
+          "p95": 245331,
+          "p99": 245331,
+          "p999": 245331
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 144,
+          "max": 144,
+          "count": 2,
+          "mean": 144,
+          "p50": 144,
+          "median": 144,
+          "p75": 144,
+          "p90": 144,
+          "p95": 144,
+          "p99": 144,
+          "p999": 144
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.200": 69,
+        "browser.http_requests": 53,
+        "errors.page.goto: Timeout 30000ms exceeded.": 129,
+        "vusers.failed": 156,
+        "errors.page.goto: net::ERR_CONNECTION_ABORTED at https://www.saucedemo.com/": 27,
+        "vusers.completed": 6
+      },
+      "rates": {},
+      "firstCounterAt": 1774267090021,
+      "firstHistogramAt": 1774267090670,
+      "lastCounterAt": 1774267099980,
+      "lastHistogramAt": 1774267099114,
+      "firstMetricAt": 1774267090021,
+      "lastMetricAt": 1774267099980,
+      "period": "1774267090000",
+      "summaries": {
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 17068,
+          "max": 26952,
+          "count": 13,
+          "mean": 21789.2,
+          "p50": 20543.1,
+          "median": 20543.1,
+          "p75": 23630.3,
+          "p90": 25091.6,
+          "p95": 25598.5,
+          "p99": 25598.5,
+          "p999": 25598.5
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2.4,
+          "max": 5.3,
+          "count": 13,
+          "mean": 3.6,
+          "p50": 3.4,
+          "median": 3.4,
+          "p75": 4.2,
+          "p90": 4.3,
+          "p95": 5,
+          "p99": 5,
+          "p999": 5
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 7547,
+          "max": 15756.6,
+          "count": 9,
+          "mean": 9981.4,
+          "p50": 9416.8,
+          "median": 9416.8,
+          "p75": 9607.1,
+          "p90": 12213.1,
+          "p95": 12213.1,
+          "p99": 12213.1,
+          "p999": 12213.1
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 21240,
+          "max": 30268,
+          "count": 12,
+          "mean": 25228.7,
+          "p50": 23630.3,
+          "median": 23630.3,
+          "p75": 27181.5,
+          "p90": 28290.8,
+          "p95": 29445.4,
+          "p99": 29445.4,
+          "p999": 29445.4
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 248,
+          "max": 376,
+          "count": 2,
+          "mean": 312,
+          "p50": 247.2,
+          "median": 247.2,
+          "p75": 247.2,
+          "p90": 247.2,
+          "p95": 247.2,
+          "p99": 247.2,
+          "p999": 247.2
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 252520.9,
+          "max": 276426.2,
+          "count": 6,
+          "mean": 265319.9,
+          "p50": 260502,
+          "median": 260502,
+          "p75": 271133.6,
+          "p90": 276611.1,
+          "p95": 276611.1,
+          "p99": 276611.1,
+          "p999": 276611.1
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 160,
+          "max": 280,
+          "count": 3,
+          "mean": 221.3,
+          "p50": 223.7,
+          "median": 223.7,
+          "p75": 223.7,
+          "p90": 223.7,
+          "p95": 223.7,
+          "p99": 223.7,
+          "p999": 223.7
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 200,
+          "max": 200,
+          "count": 1,
+          "mean": 200,
+          "p50": 198.4,
+          "median": 198.4,
+          "p75": 198.4,
+          "p90": 198.4,
+          "p95": 198.4,
+          "p99": 198.4,
+          "p999": 198.4
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 1,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      },
+      "histograms": {
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 17068,
+          "max": 26952,
+          "count": 13,
+          "mean": 21789.2,
+          "p50": 20543.1,
+          "median": 20543.1,
+          "p75": 23630.3,
+          "p90": 25091.6,
+          "p95": 25598.5,
+          "p99": 25598.5,
+          "p999": 25598.5
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 2.4,
+          "max": 5.3,
+          "count": 13,
+          "mean": 3.6,
+          "p50": 3.4,
+          "median": 3.4,
+          "p75": 4.2,
+          "p90": 4.3,
+          "p95": 5,
+          "p99": 5,
+          "p999": 5
+        },
+        "browser.page.TTFB.https://www.saucedemo.com/": {
+          "min": 7547,
+          "max": 15756.6,
+          "count": 9,
+          "mean": 9981.4,
+          "p50": 9416.8,
+          "median": 9416.8,
+          "p75": 9607.1,
+          "p90": 12213.1,
+          "p95": 12213.1,
+          "p99": 12213.1,
+          "p999": 12213.1
+        },
+        "browser.page.FCP.https://www.saucedemo.com/": {
+          "min": 21240,
+          "max": 30268,
+          "count": 12,
+          "mean": 25228.7,
+          "p50": 23630.3,
+          "median": 23630.3,
+          "p75": 27181.5,
+          "p90": 28290.8,
+          "p95": 29445.4,
+          "p99": 29445.4,
+          "p999": 29445.4
+        },
+        "browser.page.INP.https://www.saucedemo.com/inventory.html": {
+          "min": 248,
+          "max": 376,
+          "count": 2,
+          "mean": 312,
+          "p50": 247.2,
+          "median": 247.2,
+          "p75": 247.2,
+          "p90": 247.2,
+          "p95": 247.2,
+          "p99": 247.2,
+          "p999": 247.2
+        },
+        "browser.page.CLS.https://www.saucedemo.com/inventory.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 252520.9,
+          "max": 276426.2,
+          "count": 6,
+          "mean": 265319.9,
+          "p50": 260502,
+          "median": 260502,
+          "p75": 271133.6,
+          "p90": 276611.1,
+          "p95": 276611.1,
+          "p99": 276611.1,
+          "p999": 276611.1
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 160,
+          "max": 280,
+          "count": 3,
+          "mean": 221.3,
+          "p50": 223.7,
+          "median": 223.7,
+          "p75": 223.7,
+          "p90": 223.7,
+          "p95": 223.7,
+          "p99": 223.7,
+          "p999": 223.7
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 3,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 200,
+          "max": 200,
+          "count": 1,
+          "mean": 200,
+          "p50": 198.4,
+          "median": 198.4,
+          "p75": 198.4,
+          "p90": 198.4,
+          "p95": 198.4,
+          "p99": 198.4,
+          "p999": 198.4
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 1,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      }
+    },
+    {
+      "counters": {
+        "errors.page.goto: Timeout 30000ms exceeded.": 126,
+        "vusers.failed": 132,
+        "browser.page.codes.200": 63,
+        "browser.http_requests": 67,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 5,
+        "vusers.completed": 4,
+        "errors.page.click: Timeout 30000ms exceeded.": 1
+      },
+      "rates": {},
+      "firstCounterAt": 1774267100039,
+      "firstHistogramAt": 1774267100877,
+      "lastCounterAt": 1774267109630,
+      "lastHistogramAt": 1774267105550,
+      "firstMetricAt": 1774267100039,
+      "lastMetricAt": 1774267109630,
+      "period": "1774267100000",
+      "summaries": {
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 288,
+          "max": 400,
+          "count": 2,
+          "mean": 344,
+          "p50": 290.1,
+          "median": 290.1,
+          "p75": 290.1,
+          "p90": 290.1,
+          "p95": 290.1,
+          "p99": 290.1,
+          "p999": 290.1
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 258416.9,
+          "max": 269542.3,
+          "count": 4,
+          "mean": 265382.2,
+          "p50": 265764.6,
+          "median": 265764.6,
+          "p75": 271133.6,
+          "p90": 271133.6,
+          "p95": 271133.6,
+          "p99": 271133.6,
+          "p999": 271133.6
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 28340,
+          "max": 28340,
+          "count": 1,
+          "mean": 28340,
+          "p50": 28290.8,
+          "median": 28290.8,
+          "p75": 28290.8,
+          "p90": 28290.8,
+          "p95": 28290.8,
+          "p99": 28290.8,
+          "p999": 28290.8
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 5.4,
+          "max": 5.4,
+          "count": 1,
+          "mean": 5.4,
+          "p50": 5.4,
+          "median": 5.4,
+          "p75": 5.4,
+          "p90": 5.4,
+          "p95": 5.4,
+          "p99": 5.4,
+          "p999": 5.4
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 208,
+          "max": 272,
+          "count": 2,
+          "mean": 240,
+          "p50": 206.5,
+          "median": 206.5,
+          "p75": 206.5,
+          "p90": 206.5,
+          "p95": 206.5,
+          "p99": 206.5,
+          "p999": 206.5
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      },
+      "histograms": {
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 288,
+          "max": 400,
+          "count": 2,
+          "mean": 344,
+          "p50": 290.1,
+          "median": 290.1,
+          "p75": 290.1,
+          "p90": 290.1,
+          "p95": 290.1,
+          "p99": 290.1,
+          "p999": 290.1
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        },
+        "vusers.session_length": {
+          "min": 258416.9,
+          "max": 269542.3,
+          "count": 4,
+          "mean": 265382.2,
+          "p50": 265764.6,
+          "median": 265764.6,
+          "p75": 271133.6,
+          "p90": 271133.6,
+          "p95": 271133.6,
+          "p99": 271133.6,
+          "p999": 271133.6
+        },
+        "browser.page.LCP.https://www.saucedemo.com/": {
+          "min": 28340,
+          "max": 28340,
+          "count": 1,
+          "mean": 28340,
+          "p50": 28290.8,
+          "median": 28290.8,
+          "p75": 28290.8,
+          "p90": 28290.8,
+          "p95": 28290.8,
+          "p99": 28290.8,
+          "p999": 28290.8
+        },
+        "browser.page.FID.https://www.saucedemo.com/inventory.html": {
+          "min": 5.4,
+          "max": 5.4,
+          "count": 1,
+          "mean": 5.4,
+          "p50": 5.4,
+          "median": 5.4,
+          "p75": 5.4,
+          "p90": 5.4,
+          "p95": 5.4,
+          "p99": 5.4,
+          "p999": 5.4
+        },
+        "browser.page.INP.https://www.saucedemo.com/cart.html": {
+          "min": 208,
+          "max": 272,
+          "count": 2,
+          "mean": 240,
+          "p50": 206.5,
+          "median": 206.5,
+          "p75": 206.5,
+          "p90": 206.5,
+          "p95": 206.5,
+          "p99": 206.5,
+          "p999": 206.5
+        },
+        "browser.page.CLS.https://www.saucedemo.com/cart.html": {
+          "min": 0,
+          "max": 0,
+          "count": 2,
+          "mean": 0,
+          "p50": 0,
+          "median": 0,
+          "p75": 0,
+          "p90": 0,
+          "p95": 0,
+          "p99": 0,
+          "p999": 0
+        }
+      }
+    },
+    {
+      "counters": {
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 2,
+        "vusers.failed": 2,
+        "browser.page.codes.200": 18,
+        "browser.http_requests": 18,
+        "vusers.completed": 1
+      },
+      "rates": {},
+      "firstCounterAt": 1774267112003,
+      "firstHistogramAt": 1774267115775,
+      "lastCounterAt": 1774267115776,
+      "lastHistogramAt": 1774267115776,
+      "firstMetricAt": 1774267112003,
+      "lastMetricAt": 1774267115776,
+      "period": "1774267110000",
+      "summaries": {
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 152,
+          "max": 152,
+          "count": 1,
+          "mean": 152,
+          "p50": 153,
+          "median": 153,
+          "p75": 153,
+          "p90": 153,
+          "p95": 153,
+          "p99": 153,
+          "p999": 153
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0.9,
+          "max": 0.9,
+          "count": 1,
+          "mean": 0.9,
+          "p50": 0.9,
+          "median": 0.9,
+          "p75": 0.9,
+          "p90": 0.9,
+          "p95": 0.9,
+          "p99": 0.9,
+          "p999": 0.9
+        },
+        "vusers.session_length": {
+          "min": 283431.6,
+          "max": 283431.6,
+          "count": 1,
+          "mean": 283431.6,
+          "p50": 282199.2,
+          "median": 282199.2,
+          "p75": 282199.2,
+          "p90": 282199.2,
+          "p95": 282199.2,
+          "p99": 282199.2,
+          "p999": 282199.2
+        }
+      },
+      "histograms": {
+        "browser.page.INP.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 152,
+          "max": 152,
+          "count": 1,
+          "mean": 152,
+          "p50": 153,
+          "median": 153,
+          "p75": 153,
+          "p90": 153,
+          "p95": 153,
+          "p99": 153,
+          "p999": 153
+        },
+        "browser.page.CLS.https://www.saucedemo.com/checkout-step-two.html": {
+          "min": 0.9,
+          "max": 0.9,
+          "count": 1,
+          "mean": 0.9,
+          "p50": 0.9,
+          "median": 0.9,
+          "p75": 0.9,
+          "p90": 0.9,
+          "p95": 0.9,
+          "p99": 0.9,
+          "p999": 0.9
+        },
+        "vusers.session_length": {
+          "min": 283431.6,
+          "max": 283431.6,
+          "count": 1,
+          "mean": 283431.6,
+          "p50": 282199.2,
+          "median": 282199.2,
+          "p75": 282199.2,
+          "p90": 282199.2,
+          "p95": 282199.2,
+          "p99": 282199.2,
+          "p999": 282199.2
+        }
+      }
+    },
+    {
+      "counters": {
+        "browser.page.codes.401": 4,
+        "browser.http_requests": 4,
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 2,
+        "vusers.failed": 2
+      },
+      "rates": {},
+      "firstCounterAt": 1774267120546,
+      "lastCounterAt": 1774267124669,
+      "firstMetricAt": 1774267120546,
+      "lastMetricAt": 1774267124669,
+      "period": "1774267120000",
+      "summaries": {},
+      "histograms": {}
+    },
+    {
+      "counters": {
+        "errors.page.waitForSelector: Timeout 30000ms exceeded.": 1,
+        "vusers.failed": 1
+      },
+      "rates": {},
+      "firstCounterAt": 1774267133002,
+      "lastCounterAt": 1774267133002,
+      "firstMetricAt": 1774267133002,
+      "lastMetricAt": 1774267133002,
+      "period": "1774267130000",
+      "summaries": {},
+      "histograms": {}
+    }
+  ],
+  "name": "report.json"
+};
+    const editor = ace.edit("editor");
+    editor.getSession().setMode("ace/mode/javascript");
+    editor.setValue(JSON.stringify(Report, null, 2));
+    editor.gotoLine(1);
+    editor.setHighlightActiveLine(false);
+    editor.setOption("maxLines", 50);
+    editor.setTheme("ace/theme/clouds_midnight");
+
+    // let sanitizedName = Report.name.replace(/_/, " ").split(" ").map((w) => w[0].toUpperCase()+w.substring(1,w.length)).join(" ")
+    $('#report-name').html(Report.name.replace(".json", ""))
+
+    const l = _;
+
+    const chartBgColors = {
+      red: "rgba(255, 99, 132, 0.2)",
+      orange: "rgba(255, 159, 64, 0.2)",
+      yellow: "rgba(255, 205, 86, 0.2)",
+      green: "rgba(75, 192, 192, 0.2)",
+      blue: "rgba(54, 162, 235, 0.2)",
+    };
+
+    const chartBorderColors = {
+      green: "#24EB70",
+      red: "#ff0000",
+      orange: "#FF6D1B",
+      purple: "#6100FF",
+      blue: "#0047FF"
+    };
+
+    const getHttpColor = (httpCode) => {
+      const code = parseInt(httpCode, 10);
+
+      if (code >= 100 && code < 200) {
+        return chartBorderColors.blue;
+      } else if (code >= 200 && code < 300) {
+        return chartBorderColors.green;
+      } else if (code >= 300 && code < 400) {
+        return chartBorderColors.red;
+      } else if (code >= 400 && code < 500) {
+        return chartBorderColors.purple;
+      }
+
+      return chartBorderColors.orange;
+    }
+
+    const getLatencyColor = (latency) => {
+      switch (latency) {
+        case "min":
+          return chartBorderColors.red;
+        case "max":
+          return chartBorderColors.orange;
+        case "median":
+          return chartBorderColors.purple;
+        case "p95":
+          return chartBorderColors.green;
+        case "p99":
+          return chartBorderColors.green;
+        default:
+          return '';
+      }
+    };
+
+    const getCustomStats = (stats) =>
+      l.omitBy(
+        stats,
+        (_, key) =>
+          key.startsWith("errors.") ||
+          key.startsWith("core.") ||
+          key.startsWith("engine.")
+      );
+
+    const scenarioCounts = l.pickBy(Report.aggregate.counters, (_, key) =>
+      key.startsWith("vusers.created_by_name")
+    );
+
+    if (l.size(scenarioCounts) > 0) {
+      l.each(scenarioCounts, function (count, key) {
+        const [, , name] = key.split(".");
+
+        const $tdName = $("<td>" + name + "</td>");
+        const percentage =
+          Math.round(
+            (count / Report.aggregate.counters["vusers.created"]) *
+            100 *
+            1000
+          ) / 1000;
+        const $tdCount = $("<td>" + count + " (" + percentage + "%)" + "</td>");
+        $("<tr></tr>")
+          .append($tdName)
+          .append($tdCount)
+          .appendTo($("#scenarioCounts"));
+      });
+    } else {
+      $("#scenarioCountsContainer").hide();
+    }
+
+    const httpCodes = l.pickBy(Report.aggregate.counters, (_, key) =>
+      key.startsWith("http.codes")
+    );
+
+    const errors = l.pickBy(Report.aggregate.counters, (_, key) =>
+      key.startsWith("errors.")
+    );
+    if (l.size(errors) > 0) {
+      l.each(errors, function (count, error) {
+        const [, errorDetail] = error.split("errors.");
+
+        $("<tr></tr>")
+          .append($("<td>" + errorDetail + "</td>"))
+          .append($("<td>" + count + "</td>"))
+          .appendTo($("#errors"));
+      });
+    } else {
+      $("#errorsContainer > p").html(
+        "&#10004; Test completed without network or OS errors."
+      );
+    }
+
+    const getTimePeriodAggregates = (summaries) => {
+      const summary =
+        summaries["socketio.response_time"] ||
+        summaries["http.response_time"];
+      const metrics = ["min", "max", "median", "p95", "p99"];
+
+      return l.pickBy(summary, (_, key) => metrics.includes(key));
+    };
+
+    const getLatencyDistribution = (data) => {
+      return l.reduce(
+        data,
+        (acc, value, key) => {
+          acc.labels.push(key);
+          acc.values.push(value);
+
+          return acc;
+        },
+        { labels: [], values: [] }
+      );
+    };
+
+    const randomRgbColor = () => {
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+
+      return "rgb(" + r + ", " + g + ", " + b + ")";
+    };
+
+    const latencyDistributionData = getLatencyDistribution(
+      getTimePeriodAggregates(Report.aggregate.summaries)
+    );
+
+    const latencyAtIntervalsData = (intermediates = []) => {
+      const data = intermediates.reduce(
+        (acc, entry, idx) => {
+          const latencies = getTimePeriodAggregates(entry.summaries);
+
+          l.each(latencies, (latency, key) => {
+            acc.values[key] = acc.values[key] || [];
+
+            acc.values[key].push(latency);
+          });
+
+          acc.labels.push((idx + 1) * 10);
+
+          return acc;
+        },
+        { labels: [], values: {} }
+      );
+
+      return {
+        labels: data.labels,
+        datasets: l.map(data.values, (entry, key) => {
+          const color = getLatencyColor(key);
+
+          return {
+            label: key,
+            data: entry,
+            fill: false,
+            backgroundColor: color,
+            borderColor: color,
+            tension: 0.5,
+          };
+        })
+      };
+    };
+
+
+    const getMeanRpsData = (intermediates = []) => {
+      const data = intermediates.reduce(
+        (acc, entry, idx) => {
+          const count =
+            entry.rates["http.request_rate"] ||
+            entry.rates["socketio.emit_rate"] ||
+            entry.rates["websocket.send_rate"] ||
+            0;
+
+          acc.labels.push((idx + 1) * 10);
+          acc.values.push(count);
+
+          return acc;
+        },
+        { labels: [], values: [] }
+      );
+
+      return {
+        labels: data.labels,
+        datasets: [
+          {
+            data: data.values,
+            fill: false,
+            borderColor: "#0047FF",
+            tension: 0.5,
+          },
+        ],
+      };
+    };
+
+    const getHttpCodesData = (counters) => {
+      const httpCodes = l.pickBy(counters, (_, key) =>
+        key.startsWith("http.codes")
+      );
+      const labels = [];
+      const data = [];
+      const bgColors = [
+        "rgba(54, 232, 235, 0.5)",
+        "rgba(54, 235, 93, 0.5)",
+        "rgba(229, 235, 54, 0.5)",
+        "rgba(166, 54, 235, 0.5)",
+        "rgba(235, 54, 69, 0.5)",
+      ];
+
+      if (l.size(httpCodes) > 0) {
+        l.each(httpCodes, function (count, key) {
+          let [, , , code] = key.split(".");
+          code = parseInt(code, 10);
+
+          labels.push(code);
+          data.push(count);
+        });
+      }
+
+      return {
+        labels,
+        datasets: [
+          {
+            backgroundColor: labels.map(getHttpColor),
+            hoverOffset: 4,
+            data,
+          },
+        ],
+      };
+    };
+
+    const timeFormat = "DD[/]MM[/]YYYY, hh:mm:ss"
+    $("#timestamp").html(
+      moment(Report.aggregate.period).format(timeFormat)
+    );
+    $('#copy-json').on("click", (e) => {
+      navigator.clipboard.writeText(JSON.stringify(Report, null, 2));
+
+      $('#copy-json').html(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-label="" aria-labelledby="icon_start" x="0px" y="0px" role="img" class="inline false"><title id="icon_start" lang="en"></title><g fill="currentColor"><path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"></path></g></svg>`)
+      setTimeout(function () {
+        $('#copy-json').html(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-label="" aria-labelledby="icon_start" x="0px" y="0px" role="img" class="inline false"><title id="icon_start" lang="en"></title><g fill="currentColor"><path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"></path></g></svg>`)
+      }, 1000)
+    })
+
+
+    // tabs logic
+    $("#charts-tab").on("click", (e) => {
+      $("#charts-tab").addClass("active")
+      $("#json-tab").removeClass("active")
+
+      $("#index-tree").removeClass("hidden")
+      $("#charts-col").removeClass("hidden")
+      $("#json-output").addClass("hidden")
+    })
+
+    $("#json-tab").on("click", (e) => {
+      $("#json-tab").addClass("active")
+      $("#charts-tab").removeClass("active")
+
+      $("#index-tree").addClass("hidden")
+      $("#charts-col").addClass("hidden")
+      $("#json-output").removeClass("hidden")
+    })
+
+    //counters toggle
+    $("#counters-title").on("click", (e) => {
+      $('#customCountersTable').hasClass("hidden") ? $('#customCountersTable').removeClass("hidden") : $('#customCountersTable').addClass("hidden")
+      $('#counters-title').hasClass("chevron-down") ? $('#counters-title').removeClass("chevron-down") : $('#counters-title').addClass("chevron-down")
+    })
+
+
+    const iconDuration = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-label="Duration" aria-labelledby="icon_duration" x="0px" y="0px" role="img"><title id="icon_duration" lang="en">Duration</title><g fill="#9B9B9B"><path d="M15 1H9V3H15V1ZM11 14H13V8H11V14ZM19.03 7.39L20.45 5.97C20.02 5.46 19.55 4.98 19.04 4.56L17.62 5.98C16.07 4.74 14.12 4 12 4C7.03 4 3 8.03 3 13C3 17.97 7.02 22 12 22C16.98 22 21 17.97 21 13C21 10.88 20.26 8.93 19.03 7.39ZM12 20C8.13 20 5 16.87 5 13C5 9.13 8.13 6 12 6C15.87 6 19 9.13 19 13C19 16.87 15.87 20 12 20Z"></path></g></svg>`
+    const checkCircle = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+        <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+      </svg>`
+
+    const xCircle = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-label="Regions" aria-labelledby="icon_regions" x="0px" y="0px" role="img"><title id="icon_regions" lang="en">Regions</title><g fill="#9B9B9B"><path d="M12 2C6.47 2 2 6.47 2 12C2 17.53 6.47 22 12 22C17.53 22 22 17.53 22 12C22 6.47 17.53 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM15.59 7L12 10.59L8.41 7L7 8.41L10.59 12L7 15.59L8.41 17L12 13.41L15.59 17L17 15.59L13.41 12L17 8.41L15.59 7Z"></path></g></svg>`
+    const iconStarted = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-label="Started" aria-labelledby="icon_started" x="0px" y="0px" role="img"><title id="icon_started" lang="en">Started</title><g fill="#9B9B9B"><path d="M11.99 2C6.47 2 2 6.48 2 12C2 17.52 6.47 22 11.99 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 11.99 2ZM12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20ZM12.5 7H11V13L16.25 16.15L17 14.92L12.5 12.25V7Z"></path></g></svg>`
+    const iconFinished = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-label="Finished" aria-labelledby="icon_finished" x="0px" y="0px" role="img"><title id="icon_finished" lang="en">Finished</title><g fill="#9B9B9B"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM16.59 7.58L10 14.17L7.41 11.59L6 13L10 17L18 9L16.59 7.58Z"></path></g></svg>`
+    // summary blocks
+
+    const timeStarted = moment(Report.aggregate.firstMetricAt)
+    const timeFinished = moment(Report.aggregate.lastMetricAt)
+
+    function formatDuration(s) {
+      var min = Math.floor(s / 60)
+      var sec = s - min * 60
+      return min + "m " + sec + "s"
+    }
+
+    const summaryInfo = [
+      { icon: iconDuration, name: "Duration", value: formatDuration(timeFinished.diff(timeStarted, "seconds")) || "n/a" },
+      { icon: iconStarted, name: "Started", value: timeStarted.format(timeFormat) || "n/a" },
+      { icon: iconFinished, name: "Completed", value: timeFinished.format(timeFormat) || "n/a" },
+      { icon: xCircle, name: "Errors", value: !errors ? "n/a" : errors.length ? errors.length : "0" },
+    ]
+
+    function summaryBlock(block) {
+      return (
+        `<li class="summary-block flex flex-auto items-center justify-start rounded py-2 px-3 mb-3 border-gray" >
+              <div class="mr-3 text-gray-default">`+
+        block.icon +
+        `</div>
+              <div><div class="text-gray-default text-xsm">`+
+        block.name +
+        `</div>
+              <div class="text-xsm">
+                `+ block.value + `
+              </div>
+              </div>
+        </li>`
+      )
+    }
+
+    summaryInfo.forEach((block) => {
+      const appendage = summaryBlock(block)
+      $("#summary-blocks").append(appendage);
+    })
+
+
+    if (l.size(errors) > 0) {
+      const getErrorsAtIntervalsData = (intermediates = []) => {
+        const data = intermediates.reduce(
+          (acc, entry, idx) => {
+            const errorsCounters = l.pickBy(entry.counters, (_, key) =>
+              key.startsWith("errors.")
+            );
+
+            l.each(errorsCounters, (count, key) => {
+              const [, errorDetail] = key.split("errors.");
+
+              acc.values[errorDetail] = acc.values[errorDetail] || [];
+
+              acc.values[errorDetail].push(count);
+            });
+
+            acc.labels.push((idx + 1) * 10);
+
+            return acc;
+          },
+          { labels: [], values: {} }
+        );
+
+        return {
+          labels: data.labels,
+          datasets: l.map(data.values, (entry, key) => {
+            return {
+              label: key,
+              data: entry,
+              fill: false,
+              backgroundColor: Object.values(chartBorderColors),
+              borderColor: Object.values(chartBorderColors),
+              tension: 0.5,
+            };
+          })
+        };
+      };
+
+
+      new Chart(document.getElementById("errorsAtIntervalsChart"), {
+        type: "line",
+        data: getErrorsAtIntervalsData(Report.intermediate),
+        options: {
+          plugins: { legend: { position: "bottom" } },
+          aspectRatio: 3.5,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "count",
+              },
+            },
+          },
+        },
+      });
+    }
+    !errors.length && $("#errorsChartsRow").hide();
+
+    const unorderedCustomCounters = Report.aggregate.counters;
+    const customCounters = Object.keys(unorderedCustomCounters).sort().reduce(
+      (obj, key) => {
+        obj[key] = unorderedCustomCounters[key];
+        return obj;
+      },
+      {}
+    );
+
+    if (l.size(customCounters) > 0) {
+      let rows = [];
+      l.each(customCounters, function (count, key) {
+        const row = $("<tr></tr>")
+          .append($('<td class="text-xsm whitespace-nowrap p-2 font-normal text-white" colspan="6">' + key + '</td>'))
+          .append($('<td class="text-xsm whitespace-nowrap p-2 font-normal text-white" colspan="6">' + count + '</td>'));
+        rows.push(row);
+      });
+
+
+
+      rows.forEach((row) => row.appendTo($("#customCountersTable")));
+      const getCustomStatsAtIntervalsData = (intermediates = []) => {
+        const data = intermediates.reduce(
+          (acc, entry, idx) => {
+            const customCounters = entry.counters;
+
+            l.each(customCounters, (count, key) => {
+              acc.values[key] = acc.values[key] || [];
+              acc.values[key].push(count);
+            });
+
+            acc.labels.push((idx + 1) * 10);
+            return acc;
+          },
+          { labels: [], values: {} }
+        );
+        return {
+          labels: data.labels,
+          datasets: l.map(data.values, (entry, key) => {
+            color = "#0047FF";
+            return {
+              label: key,
+              data: entry,
+              fill: false,
+              backgroundColor: color,
+              borderColor: color,
+              tension: 0.5,
+            };
+          }),
+        };
+      };
+
+      $("#expandCustomCountersRow").on("click", (e) => {
+        e.preventDefault();
+        $("#customCountersTable tr").removeClass("hidden");
+        $("#expandCustomCountersRow").addClass("hidden");
+      });
+
+      // create intermediate charts array with name and type
+      let intervalChartsArray = []
+      Report.intermediate.forEach((interval, i) => {
+        Object.keys(interval.counters).forEach((counter) => {
+          intervalChartsArray.find((chart) => chart.name == counter) || intervalChartsArray.push({ name: counter, data: [], type: "interval" })
+
+        })
+      })
+
+      let intervalChartsSet = []
+      intervalChartsArray.forEach((c) => {
+        if (!intervalChartsSet.includes(c)) {
+          intervalChartsSet.push(c);
+        }
+      });
+
+      // add data per interval for each chart 
+      intervalChartsSet.forEach((chart, i) => {
+        Report.intermediate.forEach((interval, j) => {
+          const value = interval.counters[chart.name] || 0
+          intervalChartsSet[i].data.push({ counters: { [chart.name]: value } })
+        })
+      })
+
+      // add summary data 
+      let aggregateChartsArray = []
+      Object.keys(Report.aggregate.summaries).forEach((summary) => {
+        const data = Report.aggregate.summaries[summary]
+        aggregateChartsArray.push({ name: summary, data: data, type: "aggregate" })
+
+      })
+
+      let chartsSet = [...intervalChartsSet, ...aggregateChartsArray].sort((a, b) => a.name < b.name ? -1 : 1)
+
+      const sanitizer = /[.| |'|"]/g
+      chartsSet.forEach((chart) => {
+        $('#customCountersAtIntervalsChart').append("<div id='" + chart.name.replaceAll(sanitizer, "-")
+          + "-wrapper' class='text-xsm rounded' style='border: 1px solid #383838;'><div class='p-2 text-gray-default' style='border-bottom: 1px solid #383838; background-color: #2b2b2b; font-weight: 500;''>"
+          + chart.name + "</div><div class='p-4'><canvas id='" + chart.name + "'>unable to create chart</canvas></div></div>")
+
+        if (chart.type === 'interval') {
+          new Chart(document.getElementById(chart.name), {
+            type: "bar",
+            data: getCustomStatsAtIntervalsData(chart.data),
+            options: {
+              barPercentage: 0.2,
+              plugins: { legend: { display: false } },
+              aspectRatio: 2.5,
+              responsive: true,
+              maintainAspectRatio: true,
+              scales: {
+                x: {
+                  title: {
+                    display: true,
+                    text: "time"
+                  },
+                  ticks: {
+                    color: '#9b9b9b',
+                  },
+                  grid: {
+                    color: 'transparent',
+                    borderColor: '#383838',
+                  },
+                },
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: "count",
+                  },
+                  ticks: {
+                    color: '#9b9b9b',
+                    precision: 0,
+                  },
+                  grid: {
+                    color: '#383838',
+                    borderColor: '#383838',
+                  },
+                },
+              },
+            },
+          });
+        } else if (chart.type === 'aggregate') {
+          const { labels, values } = getLatencyDistribution(
+            l.pickBy(chart.data, (_, key) =>
+              ["min", "max", "median", "p95", "p99"].includes(key)
+            )
+          );
+          new Chart(document.getElementById(chart.name), {
+            type: "bar",
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  data: values,
+                  backgroundColor: Object.values(chartBorderColors),
+                  borderColor: Object.values(chartBgColors),
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              plugins: { legend: { display: false } },
+              barPercentage: 0.4,
+              scales: {
+                x: {
+                  ticks: {
+                    color: '#9b9b9b',
+                    precision: 0,
+                  },
+                  grid: {
+                    color: 'transparent',
+                    borderColor: '#383838',
+                  },
+                },
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: "ms",
+                  },
+                  ticks: {
+                    color: '#9b9b9b',
+                    precision: 0,
+                  },
+                  grid: {
+                    color: '#383838',
+                    borderColor: '#383838',
+                  },
+                },
+              },
+            },
+          })
+        }
+      })
+
+      // parse out index tabs from custom counters for index nav
+      const parentRegex = /^([^.| ]+)/
+      const nodeRegex = /[ |\.](.*)/
+
+      let indexSet = new Set(chartsSet.map((c) => {
+        return c.name.match(parentRegex)[0]
+      }))
+
+      // create tree from index set
+      let indexTree = Array.from(indexSet).sort().reduce((key, value) => {
+        return { ...key, [value]: [] };
+      }, {});
+
+      // fill tree with custom counters according to parent tab
+      chartsSet.forEach((chart) => {
+        const node = chart.name
+        const parent = node ? chart.name.match(parentRegex)[0] : chart.name
+        indexTree[parent] && indexTree[parent].push({ name: node, type: chart.type })
+      })
+
+      // sort child nodes for each tab
+      for (let [key, value] of Object.entries(indexTree)) {
+        indexTree = {
+          ...indexTree, [key]: value.sort()
+        }
+      }
+
+      const chevron = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-label="Toggle charts list for vusers metrics (5)" aria-labelledby="icon_toggle_vusers metrics (5)" x="0px" y="0px" role="img"><title id="icon_toggle_vusers metrics (5)" lang="en">Toggle charts list for vusers metrics (5)</title><g fill="currentColor"><path d="M12 8L6 14L7.41 15.41L12 10.83L16.59 15.41L18 14L12 8Z"></path></g></svg>`
+
+      // populate index with divs
+      let $htmlTree = $('<div class="mt-0 flex flex-col justify-start space-y-3 pb-3 text-gray-default"></div>')
+      Object.keys(indexTree).forEach((parent) => {
+        const nodeClass = parent.replaceAll(sanitizer, "-")
+        const nodes = indexTree[parent].map((n) =>
+          `<a class="text-xsm focus:text-beige hover:bg-black-default focus:ring-black-200 text-gray-default ml-2 block truncate rounded px-2 py-1.5 font-medium transition hover:text-white focus:ring-2 text-gray-default bg-transparent" 
+            href="#` + (n.name).replaceAll(sanitizer, "-") + '-wrapper" id="' + n.name + '-node" >'
+          + n.name
+          + '</a>').join("")
+
+        nodes.length > 1 ? $htmlTree.append(
+          '<div class="w-full overflow-hidden"><h4 id="' + nodeClass + '-parent" > <div onclick="nodeClick(`' + nodeClass + '`)" class="accordion-toggle cursor-pointer text-gray-default focus:text-beige flex items-center px-0 py-1.5 hover:text-white">'
+          + parent + ' metrics (' + indexTree[parent].length + ')'
+          + '<span class="ml-1 transition" style="transition-origin: center;">' + chevron + '</span>'
+          + ' </div> <div class="' + nodeClass + '-node accordion-details relative flex w-56 flex-col space-y-1 h-auto hidden">' + nodes + '</div></h4></div>'
+        ) :
+          $htmlTree.append("<div class='flex-col h-auto py-3'><a class='hover:text-beige' href='#" + parent + "--wrapper'>" + parent + "</a></div>")
+
+      })
+      const indexTreeContainer = $("#index-tree")
+      $htmlTree.appendTo(indexTreeContainer)
+
+    } else {
+      $("#charts-col").hide();
+      $("#customCountersContainer").hide();
+    }
+
+    function nodeClick(tab) {
+      const nodeClass = '.' + tab + '-node'
+      const nodes = document.querySelectorAll(nodeClass);
+      const parentTab = document.getElementById(tab + "-parent");
+      [...parentTab.classList].includes('chevron-down') ? parentTab.classList.remove('chevron-down') : parentTab.classList.add('chevron-down');
+      for (const node of nodes) {
+        [...node.classList].includes("hidden") ? node.classList.remove("hidden") : node.classList.add("hidden");
+      }
+    }
+
+  </script>
+</body>
+
+</html>

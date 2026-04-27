@@ -1,0 +1,185 @@
+name: Sanity Tests
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'tests/sanity/**'
+      - 'src/**'
+      - 'playwright.config.ts'
+  pull_request:
+    branches: [ main, master, develop ]
+  schedule:
+    - cron: '0 */6 * * *'  # Run every 6 hours
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Browser to test'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - chrome
+          - chromium
+          - edge
+
+jobs:
+  sanity-chrome:
+    name: Sanity Tests - Chrome
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.browser == 'chrome' || github.event.inputs.browser == 'all' || github.event.inputs.browser == '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chrome
+      
+      - name: Run Sanity tests - Chrome
+        run: npm run test:sanity:chrome
+        env:
+          CI: true
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: sanity-results-chrome
+          path: |
+            playwright-report/
+            test-results/
+            reports/
+          retention-days: 30
+      
+      - name: Upload screenshots and videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: sanity-failures-chrome
+          path: test-results/**/attachments/
+          retention-days: 7
+
+  sanity-chromium:
+    name: Sanity Tests - Chromium
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.browser == 'chromium' || github.event.inputs.browser == 'all' || github.event.inputs.browser == '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Run Sanity tests - Chromium
+        run: npm run test:sanity:chromium
+        env:
+          CI: true
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: sanity-results-chromium
+          path: |
+            playwright-report/
+            test-results/
+            reports/
+          retention-days: 30
+      
+      - name: Upload screenshots and videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: sanity-failures-chromium
+          path: test-results/**/attachments/
+          retention-days: 7
+
+  sanity-edge:
+    name: Sanity Tests - Microsoft Edge
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.browser == 'edge' || github.event.inputs.browser == 'all' || github.event.inputs.browser == '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps msedge
+      
+      - name: Run Sanity tests - Edge
+        run: npm run test:sanity:edge
+        env:
+          CI: true
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: sanity-results-edge
+          path: |
+            playwright-report/
+            test-results/
+            reports/
+          retention-days: 30
+      
+      - name: Upload screenshots and videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: sanity-failures-edge
+          path: test-results/**/attachments/
+          retention-days: 7
+
+  report:
+    name: Generate Sanity Test Report
+    runs-on: ubuntu-latest
+    needs: [sanity-chrome, sanity-chromium, sanity-edge]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+      
+      - name: Display structure of downloaded files
+        run: ls -R all-artifacts
+      
+      - name: Publish test summary
+        run: |
+          echo "## Sanity Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Chrome: ${{ needs.sanity-chrome.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Chromium: ${{ needs.sanity-chromium.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Edge: ${{ needs.sanity-edge.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "- Total Sanity Tests: 12" >> $GITHUB_STEP_SUMMARY
+          echo "- Execution Time: $(date)" >> $GITHUB_STEP_SUMMARY

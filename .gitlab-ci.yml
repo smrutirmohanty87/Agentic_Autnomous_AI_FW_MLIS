@@ -1,0 +1,254 @@
+image: mcr.microsoft.com/playwright:v1.58.2-jammy
+
+variables:
+  CI: "true"
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
+  PLAYWRIGHT_BROWSERS_PATH: "$CI_PROJECT_DIR/ms-playwright"
+
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - .npm
+    - ms-playwright
+
+stages:
+  - install
+  - test-intro
+  - test-rest
+  - test-sanity
+  - test-regression
+  - report
+
+.test_template: &test_template
+  artifacts:
+    when: always
+    paths:
+      - playwright-report/
+      - test-results/
+      - reports/
+    expire_in: 30 days
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+
+install_dependencies:
+  stage: install
+  script:
+    - npm ci
+    - npx playwright install --with-deps
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm
+      - ms-playwright
+      - node_modules
+  artifacts:
+    paths:
+      - node_modules
+      - ms-playwright
+    expire_in: 1 day
+
+bdx_intro_chromium:
+  <<: *test_template
+  stage: test-intro
+  needs: ['install_dependencies']
+  script:
+    - npm run test:bdx:intro -- --project=chromium
+  artifacts:
+    name: "bdx-intro-chromium-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - playwright-report/
+      - test-results/
+      - reports/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - tests/BDX/**/*
+        - src/**/*
+        - playwright.config.ts
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+
+bdx_intro_chrome:
+  <<: *test_template
+  stage: test-intro
+  needs: ['install_dependencies']
+  script:
+    - npm run test:bdx:intro -- --project=chrome
+  artifacts:
+    name: "bdx-intro-chrome-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - playwright-report/
+      - test-results/
+      - reports/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - tests/BDX/**/*
+        - src/**/*
+        - playwright.config.ts
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+
+bdx_intro_edge:
+  <<: *test_template
+  stage: test-intro
+  needs: ['install_dependencies']
+  script:
+    - npm run test:bdx:intro -- --project="Microsoft Edge"
+  artifacts:
+    name: "bdx-intro-edge-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - playwright-report/
+      - test-results/
+      - reports/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - tests/BDX/**/*
+        - src/**/*
+        - playwright.config.ts
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+
+bdx_rest_chromium:
+  <<: *test_template
+  stage: test-rest
+  needs: ['install_dependencies', 'bdx_intro_chromium']
+  script:
+    - npm run test:bdx:rest -- --project=chromium
+  artifacts:
+    name: "bdx-rest-chromium-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - playwright-report/
+      - test-results/
+      - reports/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - tests/BDX/**/*
+        - src/**/*
+        - playwright.config.ts
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+
+bdx_rest_chrome:
+  <<: *test_template
+  stage: test-rest
+  needs: ['install_dependencies', 'bdx_intro_chrome']
+  script:
+    - npm run test:bdx:rest -- --project=chrome
+  artifacts:
+    name: "bdx-rest-chrome-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - playwright-report/
+      - test-results/
+      - reports/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - tests/BDX/**/*
+        - src/**/*
+        - playwright.config.ts
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+
+bdx_rest_edge:
+  <<: *test_template
+  stage: test-rest
+  needs: ['install_dependencies', 'bdx_intro_edge']
+  script:
+    - npm run test:bdx:rest -- --project="Microsoft Edge"
+  artifacts:
+    name: "bdx-rest-edge-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - playwright-report/
+      - test-results/
+      - reports/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - tests/BDX/**/*
+        - src/**/*
+        - playwright.config.ts
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+
+sanity_tests:
+  <<: *test_template
+  stage: test-sanity
+  needs: ['install_dependencies']
+  script:
+    - npm run test:sanity
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master"'
+
+regression_tests:
+  <<: *test_template
+  stage: test-regression
+  needs: ['install_dependencies']
+  script:
+    - npm run test:regression
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+  allow_failure: true
+
+generate_report:
+  stage: report
+  needs:
+    - bdx_intro_chromium
+    - bdx_intro_chrome
+    - bdx_intro_edge
+    - bdx_rest_chromium
+    - bdx_rest_chrome
+    - bdx_rest_edge
+  script:
+    - echo "Generating consolidated test report..."
+    - |
+      cat <<EOF > test-summary.txt
+      BDX Test Execution Summary
+      ==========================
+      Pipeline ID: $CI_PIPELINE_ID
+      Commit: $CI_COMMIT_SHORT_SHA
+      Branch: $CI_COMMIT_BRANCH
+      
+      INTRO Tests:
+      - Chromium: ${bdx_intro_chromium}
+      - Chrome: ${bdx_intro_chrome}
+      - Edge: ${bdx_intro_edge}
+      
+      REST Tests:
+      - Chromium: ${bdx_rest_chromium}
+      - Chrome: ${bdx_rest_chrome}
+      - Edge: ${bdx_rest_edge}
+      EOF
+    - cat test-summary.txt
+  artifacts:
+    name: "test-summary-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - test-summary.txt
+      - reports/dashboard/
+    expire_in: 30 days
+  when: always
+
+pages:
+  stage: report
+  needs: ['generate_report']
+  script:
+    - mkdir -p public
+    - cp -r playwright-report/* public/ 2>/dev/null || true
+    - cp -r reports/dashboard/* public/ 2>/dev/null || true
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
+    - master

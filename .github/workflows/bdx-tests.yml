@@ -1,0 +1,144 @@
+name: BDX Tests
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'tests/BDX/**'
+      - 'src/**'
+      - 'playwright.config.ts'
+  pull_request:
+    branches: [ main, master, develop ]
+    paths:
+      - 'tests/BDX/**'
+      - 'src/**'
+      - 'playwright.config.ts'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Test type to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - intro
+          - rest
+          - all
+
+jobs:
+  bdx-intro:
+    name: BDX INTRO Scenario
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.test_type == 'intro' || github.event.inputs.test_type == 'all' || github.event.inputs.test_type == '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, chrome, Microsoft Edge]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps ${{ matrix.browser == 'chrome' && 'chrome' || matrix.browser == 'Microsoft Edge' && 'msedge' || 'chromium' }}
+      
+      - name: Run BDX INTRO tests
+        run: npm run test:bdx:intro
+        env:
+          CI: true
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: bdx-intro-results-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+            reports/
+          retention-days: 30
+      
+      - name: Upload screenshots and videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: bdx-intro-failures-${{ matrix.browser }}
+          path: test-results/**/attachments/
+          retention-days: 7
+
+  bdx-rest:
+    name: BDX Rest Scenarios
+    timeout-minutes: 90
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.test_type == 'rest' || github.event.inputs.test_type == 'all' || github.event.inputs.test_type == '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, chrome, Microsoft Edge]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps ${{ matrix.browser == 'chrome' && 'chrome' || matrix.browser == 'Microsoft Edge' && 'msedge' || 'chromium' }}
+      
+      - name: Run BDX REST tests (INTER, BDE, NO COMM)
+        run: npm run test:bdx:rest
+        env:
+          CI: true
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: bdx-rest-results-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+            reports/
+          retention-days: 30
+      
+      - name: Upload screenshots and videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: bdx-rest-failures-${{ matrix.browser }}
+          path: test-results/**/attachments/
+          retention-days: 7
+
+  report:
+    name: Generate BDX Test Report
+    runs-on: ubuntu-latest
+    needs: [bdx-intro, bdx-rest]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+      
+      - name: Display structure of downloaded files
+        run: ls -R all-artifacts
+      
+      - name: Publish test summary
+        run: |
+          echo "## BDX Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- INTRO Scenario: ${{ needs.bdx-intro.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- REST Scenarios: ${{ needs.bdx-rest.result }}" >> $GITHUB_STEP_SUMMARY

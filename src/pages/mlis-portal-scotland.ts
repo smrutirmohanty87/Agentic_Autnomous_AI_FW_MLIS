@@ -1,0 +1,212 @@
+import { expect, Page } from '@playwright/test';
+import { getMlisPortalUrl } from '../config/env';
+
+export class ScotlandLoginPage {
+  constructor(private readonly page: Page) {}
+
+  async goto() {
+    await this.page.goto(getMlisPortalUrl());
+  }
+
+  async login(email: string, password: string) {
+    await this.page.getByRole('textbox', { name: 'Email address' }).fill(email);
+    await this.page.getByRole('textbox', { name: 'Password' }).fill(password);
+    await this.page.getByRole('link', { name: 'Login' }).click();
+  }
+}
+
+export class ScotlandQuoteManagerPage {
+  constructor(private readonly page: Page) {}
+
+  async expectLoaded() {
+    await this.acceptCookiesIfVisible();
+    await expect(this.page.getByRole('heading', { name: 'Quote manager' })).toBeVisible({ timeout: 20000 });
+  }
+
+  async acceptCookiesIfVisible() {
+    const acceptCookies = this.page.getByRole('button', { name: 'ACCEPT ALL' });
+    if (await acceptCookies.isVisible()) {
+      await acceptCookies.click();
+    }
+  }
+
+  async startResidentialScotlandQuote() {
+    await this.page.getByRole('link', { name: 'Scotland Start quote' }).first().click();
+    await expect(this.page).toHaveURL(/quoteType=Residential&jurisdiction=Scotland/, { timeout: 20000 });
+  }
+}
+
+export class ScotlandProductSelectionPage {
+  constructor(private readonly page: Page) {}
+
+  async expectLoaded() {
+    await expect(this.page.getByRole('textbox', { name: 'My case reference/ file number' })).toBeVisible({ timeout: 20000 });
+    await expect(this.page.getByRole('heading', { name: 'Product selection' })).toBeVisible({ timeout: 20000 });
+  }
+
+  async fillCaseReferenceAndLimit(caseRef: string, limit: string) {
+    const caseRefInput = this.page.getByRole('textbox', { name: 'My case reference/ file number' });
+    await caseRefInput.fill(caseRef);
+    await caseRefInput.press('Tab');
+
+    const limitInput = this.page.getByRole('spinbutton', { name: 'Limit of indemnity' });
+    await limitInput.fill(limit);
+    await limitInput.press('Tab');
+    await expect(limitInput).toHaveValue(/500,000\.00|500000/);
+  }
+
+  async selectProductsByIndex(indexes: number[]) {
+    const selectButtons = this.page.getByRole('button', { name: 'Select' });
+    const proceedButton = this.page.getByRole('button', { name: 'Proceed' }).first();
+
+    await expect(selectButtons.first()).toBeEnabled({ timeout: 10000 });
+
+    for (let i = 0; i < indexes.length; i += 1) {
+      await selectButtons.nth(indexes[i]).click();
+      if (i === 0) {
+        await this.page.keyboard.press('End');
+        await expect(proceedButton).toBeVisible({ timeout: 10000 });
+      }
+    }
+  }
+
+  async proceed() {
+    await this.page.getByRole('button', { name: 'Proceed' }).first().click();
+  }
+}
+
+export class ScotlandStatementsOfFactPage {
+  constructor(private readonly page: Page) {}
+
+  async expectLoaded() {
+    await expect(this.page.getByRole('heading', { name: /statements of fact to agree/i })).toBeVisible();
+    await expect(this.page.getByRole('button', { name: 'Confirm', exact: true }).first()).toBeVisible({ timeout: 20000 });
+  }
+
+  async confirmAllStatements() {
+    const confirmButtons = this.page.getByRole('button', { name: 'Confirm', exact: true });
+    await expect(confirmButtons.first()).toBeVisible({ timeout: 20000 });
+    let remaining = await confirmButtons.count();
+    let safety = 0;
+
+    while (remaining > 0 && safety < 50) {
+      await confirmButtons.first().scrollIntoViewIfNeeded();
+      await confirmButtons.first().click();
+      await expect(confirmButtons).toHaveCount(remaining - 1, { timeout: 10000 });
+      remaining = await confirmButtons.count();
+      safety += 1;
+    }
+
+    await expect(confirmButtons).toHaveCount(0, { timeout: 10000 });
+  }
+
+  async proceed() {
+    await this.page.getByRole('button', { name: 'Proceed' }).click();
+  }
+}
+
+export class ScotlandQuotesPage {
+  constructor(private readonly page: Page) {}
+
+  async expectLoaded() {
+    await expect(this.page.getByText('Loading...').first()).toBeHidden({ timeout: 20000 });
+    await expect(this.page.getByRole('button', { name: 'Quote summary' }).first()).toBeEnabled({ timeout: 20000 });
+    const firstSelectQuote = this.page.getByRole('button', { name: 'Select quote' }).first();
+    await expect(firstSelectQuote).toBeVisible({ timeout: 20000 });
+    await expect(firstSelectQuote).toBeEnabled({ timeout: 20000 });
+  }
+
+  async selectFirstQuote() {
+    await this.page.getByRole('button', { name: 'Select quote' }).first().click();
+  }
+}
+
+export class ScotlandFinalPolicyDetailsPage {
+  constructor(private readonly page: Page) {}
+
+  async expectLoaded() {
+    await expect(this.page.getByText('Loading...').first()).toBeHidden({ timeout: 20000 });
+    await expect(this.page.getByRole('heading', { name: 'Final policy details' })).toBeVisible({ timeout: 20000 });
+  }
+
+  async fillRequiredDetails() {
+    let requiredInputs = this.page.locator('input[required]');
+
+    await requiredInputs.nth(0).fill('E2E Test Client');
+
+    const postcodeInput = requiredInputs.nth(1);
+    await postcodeInput.fill('EC3A 2BJ');
+    await postcodeInput.press('Tab').catch(() => {});
+
+    const enterManually = this.page
+      .getByRole('button', { name: /enter manually/i })
+      .or(this.page.getByRole('link', { name: /enter manually/i }))
+      .first();
+
+    if (await enterManually.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await enterManually.click();
+    }
+
+    requiredInputs = this.page.locator('input[required]');
+    await expect(requiredInputs.nth(2)).toBeVisible({ timeout: 20000 });
+    await requiredInputs.nth(2).fill('52-54 Leadenhall Street');
+    await requiredInputs.nth(3).fill('London');
+  }
+
+  async proceed() {
+    await this.page.getByRole('button', { name: 'Proceed' }).click();
+  }
+}
+
+export class ScotlandSummaryPage {
+  constructor(private readonly page: Page) {}
+
+  async expectLoaded() {
+    await expect(this.page.getByText('Loading...').first()).toBeHidden({ timeout: 20000 });
+    await expect(this.page.getByRole('heading', { name: 'Summary' })).toBeVisible({ timeout: 20000 });
+  }
+
+  async expectSummaryData(caseRef: string) {
+    await expect(this.page.getByText(caseRef)).toBeVisible();
+    await expect(this.page.getByText('£500,000.00')).toBeVisible();
+    await expect(this.page.getByText('E2E Test Client')).toBeVisible();
+    await expect(this.page.getByText('52-54 Leadenhall Street')).toBeVisible();
+    await expect(this.page.getByText('Premium: £')).toBeVisible();
+  }
+
+  async proceedToOrder() {
+    await this.page.getByRole('button', { name: 'Proceed to order' }).click();
+  }
+}
+
+export class ScotlandOrderDialog {
+  constructor(private readonly page: Page) {}
+
+  async selectTodayAndOrder() {
+    await this.page.getByRole('textbox', { name: 'Confirm policy commencement' }).click();
+    await this.page.getByRole('button', { name: 'Today' }).click();
+    await expect(this.page.getByRole('button', { name: 'Order now' })).toBeEnabled();
+    await this.page.getByRole('button', { name: 'Order now' }).click();
+  }
+}
+
+export class ScotlandPolicyIssuedPage {
+  constructor(private readonly page: Page) {}
+
+  async expectPolicyIssued() {
+    const processingDialog = this.page.getByRole('heading', { name: 'Processing Request' }).first();
+    if (await processingDialog.isVisible()) {
+      await expect(processingDialog).toBeHidden({ timeout: 60000 });
+    }
+
+    await expect(this.page.getByRole('heading', { name: 'Policy issued' })).toBeVisible({ timeout: 60000 });
+    const policyLabel = this.page.locator('strong', { hasText: 'Policy number' });
+    await expect(policyLabel).toBeVisible({ timeout: 20000 });
+    const policyText = await policyLabel.locator('xpath=following::p[1]').first().textContent();
+    expect(policyText ?? '').toMatch(/[A-Z]{2,}-[A-Z]{2,}-\d{6,}/);
+  }
+
+  async backToQuoteManager() {
+    await this.page.getByRole('button', { name: 'Back to quote manager' }).click();
+  }
+}

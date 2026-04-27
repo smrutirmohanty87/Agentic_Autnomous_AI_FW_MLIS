@@ -1,0 +1,35 @@
+config:
+  target: "https://www.saucedemo.com"
+
+  phases:
+    - duration: 60
+      arrivalRate: 10   # steady traffic
+
+  engines:
+    playwright:
+      launchOptions:
+        headless: true
+
+  processor: "./userFlows.js"
+
+scenarios:
+
+  - name: "Browsers"
+    engine: playwright
+    weight: 4
+    testFunction: "browseProducts"
+
+  - name: "Buyers"
+    engine: playwright
+    weight: 3
+    testFunction: "addToCart"
+
+  - name: "Checkout Users"
+    engine: playwright
+    weight: 2
+    testFunction: "checkoutFlow"
+
+  - name: "Light Users"
+    engine: playwright
+    weight: 1
+    testFunction: "loginOnly"

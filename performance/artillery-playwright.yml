@@ -1,0 +1,39 @@
+config:
+  target: "https://www.saucedemo.com"
+
+  phases:
+    - duration: 30
+      arrivalCount: 20   # ⭐ EXACTLY 20 USERS
+
+  engines:
+    playwright:
+      launchOptions:
+        headless: true
+
+  processor: "./userFlows.js"
+
+scenarios:
+
+  # LOGIN ONLY
+  - name: "Login Users"
+    engine: playwright
+    weight: 1
+    testFunction: "loginOnly"
+
+  # BROWSE
+  - name: "Browse Users"
+    engine: playwright
+    weight: 1
+    testFunction: "browseProducts"
+
+  # ADD TO CART
+  - name: "Cart Users"
+    engine: playwright
+    weight: 1
+    testFunction: "addToCart"
+
+  # CHECKOUT
+  - name: "Checkout Users"
+    engine: playwright
+    weight: 1
+    testFunction: "checkoutFlow"

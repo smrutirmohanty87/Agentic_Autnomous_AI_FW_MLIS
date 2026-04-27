@@ -1,0 +1,37 @@
+{
+  "name": "agentic_qa_framework",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:sanity": "npx playwright test tests/sanity/",
+    "test:sanity:chrome": "npx playwright test tests/sanity/ --project=chrome",
+    "test:sanity:chromium": "npx playwright test tests/sanity/ --project=chromium",
+    "test:sanity:edge": "npx playwright test tests/sanity/ --project=\"Microsoft Edge\"",
+    "test:regression": "npx playwright test tests/regression/",
+    "test:regression:chrome": "npx playwright test tests/regression/ --project=chrome",
+    "test:regression:chromium": "npx playwright test tests/regression/ --project=chromium",
+    "test:regression:edge": "npx playwright test tests/regression/ --project=\"Microsoft Edge\"",
+    "test:bdx:intro": "npx playwright test tests/BDX/TC_BDX_001_INTRO_cancel_full_premium_return.spec.ts",
+    "test:bdx:rest": "npx playwright test tests/BDX/TC_BDX_002_INTER_COMM_policy_bdx_lines.spec.ts tests/BDX/TC_BDX_003_BDE_COMM_policy_bdx_lines.spec.ts tests/BDX/TC_BDX_004_NO_COMM_policy_bdx_lines.spec.ts",
+    "test:bdx:all": "npx playwright test tests/BDX/",
+    "test:bdx:intro:chrome": "npx playwright test tests/BDX/TC_BDX_001_INTRO_cancel_full_premium_return.spec.ts --project=chrome",
+    "test:bdx:rest:chrome": "npx playwright test tests/BDX/TC_BDX_002_INTER_COMM_policy_bdx_lines.spec.ts tests/BDX/TC_BDX_003_BDE_COMM_policy_bdx_lines.spec.ts tests/BDX/TC_BDX_004_NO_COMM_policy_bdx_lines.spec.ts --project=chrome",
+    "test:bdx:all:chrome": "npx playwright test tests/BDX/ --project=chrome",
+    "autonomous:run": "node scripts/autonomous-run.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.3.1",
+    "dotenv": "^16.6.1",
+    "artillery-engine-playwright": "^1.27.0"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

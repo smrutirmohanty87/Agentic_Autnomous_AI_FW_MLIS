@@ -1,0 +1,32 @@
+config:
+  target: "https://www.saucedemo.com"
+
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm up"
+
+    - duration: 30
+      arrivalRate: 10
+      name: "Moderate load"
+
+    - duration: 30
+      arrivalRate: 20
+      name: "High load"
+
+    - duration: 30
+      arrivalRate: 40
+      name: "Stress level"
+
+  engines:
+    playwright:
+      launchOptions:
+        headless: true
+
+  processor: "./userFlows.js"
+
+scenarios:
+  - name: "Mixed Users"
+    engine: playwright
+    weight: 1
+    testFunction: "checkoutFlow"
