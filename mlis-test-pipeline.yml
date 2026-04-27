@@ -1,6 +1,20 @@
 # =============================================================================
-# MLIS Test Automation — Consolidated Pipeline
+# MLIS Test Automation — Consolidated Tag-Based Pipeline
 # Covers: Sanity (12) | Regression (19) | BDX (6) test scenarios
+#
+# Tests are selected using Playwright's --grep flag with tags defined
+# directly inside each test file's test.describe() block:
+#
+#   @sanity     → tests/sanity/TC_SAN_001 – TC_SAN_012
+#   @regression → tests/regression/TC_REG_001 – TC_REG_019
+#   @bdx        → tests/BDX/TC_BDX_001 – TC_BDX_006
+#                 (BDX tests use @sanity tag + "BDX" in describe name;
+#                  matched via --grep "@sanity" scoped to tests/BDX/)
+#
+# Equivalent local commands:
+#   npx playwright test --grep "@sanity"     tests/sanity/
+#   npx playwright test --grep "@regression" tests/regression/
+#   npx playwright test --grep "@sanity"     tests/BDX/
 #
 # Pipeline secret variables required (set in Azure DevOps UI):
 #
@@ -50,15 +64,20 @@ parameters:
       - UAT2
       - SIT2
 
-  - name: testSuite
-    displayName: 'Test Suite'
+  # Select tests by the @tag used in test.describe() blocks.
+  # @sanity     → runs TC_SAN_001–012  (tests/sanity/)
+  # @regression → runs TC_REG_001–019  (tests/regression/)
+  # @bdx        → runs TC_BDX_001–006  (tests/BDX/)
+  # all         → runs every suite in sequence
+  - name: tag
+    displayName: 'Test Tag (suite selector)'
     type: string
     default: 'all'
     values:
       - all
-      - sanity
-      - regression
-      - bdx
+      - '@sanity'
+      - '@regression'
+      - '@bdx'
 
   - name: browser
     displayName: 'Browser'
@@ -77,6 +96,7 @@ variables:
   CI: 'true'
   TEST_ENV: ${{ parameters.testEnv }}
   BROWSER: ${{ parameters.browser }}
+  SELECTED_TAG: ${{ parameters.tag }}
 
 # ===========================================================================
 # YAML Anchors — shared step blocks (DRY)
@@ -129,17 +149,19 @@ stages:
 
   # =========================================================================
   # STAGE 1 — SANITY TESTS  (12 test cases)
+  # Tag filter: --grep "@sanity"  scoped to tests/sanity/
+  # Triggered when tag == '@sanity' or tag == 'all'
   # =========================================================================
   - stage: Sanity_Tests
-    displayName: 'Stage 1 — Sanity Tests (12 tests)'
+    displayName: 'Stage 1 — Sanity Tests [@sanity] (12 tests)'
     condition: |
       or(
-        eq('${{ parameters.testSuite }}', 'sanity'),
-        eq('${{ parameters.testSuite }}', 'all')
+        eq('${{ parameters.tag }}', '@sanity'),
+        eq('${{ parameters.tag }}', 'all')
       )
     jobs:
       - job: RunSanity
-        displayName: 'Sanity — $(TEST_ENV) / $(BROWSER)'
+        displayName: 'Sanity [@sanity] — $(TEST_ENV) / $(BROWSER)'
         pool:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 60
@@ -147,26 +169,31 @@ stages:
           - *install
 
           # ----------------------------------------------------------------
-          # Sanity test cases:
-          #   TC_SAN_001  Commercial EW — multiple products
-          #   TC_SAN_002  Commercial EW — multiple products via referral
-          #   TC_SAN_003  Commercial EW — single product
-          #   TC_SAN_004  Commercial EW — single product via referral
-          #   TC_SAN_005  Full commercial EW quote journey
-          #   TC_SAN_006  Full residential EW quote journey
-          #   TC_SAN_007  Residential EW — multiple products quote journey
-          #   TC_SAN_008  Cancel from inception — full premium return
-          #   TC_SAN_009  Residential quick quote — single product email
-          #   TC_SAN_010  Residential quick quote — multiple products email
-          #   TC_SAN_011  Residential quick quote Scotland — single product manual
-          #   TC_SAN_012  Residential quick quote Scotland — multiple products manual
+          # Tag:  @sanity
+          # Grep: --grep "@sanity"  (matches test.describe blocks prefixed @sanity)
+          # Scope: tests/sanity/  (excludes BDX which also uses @sanity)
+          #
+          # Test cases matched:
+          #   TC_SAN_001  @sanity | E2E | Commercial | England & Wales
+          #   TC_SAN_002  @sanity | E2E | Commercial | England & Wales
+          #   TC_SAN_003  @sanity | E2E | Commercial | England & Wales
+          #   TC_SAN_004  @sanity | E2E | Commercial | England & Wales
+          #   TC_SAN_005  @sanity | E2E | Salesforce Quote Journey | Commercial E&W
+          #   TC_SAN_006  @sanity | E2E | Salesforce Quote Journey | Residential E&W
+          #   TC_SAN_007  @sanity | E2E | Salesforce Quote Journey | Residential E&W Multiple Products
+          #   TC_SAN_008  @sanity | E2E | Cancellation | From Inception
+          #   TC_SAN_009  @sanity | E2E | Residential Quick Quote | England & Wales
+          #   TC_SAN_010  @sanity | E2E | Residential Quick Quote | England & Wales
+          #   TC_SAN_011  @sanity | E2E | Residential Quick Quote | Scotland
+          #   TC_SAN_012  @sanity | E2E | Residential Quick Quote | Scotland
           # ----------------------------------------------------------------
           - script: >
               npx playwright test tests/sanity/
+              --grep "@sanity"
               --project=$(BROWSER)
               --workers=1
               --reporter=list,html
-            displayName: 'Run Sanity tests (TC_SAN_001 – TC_SAN_012)'
+            displayName: 'Run Sanity tests —tag @sanity (TC_SAN_001–012)'
             env:
               <<: *env
 
@@ -188,21 +215,23 @@ stages:
 
   # =========================================================================
   # STAGE 2 — REGRESSION TESTS  (19 test cases)
+  # Tag filter: --grep "@regression"  scoped to tests/regression/
+  # Triggered when tag == '@regression' or tag == 'all'
   # =========================================================================
   - stage: Regression_Tests
-    displayName: 'Stage 2 — Regression Tests (19 tests)'
+    displayName: 'Stage 2 — Regression Tests [@regression] (19 tests)'
     dependsOn: Sanity_Tests
     condition: |
       and(
         succeededOrFailed(),
         or(
-          eq('${{ parameters.testSuite }}', 'regression'),
-          eq('${{ parameters.testSuite }}', 'all')
+          eq('${{ parameters.tag }}', '@regression'),
+          eq('${{ parameters.tag }}', 'all')
         )
       )
     jobs:
       - job: RunRegression
-        displayName: 'Regression — $(TEST_ENV) / $(BROWSER)'
+        displayName: 'Regression [@regression] — $(TEST_ENV) / $(BROWSER)'
         pool:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 150
@@ -210,33 +239,38 @@ stages:
           - *install
 
           # ----------------------------------------------------------------
-          # Regression test cases:
-          #   TC_REG_001  Commercial NI — multiple products
-          #   TC_REG_002  Commercial NI — single product
-          #   TC_REG_003  Commercial Scotland — multiple products
-          #   TC_REG_004  Commercial Scotland — single product
-          #   TC_REG_005  Residential EW — multiple products
-          #   TC_REG_006  Residential EW — single product
-          #   TC_REG_007  Residential NI — multiple products
-          #   TC_REG_008  Residential NI — single product
-          #   TC_REG_009  Residential Scotland — multiple products
-          #   TC_REG_010  Residential Scotland — single product
-          #   TC_REG_011  Notes & Attachments — Salesforce EW policy
-          #   TC_REG_012  Notes & Attachments — Salesforce commercial EW
-          #   TC_REG_013  Notes & Attachments — Salesforce commercial Scotland
-          #   TC_REG_014  MTA mid-term adjustment
-          #   TC_REG_015  Cancel and reissue live policy
-          #   TC_REG_016  MTA then cancel policy
-          #   TC_REG_017  MTA then cancel and reissue
-          #   TC_REG_018  MTA then cancel and reissue then cancel policy
-          #   TC_REG_019  Cancel and reissue then cancel policy
+          # Tag:  @regression
+          # Grep: --grep "@regression"  (matches test.describe blocks prefixed @regression)
+          # Scope: tests/regression/
+          #
+          # Test cases matched:
+          #   TC_REG_001  @regression | E2E | Commercial | Northern Ireland
+          #   TC_REG_002  @regression | E2E | Commercial | Northern Ireland
+          #   TC_REG_003  @regression | E2E | Commercial | Scotland
+          #   TC_REG_004  @regression | E2E | Commercial | Scotland
+          #   TC_REG_005  @regression | E2E | Residential | England & Wales
+          #   TC_REG_006  @regression | E2E | Residential | England & Wales
+          #   TC_REG_007  @regression | E2E | Residential | Northern Ireland
+          #   TC_REG_008  @regression | E2E | Residential | Northern Ireland
+          #   TC_REG_009  @regression | E2E | Residential | Scotland
+          #   TC_REG_010  @regression | E2E | Residential | Scotland
+          #   TC_REG_011  @regression | E2E | Notes & Attachments | England & Wales
+          #   TC_REG_012  @regression | E2E | Notes & Attachments | Commercial
+          #   TC_REG_013  @regression | E2E | Notes & Attachments | Commercial Scotland
+          #   TC_REG_014  @regression | E2E | MTA
+          #   TC_REG_015  @regression | E2E | Cancel and Reissue
+          #   TC_REG_016  @regression | E2E | MTA + Cancellation
+          #   TC_REG_017  @regression | E2E | MTA + Cancel and Reissue
+          #   TC_REG_018  @regression | E2E | MTA + Cancel and Reissue + Cancellation
+          #   TC_REG_019  @regression | E2E | Cancel and Reissue + Cancellation
           # ----------------------------------------------------------------
           - script: >
               npx playwright test tests/regression/
+              --grep "@regression"
               --project=$(BROWSER)
               --workers=1
               --reporter=list,html
-            displayName: 'Run Regression tests (TC_REG_001 – TC_REG_019)'
+            displayName: 'Run Regression tests — tag @regression (TC_REG_001–019)'
             env:
               <<: *env
 
@@ -258,16 +292,20 @@ stages:
 
   # =========================================================================
   # STAGE 3 — BDX TESTS  (6 test cases)
+  # Tag filter: --grep "@sanity"  scoped to tests/BDX/
+  #   (BDX specs use @sanity tag + "BDX" in their describe name;
+  #    scoping to tests/BDX/ ensures sanity tests are not re-run)
+  # Triggered when tag == '@bdx' or tag == 'all'
   # =========================================================================
   - stage: BDX_Tests
-    displayName: 'Stage 3 — BDX Tests (6 tests)'
+    displayName: 'Stage 3 — BDX Tests [@bdx] (6 tests)'
     dependsOn: Regression_Tests
     condition: |
       and(
         succeededOrFailed(),
         or(
-          eq('${{ parameters.testSuite }}', 'bdx'),
-          eq('${{ parameters.testSuite }}', 'all')
+          eq('${{ parameters.tag }}', '@bdx'),
+          eq('${{ parameters.tag }}', 'all')
         )
       )
     jobs:
@@ -277,20 +315,22 @@ stages:
       # ----------------------------------------------------------------------
 
       - job: BDX_001
-        displayName: 'TC_BDX_001 — INTRO Cancel Full Premium Return'
+        displayName: 'TC_BDX_001 [@sanity|BDX] — INTRO Cancel Full Premium Return'
         pool:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 30
         steps:
           - *install
 
+          # Tag in spec: @sanity | E2E | BDX | Cancellation | From Inception
           - script: >
               npx playwright test
               tests/BDX/TC_BDX_001_INTRO_cancel_full_premium_return.spec.ts
+              --grep "@sanity"
               --project=$(BROWSER)
               --workers=1
               --reporter=list,html
-            displayName: 'Run TC_BDX_001'
+            displayName: 'Run TC_BDX_001 — tag @sanity (BDX scope)'
             env:
               <<: *env
 
@@ -311,25 +351,27 @@ stages:
               publishLocation: pipeline
 
       - job: BDX_002_003_004
-        displayName: 'TC_BDX_002-004 — INTER / BDE / NO-COMM Policy BDX Lines'
+        displayName: 'TC_BDX_002-004 [@sanity|BDX] — INTER / BDE / NO-COMM'
         pool:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 60
         steps:
           - *install
 
-          # TC_BDX_002  INTER COMM — policy BDX lines
-          # TC_BDX_003  BDE  COMM  — policy BDX lines
-          # TC_BDX_004  NO   COMM  — policy BDX lines
+          # Tags in specs:
+          #   TC_BDX_002  @sanity | E2E | BDX | INTER_COMM
+          #   TC_BDX_003  @sanity | E2E | BDX | BDE_COMM
+          #   TC_BDX_004  @sanity | E2E | BDX | NO_COMM
           - script: |
               npx playwright test \
                 tests/BDX/TC_BDX_002_INTER_COMM_policy_bdx_lines.spec.ts \
                 tests/BDX/TC_BDX_003_BDE_COMM_policy_bdx_lines.spec.ts \
                 tests/BDX/TC_BDX_004_NO_COMM_policy_bdx_lines.spec.ts \
+                --grep "@sanity" \
                 --project=$(BROWSER) \
                 --workers=1 \
                 --reporter=list,html
-            displayName: 'Run TC_BDX_002 / 003 / 004'
+            displayName: 'Run TC_BDX_002/003/004 — tag @sanity (BDX scope)'
             env:
               <<: *env
 
@@ -354,20 +396,22 @@ stages:
       # ----------------------------------------------------------------------
 
       - job: BDX_005
-        displayName: 'TC_BDX_005 — NB MTA Cancellation Mid-Term Adjustment'
+        displayName: 'TC_BDX_005 [@sanity|BDX] — NB MTA Cancellation'
         pool:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 30
         steps:
           - *install
 
+          # Tag in spec: @sanity | E2E | BDX | NB_MTA
           - script: >
               npx playwright test
               tests/BDX/TC_BDX_005_NB_MTA_Cancellation_mid_term_adjustment.spec.ts
+              --grep "@sanity"
               --project=$(BROWSER)
               --workers=1
               --reporter=list,html
-            displayName: 'Run TC_BDX_005'
+            displayName: 'Run TC_BDX_005 — tag @sanity (BDX scope)'
             env:
               <<: *env
 
@@ -388,20 +432,22 @@ stages:
               publishLocation: pipeline
 
       - job: BDX_006
-        displayName: 'TC_BDX_006 — BDE Cancel & Reissue Then Cancel Policy'
+        displayName: 'TC_BDX_006 [@sanity|BDX] — BDE Cancel & Reissue Then Cancel'
         pool:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 30
         steps:
           - *install
 
+          # Tag in spec: @sanity | E2E | BDX | BDE | Cancel and Reissue | Cancellation
           - script: >
               npx playwright test
               tests/BDX/TC_BDX_006_BDE_new_cancel_and_reissue_then_cancel_policy.spec.ts
+              --grep "@sanity"
               --project=$(BROWSER)
               --workers=1
               --reporter=list,html
-            displayName: 'Run TC_BDX_006'
+            displayName: 'Run TC_BDX_006 — tag @sanity (BDX scope)'
             env:
               <<: *env
 
@@ -449,15 +495,20 @@ stages:
               echo "============================================"
               echo "  Environment : $(TEST_ENV)"
               echo "  Browser     : $(BROWSER)"
-              echo "  Suite       : ${{ parameters.testSuite }}"
+              echo "  Tag filter  : $(SELECTED_TAG)"
               echo "============================================"
               echo ""
-              echo "  Stages executed:"
-              echo "    Stage 1 — Sanity     : TC_SAN_001 – TC_SAN_012  (12 tests)"
-              echo "    Stage 2 — Regression : TC_REG_001 – TC_REG_019  (19 tests)"
-              echo "    Stage 3 — BDX        : TC_BDX_001 – TC_BDX_006  ( 6 tests)"
-              echo "                           ─────────────────────────────────────"
-              echo "                           Total                      37 tests"
+              echo "  Tag → Stage mapping:"
+              echo "    @sanity     → Stage 1 — TC_SAN_001–012  (12 tests)"
+              echo "    @regression → Stage 2 — TC_REG_001–019  (19 tests)"
+              echo "    @bdx        → Stage 3 — TC_BDX_001–006  ( 6 tests)"
+              echo "    all         → All stages (37 tests total)"
+              echo "============================================"
+              echo ""
+              echo "  Equivalent local commands:"
+              echo "    npx playwright test --grep \"@sanity\"     tests/sanity/"
+              echo "    npx playwright test --grep \"@regression\" tests/regression/"
+              echo "    npx playwright test --grep \"@sanity\"     tests/BDX/"
               echo "============================================"
             displayName: 'Display run summary'
 
