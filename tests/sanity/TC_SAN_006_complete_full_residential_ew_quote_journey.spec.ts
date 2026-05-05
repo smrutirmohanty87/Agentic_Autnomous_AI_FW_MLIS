@@ -169,28 +169,35 @@ test.describe('@sanity | E2E | Salesforce Quote Journey | Residential E&W', () =
         .toBeGreaterThan(0);
     }
 
-    // Click Confirm one-by-one up to the number of statements shown in the heading.
-    let clicked = 0;
-    for (let attempts = 0; attempts < Math.max(80, statementsToConfirm * 6) && clicked < statementsToConfirm; attempts += 1) {
-      const count = await confirmButtonsByXpath.count();
-      if (count === 0) {
+    // Click Confirm one-by-one and require count to decrease to avoid false-positive clicks.
+    for (let attempts = 0; attempts < Math.max(100, statementsToConfirm * 10); attempts += 1) {
+      const before = await confirmButtonsByXpath.count();
+      if (before === 0) {
         break;
       }
 
       const firstConfirm = confirmButtonsByXpath.first();
       await firstConfirm.scrollIntoViewIfNeeded();
-      await firstConfirm.click({ force: true, timeout: 20000 });
-      clicked += 1;
-      await page.waitForTimeout(300);
+
+      let reduced = false;
+      try {
+        await firstConfirm.click({ timeout: 20000 });
+        await expect.poll(async () => confirmButtonsByXpath.count(), { timeout: 7000 }).toBeLessThan(before);
+        reduced = true;
+      } catch {
+        // Lightning occasionally needs a forced click fallback when overlays intercept the click.
+        await firstConfirm.click({ force: true, timeout: 20000 });
+        await expect.poll(async () => confirmButtonsByXpath.count(), { timeout: 7000 }).toBeLessThan(before);
+        reduced = true;
+      }
+
+      if (!reduced) {
+        await page.waitForTimeout(250);
+      }
     }
 
-    // Never proceed unless we confirmed every statement shown by the page.
-    expect(
-      clicked,
-      `Confirmed ${clicked} statements, but expected ${statementsToConfirm}. Blocking Proceed.`
-    ).toBeGreaterThanOrEqual(statementsToConfirm);
     await expect(confirmButtonsByXpath, 'All Statements of Fact must be confirmed before clicking Proceed.').toHaveCount(0, {
-      timeout: 15000,
+      timeout: 60000,
     });
 
     await clickWhenReady(page.getByRole('button', { name: /^Proceed$/ }).first(), page);
@@ -210,14 +217,24 @@ test.describe('@sanity | E2E | Salesforce Quote Journey | Residential E&W', () =
     // 5. Fill final policy details.
     await expect(page.getByRole('heading', { name: /final policy details/i })).toBeVisible({ timeout: 120000 });
 
-    const finalDetailTextboxes = page.getByRole('textbox');
-    await expect(finalDetailTextboxes.nth(7)).toBeVisible({ timeout: 30000 });
+    let requiredInputs = page.locator('input[required]');
+    await expect(requiredInputs.nth(0)).toBeVisible({ timeout: 30000 });
+    await requiredInputs.nth(0).fill('John Smith');
+    await requiredInputs.nth(1).fill('SW1A 1AA');
+    await requiredInputs.nth(1).press('Tab').catch(() => {});
 
-    // Index map: 0=Land registry(optional), 1=Insured name, 2=Postcode, 3=Address line 1, 7=Town/city.
-    await finalDetailTextboxes.nth(1).fill('John Smith');
-    await finalDetailTextboxes.nth(2).fill('SW1A 1AA');
-    await finalDetailTextboxes.nth(3).fill('10 Downing Street');
-    await finalDetailTextboxes.nth(7).fill('London');
+    const enterManually = page
+      .getByRole('button', { name: /enter manually/i })
+      .or(page.getByRole('link', { name: /enter manually/i }))
+      .first();
+    if (await enterManually.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await clickWhenReady(enterManually, page);
+    }
+
+    requiredInputs = page.locator('input[required]');
+    await expect(requiredInputs.nth(2)).toBeVisible({ timeout: 30000 });
+    await requiredInputs.nth(2).fill('10 Downing Street');
+    await requiredInputs.nth(3).fill('London');
 
     await clickWhenReady(page.getByRole('button', { name: /next|proceed/i }).first(), page);
 

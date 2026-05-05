@@ -238,12 +238,24 @@ test.describe('@sanity | E2E | Salesforce Quote Journey | Residential E&W Multip
 		// 5. Fill final policy details.
 		await expect(page.getByRole('heading', { name: /final policy details/i })).toBeVisible({ timeout: 120000 });
 
-		const finalDetailTextboxes = page.getByRole('textbox');
-		await expect(finalDetailTextboxes.nth(7)).toBeVisible({ timeout: 30000 });
-		await finalDetailTextboxes.nth(1).fill('John Smith');
-		await finalDetailTextboxes.nth(2).fill('SW1A 1AA');
-		await finalDetailTextboxes.nth(3).fill('10 Downing Street');
-		await finalDetailTextboxes.nth(7).fill('London');
+		let requiredInputs = page.locator('input[required]');
+		await expect(requiredInputs.nth(0)).toBeVisible({ timeout: 30000 });
+		await requiredInputs.nth(0).fill('John Smith');
+		await requiredInputs.nth(1).fill('SW1A 1AA');
+		await requiredInputs.nth(1).press('Tab').catch(() => {});
+
+		const enterManually = page
+			.getByRole('button', { name: /enter manually/i })
+			.or(page.getByRole('link', { name: /enter manually/i }))
+			.first();
+		if (await enterManually.isVisible({ timeout: 3000 }).catch(() => false)) {
+			await clickWhenReady(enterManually, page);
+		}
+
+		requiredInputs = page.locator('input[required]');
+		await expect(requiredInputs.nth(2)).toBeVisible({ timeout: 30000 });
+		await requiredInputs.nth(2).fill('10 Downing Street');
+		await requiredInputs.nth(3).fill('London');
 
 		await clickWhenReady(page.getByRole('button', { name: /next|proceed/i }).first(), page);
 

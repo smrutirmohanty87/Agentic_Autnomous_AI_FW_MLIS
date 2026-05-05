@@ -97,5 +97,7 @@ test.describe('@regression | E2E | MTA', () => {
 
     // Step 4: Bind MTA — insert today's date and click Bind
     await salesforce.bindMTA();
+    // await salesforce.searchAndOpenQuotedFromGlobalSearchGrid(policyNumber);
+    // await salesforce.openQuotesTab1();
   });
 });

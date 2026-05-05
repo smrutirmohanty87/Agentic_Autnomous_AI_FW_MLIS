@@ -16,7 +16,7 @@ let didLog = false;
 
 function normalizeEnvName(value: string | undefined): string {
   const env = (value ?? '').trim();
-  return env ? env.toUpperCase() : 'UAT2';
+  return env ? env.toUpperCase() : 'SIT2';
 }
 
 function resolveEnvVarName(envName: string, baseName: string): string {
@@ -44,7 +44,7 @@ function getEnvVarWithOptionalFallback(envName: string, baseName: string): strin
 /**
  * Centralized environment config resolver.
  *
- * Reads process.env.TEST_ENV (defaults to UAT2) and maps to the corresponding
+ * Reads process.env.TEST_ENV (defaults to SIT2) and maps to the corresponding
  * .env variable set, returning a structured config object.
  */
 export function getEnvConfig(): EnvConfig {

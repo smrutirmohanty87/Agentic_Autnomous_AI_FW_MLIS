@@ -27,6 +27,11 @@
 #     SIT2_MLIS_PORTAL_URL         SIT2_SALESFORCE_LIGHTNING_URL
 #     SIT2_BROKER_USERNAME         SIT2_BROKER_PASSWORD
 #     SIT2_SALESFORCE_USERNAME     SIT2_SALESFORCE_PASSWORD
+#
+#   DURQA environment (DURQA_* prefix):
+#     DURQA_MLIS_PORTAL_URL        DURQA_SALESFORCE_LIGHTNING_URL
+#     DURQA_BROKER_USERNAME        DURQA_BROKER_PASSWORD
+#     DURQA_SALESFORCE_USERNAME    DURQA_SALESFORCE_PASSWORD
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -63,6 +68,7 @@ parameters:
     values:
       - UAT2
       - SIT2
+      - DURQA
 
   # Select tests by the @tag used in test.describe() blocks.
   # @sanity     → runs TC_SAN_001–012  (tests/sanity/)
@@ -141,6 +147,13 @@ variables:
   SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
   SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
   SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+  # DURQA credentials
+  DURQA_MLIS_PORTAL_URL: $(DURQA_MLIS_PORTAL_URL)
+  DURQA_SALESFORCE_LIGHTNING_URL: $(DURQA_SALESFORCE_LIGHTNING_URL)
+  DURQA_BROKER_USERNAME: $(DURQA_BROKER_USERNAME)
+  DURQA_BROKER_PASSWORD: $(DURQA_BROKER_PASSWORD)
+  DURQA_SALESFORCE_USERNAME: $(DURQA_SALESFORCE_USERNAME)
+  DURQA_SALESFORCE_PASSWORD: $(DURQA_SALESFORCE_PASSWORD)
 
 # ===========================================================================
 # STAGES

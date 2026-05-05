@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect,test } from '@playwright/test';
 import {
   FinalPolicyDetailsPage,
   LoginPage,
@@ -101,5 +101,29 @@ test.describe('@regression | E2E | Cancellation | Cancel and Reissue', () => {
 
     // Summary step — review and proceed to order
     await salesforce.completeReissueSummary();
+
+    // Try to complete ordering (if required) and capture the reissued policy number.
+        const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const commencementDateInput = page.getByRole('textbox', { name: /commencement date/i }).first();
+        const genericDateInput = page.locator('input[placeholder="DD/MM/YYYY"]:visible').first();
+    
+        if (await commencementDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+          await commencementDateInput.fill(today);
+          await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
+        } else if (await genericDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+          await genericDateInput.fill(today);
+          await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
+        }
+    
+        const orderNow = page.getByRole('button', { name: /order now/i }).first();
+        if (await orderNow.isVisible({ timeout: 10000 }).catch(() => false)) {
+          await orderNow.click();
+        }
+    
+        await expect(page.getByRole('heading', { name: /policy issued/i }).first()).toBeVisible({ timeout: 180000 });
+    
+        // After Cancel & Re-issue completes, return to the Submission record before continuing.
+        await salesforce.clickReturnToSubmission();
+    
   });
 });

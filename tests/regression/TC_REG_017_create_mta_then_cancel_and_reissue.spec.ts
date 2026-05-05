@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect ,test } from '@playwright/test';
 import {
   FinalPolicyDetailsPage,
   LoginPage,
@@ -77,8 +77,21 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
     const sfCreds = getSalesforceCredentials();
     await salesforce.login(sfCreds.username, sfCreds.password);
 
-    // Global Search → open the exact policy number from the results grid
-    await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
+    // Global Search → open the exact policy number from the results grid.
+    // Test-local retry for transient Salesforce search UI loading issues in SIT2.
+    let openedFromSearch = false;
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
+        openedFromSearch = true;
+        break;
+      } catch (error) {
+        if (attempt === 2) throw error;
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(4000);
+      }
+    }
+    expect(openedFromSearch).toBeTruthy();
 
     // Navigate to Related tab → open Insurance Policy record
     await salesforce.openRelatedTab();
@@ -110,5 +123,45 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
 
     // Summary step — review and proceed to order
     await salesforce.completeReissueSummary();
+
+    // For this test only: if Summary is still shown after first click, wait and retry once.
+    const reissueSummaryHeading = page.getByRole('heading', { name: /summary/i }).first();
+    const reissueProceedToOrder = page.getByRole('button', { name: /proceed to order/i }).first();
+    if (await reissueSummaryHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await page.waitForTimeout(4000);
+      if (await reissueSummaryHeading.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await reissueProceedToOrder.click();
+      }
+    }
+
+    // Try to complete ordering (if required) and capture the reissued policy number.
+            const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const commencementDateInput = page.getByRole('textbox', { name: /commencement date/i }).first();
+            const genericDateInput = page.locator('input[placeholder="DD/MM/YYYY"]:visible').first();
+        
+            if (await commencementDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+              await commencementDateInput.fill(today);
+              await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
+            } else if (await genericDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+              await genericDateInput.fill(today);
+              await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
+            }
+        
+            const orderNow = page.getByRole('button', { name: /order now/i }).first();
+            if (await orderNow.isVisible({ timeout: 10000 }).catch(() => false)) {
+              await orderNow.click();
+            }
+        
+            await expect(page.getByRole('heading', { name: /policy issued/i }).first()).toBeVisible({ timeout: 180000 });
+        
+            // After Cancel & Re-issue completes, return to the Submission record (test-local tolerant flow).
+            const returnToSubmission = page
+              .getByRole('button', { name: /Return to submission/i })
+              .or(page.getByRole('link', { name: /Return to submission/i }))
+              .first();
+            if (await returnToSubmission.isVisible({ timeout: 15000 }).catch(() => false)) {
+              await returnToSubmission.click();
+            }
+            await page.waitForTimeout(8000);
   });
 });

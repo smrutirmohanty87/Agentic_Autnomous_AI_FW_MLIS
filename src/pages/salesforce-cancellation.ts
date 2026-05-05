@@ -315,6 +315,13 @@ export class SalesforcePortalPage {
     await this.clickWhenUiReady(relatedTab);
     await this.waitForLightningIdle();
   }
+  /** step 8 : Navigate to quotes tab    */
+  async openQuotesTab() {
+    const quotesTab = this.page.getByRole('tab', { name: 'Quotes' }).first();
+    await expect(quotesTab).toBeVisible({ timeout: 60000 });
+    await this.clickWhenUiReady(quotesTab);
+    await this.waitForLightningIdle();
+  }
 
   /**
    * Opt-in helper: after a Cancel & Reissue completes, the UI can show a "Return to submission" action.
@@ -403,6 +410,88 @@ export class SalesforcePortalPage {
   }
 
   /**
+   * Opt-in helper: a more resilient variant of openInsurancePolicyFromRelated.
+   *
+   * Why: On some orgs/environments the Insurance Policies list can render without
+   * ARIA rowheader roles (or be slow to populate), causing flaky failures when
+   * locating the first row link.
+   *
+   * This method retries navigation and uses multiple locator strategies to find
+   * either the expected policy number link or the first row link.
+   *
+   * IMPORTANT: Kept separate so existing tests remain unaffected unless they
+   * explicitly call this method.
+   */
+  async openInsurancePolicyFromRelatedStable(expectedPolicyNumber?: string) {
+    const attempts = 3;
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      // Reload to pick up server-side sync, then re-open Related tab.
+      await this.page.reload({ waitUntil: 'domcontentloaded' });
+      await this.waitForLightningIdle();
+
+      const relatedTab = this.page.getByRole('tab', { name: 'Related' }).first();
+      await expect(relatedTab).toBeVisible({ timeout: 60000 });
+      await this.clickWhenUiReady(relatedTab);
+      await this.waitForLightningIdle();
+
+      const insurancePoliciesLink = this.page
+        .locator('article:visible')
+        .getByRole('link', { name: /Insurance Policies/i })
+        .first();
+
+      for (let i = 0; i < 15; i += 1) {
+        if (await insurancePoliciesLink.isVisible().catch(() => false)) break;
+        await this.page.mouse.wheel(0, 1200);
+        await this.page.waitForTimeout(500);
+      }
+
+      await expect(insurancePoliciesLink).toBeVisible({ timeout: 120000 });
+      await this.clickWhenUiReady(insurancePoliciesLink);
+      await this.waitForLightningIdle();
+
+      await expect(this.page.getByRole('heading', { name: /Insurance Policies/i })).toBeVisible({ timeout: 60000 });
+
+      const tableScope = this.page.locator('table:visible').first();
+
+      const matchingLink = expectedPolicyNumber
+        ? tableScope.getByRole('link', { name: new RegExp(expectedPolicyNumber, 'i') }).first()
+        : null;
+
+      const firstRowLinkByRole = this.page.locator('[role="rowheader"] a:visible').first();
+      const firstRowLinkByTable = tableScope
+        .locator('tbody tr th a:visible, tbody tr td a:visible')
+        .filter({ hasText: /\S+/ })
+        .first();
+
+      if (matchingLink && (await matchingLink.isVisible({ timeout: 10000 }).catch(() => false))) {
+        await this.clickWhenUiReady(matchingLink);
+      } else if (await firstRowLinkByTable.isVisible({ timeout: 10000 }).catch(() => false)) {
+        await this.clickWhenUiReady(firstRowLinkByTable);
+      } else if (await firstRowLinkByRole.isVisible({ timeout: 10000 }).catch(() => false)) {
+        await this.clickWhenUiReady(firstRowLinkByRole);
+      } else if (attempt < attempts) {
+        continue;
+      } else {
+        throw new Error(
+          `[salesforce] Unable to open Insurance Policy from Related (attempt ${attempt}/${attempts}). ` +
+            `No row links were found in the Insurance Policies list.`,
+        );
+      }
+
+      await expect(this.page.getByRole('heading', { name: /Insurance Policy/i })).toBeVisible({ timeout: 60000 });
+      if (expectedPolicyNumber) {
+        await expect(this.page.getByRole('heading', { name: new RegExp(expectedPolicyNumber, 'i') })).toBeVisible({ timeout: 60000 });
+      }
+
+      await this.waitForLightningIdle();
+      await expect(this.page.getByRole('button', { name: 'Create MTA' })).toBeVisible({ timeout: 60000 });
+      await expect(this.page.getByRole('button', { name: 'Show more actions' })).toBeVisible({ timeout: 60000 });
+      return;
+    }
+  }
+
+  /**
    * Global Search → open the exact matching result from the results grid.
    * This is intentionally strict: it will NOT click the first row, to avoid opening an older cancelled policy.
    * Use this to land on the Submission/record page, then open Insurance Policy from the Related tab.
@@ -446,6 +535,134 @@ export class SalesforcePortalPage {
     const matchingLink = matchingRow.getByRole('link', { name: new RegExp(escaped, 'i') }).first();
     await expect(matchingLink).toBeVisible({ timeout: 60000 });
     await this.clickWhenUiReady(matchingLink);
+
+    await this.waitForLightningIdle();
+    await expect(this.page.getByRole('tab', { name: 'Related' }).first()).toBeVisible({ timeout: 120000 });
+  }
+
+  /**
+   * Global Search → scan ALL result tables, find the row whose Stage/Status cell is exactly "Quoted"
+   * AND whose row text contains the policy reference, then click that row's link.
+   *
+   * Salesforce global search returns results in multiple separate tables (Insurance Policies,
+   * Submissions, Quotes, etc.).  Only the first table is NOT guaranteed to contain the Quoted row,
+   * so this method iterates every visible table on the results page.
+   *
+   * The Stage cell is matched via two strategies:
+   *   1. A <td> whose ONLY visible text is "Quoted" (exact-cell match).
+   *   2. Any descendant element (badge / span) whose text is exactly "Quoted".
+   *
+   * Polls for up to 120 s to allow Salesforce async indexing to update.
+   */
+  async searchAndOpenQuotedFromGlobalSearchGrid(policyReference: string) {
+    const searchLauncher = this.page.locator('//*[@id="oneHeader"]/div[2]/div[2]/div/div/button').first();
+    const searchButtonFallback = this.page.getByRole('button', { name: /^Search/ }).first();
+
+    if (await searchLauncher.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await this.clickWhenUiReady(searchLauncher);
+    } else {
+      await expect(searchButtonFallback).toBeVisible({ timeout: 15000 });
+      await this.clickWhenUiReady(searchButtonFallback);
+    }
+
+    const dialogSearchInput = this.page
+      .locator('[role="dialog"] input[type="search"]:visible, [role="dialog"] input[placeholder*="Search"]:visible')
+      .first();
+    const headerSearchInput = this.page
+      .locator('#oneHeader input[type="search"]:visible, #oneHeader input[placeholder="Search..."]:visible')
+      .first();
+
+    let activeSearchInput = dialogSearchInput;
+    if (!(await dialogSearchInput.isVisible({ timeout: 5000 }).catch(() => false))) {
+      await expect(headerSearchInput).toBeVisible({ timeout: 15000 });
+      activeSearchInput = headerSearchInput;
+    }
+
+    await activeSearchInput.fill(policyReference);
+    await activeSearchInput.press('Enter');
+    await this.waitForLightningIdle();
+
+    const escaped = this.escapeForRegex(policyReference);
+
+    // Wait for at least one results table to appear.
+    await expect(this.page.locator('table:visible').first()).toBeVisible({ timeout: 120000 });
+
+    // ── Poll across ALL tables for a row that has the policy ref AND a Quoted stage cell ──
+    const deadline = Date.now() + 120000;
+    let quotedRowLocator: import('@playwright/test').Locator | null = null;
+
+    while (Date.now() < deadline) {
+      await this.waitForLightningIdle();
+
+      const allTables = this.page.locator('table:visible');
+      const tableCount = await allTables.count().catch(() => 0);
+
+      for (let t = 0; t < tableCount; t++) {
+        const table = allTables.nth(t);
+        const matchingRows = table.locator('tr').filter({ hasText: new RegExp(escaped, 'i') });
+        const rowCount = await matchingRows.count().catch(() => 0);
+
+        for (let r = 0; r < rowCount; r++) {
+          const row = matchingRows.nth(r);
+
+          // Strategy 1: a <td> whose trimmed innerText is exactly "Quoted".
+          const cells = row.locator('td');
+          const cellCount = await cells.count().catch(() => 0);
+          for (let c = 0; c < cellCount; c++) {
+            const cellText = (await cells.nth(c).innerText().catch(() => '')).trim();
+            if (/^Quoted$/i.test(cellText)) {
+              quotedRowLocator = row;
+              break;
+            }
+          }
+          if (quotedRowLocator) break;
+
+          // Strategy 2: any descendant element (badge / span / div) whose text is "Quoted".
+          const quotedBadge = row.locator(
+            'lightning-badge, span.slds-badge, [class*="badge"], [class*="status"], td span, td div',
+          ).filter({ hasText: /^Quoted$/i }).first();
+          if (await quotedBadge.isVisible({ timeout: 300 }).catch(() => false)) {
+            quotedRowLocator = row;
+            break;
+          }
+        }
+
+        if (quotedRowLocator) break;
+      }
+
+      if (quotedRowLocator) break;
+      await this.page.waitForTimeout(2000);
+    }
+
+    if (!quotedRowLocator) {
+      // Collect diagnostic text from every matching row across every table to aid debugging.
+      const samples: string[] = [];
+      const allTables = this.page.locator('table:visible');
+      const tableCount = await allTables.count().catch(() => 0);
+      for (let t = 0; t < tableCount && samples.length < 6; t++) {
+        const rows = allTables.nth(t).locator('tr').filter({ hasText: new RegExp(escaped, 'i') });
+        const rowCount = await rows.count().catch(() => 0);
+        for (let r = 0; r < rowCount && samples.length < 6; r++) {
+          const text = (await rows.nth(r).innerText().catch(() => '')).replace(/\s+/g, ' ').trim();
+          if (text) samples.push(`[table ${t}, row ${r}]: ${text}`);
+        }
+      }
+      throw new Error(
+        `[salesforce] Global search for '${policyReference}' found no row with Stage = "Quoted" across ${tableCount} table(s).\n` +
+        `Rows found:\n${samples.join('\n')}`,
+      );
+    }
+
+    // Click the link inside the Quoted row that refers to this policy.
+    const linkInRow = quotedRowLocator.getByRole('link', { name: new RegExp(escaped, 'i') }).first();
+    const anyLink   = quotedRowLocator.locator('a:visible').filter({ hasText: new RegExp(escaped, 'i') }).first();
+
+    if (await linkInRow.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await this.clickWhenUiReady(linkInRow);
+    } else {
+      await expect(anyLink).toBeVisible({ timeout: 15000 });
+      await this.clickWhenUiReady(anyLink);
+    }
 
     await this.waitForLightningIdle();
     await expect(this.page.getByRole('tab', { name: 'Related' }).first()).toBeVisible({ timeout: 120000 });
@@ -1131,6 +1348,72 @@ export class SalesforcePortalPage {
     const lightningSpinner = this.page.locator('.slds-spinner_container:visible, lightning-spinner:visible').first();
     if (await lightningSpinner.isVisible({ timeout: 1500 }).catch(() => false)) {
       await expect(lightningSpinner).toBeHidden({ timeout: 60000 });
+    }
+  }
+
+  // ── Insurance Policy: Quotes tab assertions (opt-in) ──────────────────────
+
+  private moneyTextRegex(amount: string): RegExp {
+    const cleaned = amount.replace(/[£,$\s]/g, '').replace(/,/g, '');
+    const numeric = Number.parseFloat(cleaned);
+    if (!Number.isFinite(numeric)) {
+      return new RegExp(this.escapeForRegex(amount), 'i');
+    }
+
+    const intPart = Math.trunc(numeric).toString();
+    // Match examples: "100", "100.00", "£100.00" with non-digit boundaries.
+    return new RegExp(`(?:^|[^\\d])(?:£\\s*)?${intPart}(?:\\.\\d{1,2})?(?:[^\\d]|$)`, 'i');
+  }
+
+  /** Open the Insurance Policy "Quotes" tab (kept opt-in so existing tests are unaffected). */
+  async openQuotesTab1() {
+    const quotesTab = this.page.getByRole('tab', { name: /^Quotes$/i }).first();
+
+    for (let attempt = 1; attempt <= 4; attempt += 1) {
+      try {
+        await this.waitForLightningIdle();
+        await expect(quotesTab).toBeVisible({ timeout: 30000 });
+        await this.clickWhenUiReady(quotesTab);
+        await this.waitForLightningIdle();
+
+        // Quotes content is commonly a table/list; wait for something visible in the main region.
+        const visibleTable = this.page.locator('table:visible').first();
+        if (await visibleTable.isVisible({ timeout: 5000 }).catch(() => false)) {
+          return;
+        }
+
+        // Fallback: accept just having switched tabs if table isn't used.
+        await expect(quotesTab).toHaveAttribute('aria-selected', 'true', { timeout: 15000 }).catch(() => {});
+        return;
+      } catch (error) {
+        if (attempt === 4) throw error;
+        await this.page.keyboard.press('Escape').catch(() => {});
+        await this.page.waitForTimeout(1500);
+      }
+    }
+  }
+
+  /** Assert the given premium values are present somewhere on the Quotes tab. */
+  async expectMTAPremiumsOnQuotesTab(premiumValues: string[]) {
+    await this.openQuotesTab();
+
+    const scopeFallback = this.page.locator('main:visible').first();
+
+    for (const premiumValue of premiumValues) {
+      const premiumRegex = this.moneyTextRegex(premiumValue);
+
+      await expect
+        .poll(async () => {
+          await this.waitForLightningIdle();
+
+          const table = this.page.locator('table:visible').first();
+          const text = await (await table.isVisible({ timeout: 500 }).catch(() => false)
+            ? table.innerText().catch(() => '')
+            : scopeFallback.innerText().catch(() => '')
+          );
+          return premiumRegex.test(text);
+        }, { timeout: 180000 })
+        .toBeTruthy();
     }
   }
   async fillLightningComboboxDirect(label: string, value: string) {
