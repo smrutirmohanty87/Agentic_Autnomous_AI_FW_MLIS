@@ -221,11 +221,11 @@ stages:
     dependsOn: Sanity_Tests
     condition: |
       and(
-        succeededOrFailed(),
         or(
           eq('${{ parameters.tag }}', '@regression'),
           eq('${{ parameters.tag }}', 'all')
-        )
+        ),
+        in(dependencies.Sanity_Tests.result, 'Succeeded', 'SucceededWithIssues', 'Failed', 'Skipped')
       )
     jobs:
       - job: RunRegression
@@ -336,11 +336,11 @@ stages:
     dependsOn: Regression_Tests
     condition: |
       and(
-        succeededOrFailed(),
         or(
           eq('${{ parameters.tag }}', '@bdx'),
           eq('${{ parameters.tag }}', 'all')
-        )
+        ),
+        in(dependencies.Regression_Tests.result, 'Succeeded', 'SucceededWithIssues', 'Failed', 'Skipped')
       )
     jobs:
 
