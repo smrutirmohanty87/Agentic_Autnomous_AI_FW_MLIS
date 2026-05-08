@@ -180,7 +180,7 @@ test.describe('@regression | E2E | MTA', () => {
     const mtaPremiumValue1 = extractMtaPremiumForRow(quotesText, /MTA01\/00/i);
     const mtaPremiumValue2 = extractMtaPremiumForRow(quotesText, /MTA02\/00/i);
 
-    expect(Math.abs(mtaPremiumValue1 - parseMoney(mtaPremium1))).toBeLessThanOrEqual(0.01);
-    expect(Math.abs(mtaPremiumValue2 - parseMoney(mtaPremium2))).toBeLessThanOrEqual(0.01);
+    expect(mtaPremiumValue1).toBe(parseMoney(mtaPremium1));
+    expect(mtaPremiumValue2).toBe(parseMoney(mtaPremium2));
   });
 });

@@ -839,7 +839,7 @@ class DashboardReporter implements Reporter {
     // (The dashboard is still generated regardless.)
     console.log(`[dashboard] Written: ${indexPath}`);
 
-    if (this.openAfterRun) {
+    if (this.openAfterRun && result.status === 'passed') {
       const platform = process.platform;
       const url = pathToFileURL(indexPath).toString();
 

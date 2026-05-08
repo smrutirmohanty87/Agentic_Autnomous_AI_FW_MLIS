@@ -1,5 +1,6 @@
-import { expect, Page } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 import { getMlisPortalUrl } from '../config/env';
+import { logPolicyNumber } from '../utils/policy-tracker';
 
 export class CommercialLoginPage {
   constructor(private readonly page: Page) {}
@@ -268,7 +269,8 @@ export class CommercialQuotesPage {
 
   async expectLoaded() {
     await expect(this.page.getByText('Loading...').first()).toBeHidden({ timeout: 20000 });
-    await expect(this.page.getByRole('button', { name: 'Quote summary' }).first()).toBeEnabled({ timeout: 20000 });
+    // 'Quote summary' may be disabled for referral quotes — only assert visibility here.
+    await expect(this.page.getByRole('button', { name: 'Quote summary' }).first()).toBeVisible({ timeout: 20000 });
     const firstSelectQuote = this.page.getByRole('button', { name: 'Select quote' }).first();
     await expect(firstSelectQuote).toBeVisible({ timeout: 20000 });
     await expect(firstSelectQuote).toBeEnabled({ timeout: 20000 });
@@ -366,8 +368,9 @@ export class CommercialPolicyIssuedPage {
     await expect(this.page.getByRole('heading', { name: 'Policy issued' })).toBeVisible({ timeout: 60000 });
     const policyLabel = this.page.locator('strong', { hasText: 'Policy number' });
     await expect(policyLabel).toBeVisible({ timeout: 20000 });
-    const policyText = await policyLabel.locator('xpath=following::p[1]').first().textContent();
-    expect(policyText ?? '').toMatch(/[A-Z]{2,}-[A-Z]{2,}-\d{6,}/);
+    const policyText = (await policyLabel.locator('xpath=following::p[1]').first().textContent())?.trim() ?? '';
+    expect(policyText).toMatch(/[A-Z]{2,}-[A-Z]{2,}-\d{6,}/);
+    await logPolicyNumber(policyText, test.info().title, 'EW Commercial').catch(() => {});
   }
 
   async backToQuoteManager() {

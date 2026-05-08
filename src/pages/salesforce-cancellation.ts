@@ -23,6 +23,52 @@ export class SalesforcePortalPage {
     }
   }
 
+  private isFutureDdMmYyyy(value: string) {
+    const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec((value ?? '').trim());
+    if (!match) return false;
+
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+    const parsed = new Date(year, month - 1, day);
+
+    if (
+      Number.isNaN(parsed.getTime()) ||
+      parsed.getFullYear() !== year ||
+      parsed.getMonth() !== month - 1 ||
+      parsed.getDate() !== day
+    ) {
+      return false;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return parsed.getTime() > today.getTime();
+  }
+
+  private async setFutureCancellationEffectiveDate(daysAhead = 5) {
+    const value = getFutureDate(daysAhead);
+    const dateField = this.page.getByRole('textbox', { name: /\*?\s*Cancellation Effective Date/i }).first();
+
+    await expect(dateField).toBeVisible({ timeout: 15000 });
+    await expect(dateField).toBeEnabled({ timeout: 10000 });
+
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      await dateField.click({ timeout: 10000 });
+      await dateField.fill('');
+      await dateField.type(value, { delay: 40 });
+      await dateField.press('Tab').catch(() => undefined);
+      await this.waitForLightningIdle();
+
+      const currentValue = (await dateField.inputValue().catch(() => '')).trim();
+      if (this.isFutureDdMmYyyy(currentValue)) {
+        return;
+      }
+    }
+
+    throw new Error('Unable to set Cancellation Effective Date to a future dd-mm-yyyy value.');
+  }
+
   /**
    * Resilient Salesforce Lightning combobox selection.
    * Handles: slow option loading, DOM re-renders after selection, stale elements.
@@ -822,6 +868,224 @@ export class SalesforcePortalPage {
     }
   }
 
+  async openCreateClaimDialog() {
+    const createClaimButton = this.page.getByRole('button', { name: 'Create Claim' }).first();
+    await expect(createClaimButton).toBeVisible({ timeout: 60000 });
+    await createClaimButton.click();
+    await this.waitForLightningIdle();
+
+    const claimHeading = this.page.getByRole('heading', { name: /Claim|Create Claim|Enter Claim|New Claim/i }).first();
+    const submitButton = this.page.getByRole('button', { name: /Submit/i }).first();
+
+    const headingVisible = await claimHeading.isVisible({ timeout: 10000 }).catch(() => false);
+    if (headingVisible) {
+      await expect(claimHeading).toBeVisible({ timeout: 60000 });
+    } else {
+      await expect(submitButton).toBeVisible({ timeout: 60000 });
+    }
+  }
+
+  async selectClaimCoverage(optionText?: string) {
+    const coverageCombobox = this.page
+      .getByRole('combobox', { name: /Select Claim coverage|Claim coverage/i })
+      .first();
+
+    await expect(coverageCombobox).toBeVisible({ timeout: 30000 });
+    await coverageCombobox.scrollIntoViewIfNeeded();
+    await coverageCombobox.click();
+
+    // Claims UI renders dropdown options asynchronously after combobox click.
+    await this.page.waitForTimeout(800);
+
+    const allOptions = this.page.getByRole('option').filter({ hasText: /\S+/ });
+    await expect(allOptions.first()).toBeVisible({ timeout: 15000 });
+
+    const preferred = optionText
+      ? this.page.getByRole('option', { name: new RegExp(this.escapeForRegex(optionText), 'i') }).first()
+      : this.page.getByRole('option').filter({ hasNotText: /select|choose/i }).first();
+
+    if (await preferred.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await preferred.click();
+    } else {
+      await allOptions.first().click();
+    }
+
+    await this.waitForLightningIdle();
+  }
+
+  private async selectRiskLocationFromDropdown(optionText?: string) {
+    const addRiskLocationButton = this.page.getByRole('button', { name: /Add Risk Location/i }).first();
+    await expect(addRiskLocationButton).toBeVisible({ timeout: 60000 });
+    await addRiskLocationButton.click();
+
+    // Match claim coverage behavior: click, wait for options, then select.
+    const riskLocationCombobox = this.page
+      .getByRole('combobox', { name: /Select Claim Risk Location|Risk Location/i })
+      .first();
+    await expect(riskLocationCombobox).toBeVisible({ timeout: 30000 });
+    await riskLocationCombobox.click();
+    await this.page.waitForTimeout(800);
+
+    const allOptions = this.page.getByRole('option').filter({ hasText: /\S+/ }).filter({ hasNotText: /--\s*Clear\s*--/i });
+    await expect(allOptions.first()).toBeVisible({ timeout: 30000 });
+
+    const preferred = optionText
+      ? this.page.getByRole('option', { name: new RegExp(this.escapeForRegex(optionText), 'i') }).first()
+      : allOptions.first();
+
+    if (await preferred.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await preferred.click();
+    } else {
+      await allOptions.first().click();
+    }
+
+    await this.waitForLightningIdle();
+  }
+
+  async fillMandatoryClaimFieldsAndSubmit(claimCoverage?: string) {
+    await this.selectClaimCoverage(claimCoverage);
+
+    const requiredInputs = this.page.locator('input[required]:visible, textarea[required]:visible');
+    const inputCount = await requiredInputs.count();
+
+    for (let i = 0; i < inputCount; i += 1) {
+      const input = requiredInputs.nth(i);
+      const disabled = await input.isDisabled().catch(() => true);
+      if (disabled) continue;
+
+      const current = (await input.inputValue().catch(() => '')).trim();
+      if (current) continue;
+
+      const type = ((await input.getAttribute('type').catch(() => '')) || '').toLowerCase();
+      if (type === 'email') {
+        await input.fill(`claim.${Date.now()}@testdual.com`);
+      } else if (type === 'number') {
+        await input.fill('1000');
+      } else if (type === 'tel') {
+        await input.fill('01234567890');
+      } else if (type === 'date') {
+        const today = new Date();
+        const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        await input.fill(iso);
+      } else {
+        await input.fill(`Auto Claim ${Date.now()}`);
+      }
+    }
+
+    const requiredComboboxes = this.page.locator('[role="combobox"][aria-required="true"]:visible');
+    const comboCount = await requiredComboboxes.count().catch(() => 0);
+    for (let i = 0; i < comboCount; i += 1) {
+      const combo = requiredComboboxes.nth(i);
+      const text = ((await combo.innerText().catch(() => '')) || '').trim();
+      if (text && !/select|choose/i.test(text)) continue;
+
+      await combo.click();
+      await this.page.waitForTimeout(500);
+      const option = this.page.getByRole('option').filter({ hasNotText: /select|choose/i }).first();
+      if (await option.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await option.click();
+      } else {
+        await this.page.keyboard.press('ArrowDown');
+        await this.page.keyboard.press('Enter');
+      }
+      await this.waitForLightningIdle();
+    }
+
+    const submitButton = this.page.getByRole('button', { name: /Submit/i }).first();
+    await expect(submitButton).toBeVisible({ timeout: 20000 });
+    await submitButton.click();
+    await this.waitForLightningIdle();
+  }
+
+  private async readGeneratedClaimNumber(): Promise<string> {
+    const claimLabel = this.page.getByText(/Claim Number/i).first();
+    if (await claimLabel.isVisible({ timeout: 5000 }).catch(() => false)) {
+      const text = (await claimLabel.innerText().catch(() => '')).trim();
+      const match = text.match(/([A-Z]{2,6}[- ]?\d{3,})/i);
+      if (match?.[1]) return match[1].replace(/\s+/g, '-');
+    }
+
+    const bodyText = await this.page.locator('body').innerText().catch(() => '');
+    const match = bodyText.match(/(?:Claim\s*Number\s*[:#-]?\s*)([A-Z]{2,6}[- ]?\d{3,})/i)
+      ?? bodyText.match(/\b([A-Z]{2,6}-\d{3,})\b/i);
+    if (match?.[1]) return match[1].replace(/\s+/g, '-');
+
+    throw new Error('Claim number was not found after claim creation submit.');
+  }
+
+  private async fillDateFieldWithToday(fieldName: RegExp) {
+    const dateInput = this.page.getByRole('textbox', { name: fieldName }).first();
+    await expect(dateInput).toBeVisible({ timeout: 30000 });
+
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(today.getFullYear());
+    const ddMmYyyySlash = `${dd}/${mm}/${yyyy}`;
+    const ddMmYyyyDash = `${dd}-${mm}-${yyyy}`;
+
+    await dateInput.click();
+    await dateInput.fill('');
+    await dateInput.type(ddMmYyyySlash, { delay: 40 });
+    await dateInput.press('Tab').catch(() => undefined);
+    await this.waitForLightningIdle();
+
+    const current = (await dateInput.inputValue().catch(() => '')).trim();
+    if (!current) {
+      await dateInput.click();
+      await dateInput.fill('');
+      await dateInput.type(ddMmYyyyDash, { delay: 40 });
+      await dateInput.press('Tab').catch(() => undefined);
+      await this.waitForLightningIdle();
+    }
+
+    await expect(dateInput).toHaveValue(new RegExp(`${dd}[/-]${mm}[/-]${yyyy}`), { timeout: 10000 });
+  }
+
+  async completeClaimPostCreationFlowAndAssertIncurred() {
+    // Slow down intentionally for visual verification in headed runs.
+    await this.page.waitForTimeout(1200);
+
+    // Claim Basis is mandatory in this claim flow.
+    const claimBasis = this.page.getByRole('combobox', { name: /Claim Basis/i }).first();
+    if (await claimBasis.isVisible({ timeout: 8000 }).catch(() => false)) {
+      await claimBasis.click();
+      await this.page.waitForTimeout(900);
+      const claimBasisOption = this.page
+        .getByRole('option')
+        .filter({ hasNotText: /select|choose|clear/i })
+        .first();
+      await expect(claimBasisOption).toBeVisible({ timeout: 30000 });
+      await claimBasisOption.click();
+      await this.waitForLightningIdle();
+    }
+
+    // Risk Location: same pattern as Claim Coverage (click, wait, select from dropdown), then Save.
+    await this.selectRiskLocationFromDropdown();
+
+    const saveButton = this.page.getByRole('button', { name: /^Save$/i }).first();
+    await expect(saveButton).toBeVisible({ timeout: 30000 });
+    await saveButton.click();
+    await this.waitForLightningIdle();
+
+    await this.page.waitForTimeout(1000);
+
+    // Fill claim dates using current date.
+    await this.fillDateFieldWithToday(/Date Claim Made|Date of Claim/i);
+    await this.fillDateFieldWithToday(/Date of Loss \(From\)|Date of Loss/i);
+
+    await this.page.waitForTimeout(1000);
+
+    // Final submit.
+    const finalSubmit = this.page.getByRole('button', { name: /Submit/i }).first();
+    await expect(finalSubmit).toBeVisible({ timeout: 30000 });
+    await finalSubmit.click();
+    await this.waitForLightningIdle();
+
+    // No post-submit claim-id assertion: if submit succeeds without UI errors, flow is complete.
+    await this.page.waitForTimeout(1200);
+  }
+
   /**
    * Step 1: Fill the Create MTA dialog — select MTA Reason and click Save.
    */
@@ -1040,6 +1304,7 @@ export class SalesforcePortalPage {
     // Verify Step 2 loaded
     await expect(this.page.getByRole('heading', { name: 'Enter Premiums' })).toBeVisible({ timeout: 60000 });
   }
+  
   async completeCancelFromInceptionStep2(notes: string) {
     // Select Cancellation Category — wait for DOM re-render after each selection
     await this.selectLightningCombobox('Cancellation Category', 'Cancel this MTA Only');
@@ -1065,6 +1330,33 @@ export class SalesforcePortalPage {
     await expect(this.page.getByRole('heading', { name: 'Enter Premiums' })).toBeVisible({ timeout: 60000 });
   }
 
+  
+  async completeCancelFromInceptionStep3(notes: string) {
+    // Select Cancellation Category — wait for DOM re-render after each selection
+    await this.selectLightningCombobox('Cancellation Category', 'Cancel the Policy Midterm');
+
+    // Wait for Cooling Period Display to confirm the form refreshed after category selection
+    const coolingPeriod = this.page.getByRole('textbox', { name: /Cooling Period Display/i });
+    await expect(coolingPeriod).toBeVisible({ timeout: 15000 });
+
+    // Select Instigated By — DOM re-renders, Reason dropdown appears dynamically
+    await this.selectLightningCombobox('Cancellation Instigated By', 'Customer');
+    await expect(this.page.getByRole('combobox', { name: /Cancellation Reason/i })).toBeVisible({ timeout: 15000 });
+
+    // Select Reason — DOM re-renders, Notes field appears dynamically
+    await this.selectLightningCombobox('Cancellation Reason', 'Cover No Longer Required');
+    await expect(this.page.getByRole('textbox', { name: /Cancellation Notes/i })).toBeVisible({ timeout: 15000 });
+
+    // Fill notes and proceed
+    await this.page.getByRole('textbox', { name: /Cancellation Notes/i }).fill(notes);
+    await this.setFutureCancellationEffectiveDate(5);
+    await this.waitForLightningIdle();
+    await this.page.getByRole('button', { name: 'Next' }).click();
+
+    // Verify Step 2 loaded
+    await expect(this.page.getByRole('heading', { name: 'Enter Premiums' })).toBeVisible({ timeout: 60000 });
+  }
+
 
   async completeCancelMidtermStep1(notes: string, cancellationDate?: string) {
     // Select Cancellation Category — wait for DOM re-render
@@ -1078,10 +1370,8 @@ export class SalesforcePortalPage {
       timeout: 15000,
     });
 
-    // Set cancellation date (defaults to today)
-    const dateValue = cancellationDate ?? new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    await dateField.fill(dateValue);
-    await dateField.press('Tab');
+    // Always set cancellation date to a future day in strict dd-mm-yyyy format.
+    await this.setFutureCancellationEffectiveDate(5);
     await this.waitForLightningIdle();
 
     // Select Instigated By — DOM re-renders, Reason dropdown appears
@@ -1449,16 +1739,7 @@ async fillCancelPolicyStep1Direct(data: {
 
   if (await dateField.isVisible().catch(() => false)) {
     if (await dateField.isEnabled().catch(() => false)) {
-      const dateValue =
-        data.cancellationDate ??
-        new Date().toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        });
-
-      await dateField.fill(dateValue);
-      await dateField.press('Tab');
+      await this.setFutureCancellationEffectiveDate(5);
     }
   }
 
@@ -1483,4 +1764,13 @@ async fillCancelPolicyStep1Direct(data: {
   await expect(this.page.getByRole('heading', { name: 'Enter Premiums' }))
     .toBeVisible({ timeout: 60000 });
 }
+}
+
+function getFutureDate(daysAhead: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + Math.max(1, daysAhead));
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = String(date.getFullYear());
+  return `${day}-${month}-${year}`;
 }

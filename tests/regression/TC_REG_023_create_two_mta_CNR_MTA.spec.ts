@@ -122,6 +122,16 @@ test.describe('@regression | E2E | MTA', () => {
     // Summary step — review and proceed to order
     await salesforce.completeReissueSummary();
 
+    // For this test only: if Summary is still shown after first click, wait and retry once.
+    const reissueSummaryHeading = page.getByRole('heading', { name: /summary/i }).first();
+    const reissueProceedToOrder = page.getByRole('button', { name: /proceed to order/i }).first();
+    if (await reissueSummaryHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await page.waitForTimeout(4000);
+      if (await reissueSummaryHeading.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await reissueProceedToOrder.click();
+      }
+    }
+
     // Try to complete ordering (if required) and capture the reissued policy number.
     const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const commencementDateInput = page.getByRole('textbox', { name: /commencement date/i }).first();

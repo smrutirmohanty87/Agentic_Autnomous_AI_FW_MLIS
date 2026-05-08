@@ -1,5 +1,6 @@
-import { expect, Page } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 import { getMlisPortalUrl } from '../config/env';
+import { logPolicyNumber } from '../utils/policy-tracker';
 
 export class LoginPage {
   constructor(private readonly page: Page) {}
@@ -314,16 +315,18 @@ export class PolicyIssuedPage {
     await expect(this.page.getByRole('heading', { name: 'Policy issued' })).toBeVisible({ timeout: 60000 });
     const policyLabel = this.page.locator('strong', { hasText: 'Policy number' });
     await expect(policyLabel).toBeVisible({ timeout: 20000 });
-    const policyText = await policyLabel.locator('xpath=following::p[1]').first().textContent();
-    expect(policyText ?? '').toMatch(/[A-Z]{2,}-[A-Z]{2,}-\d{6,}/);
+    const policyText = (await policyLabel.locator('xpath=following::p[1]').first().textContent())?.trim() ?? '';
+    expect(policyText).toMatch(/[A-Z]{2,}-[A-Z]{2,}-\d{6,}/);
+    await logPolicyNumber(policyText, test.info().title, 'EW Residential').catch(() => {});
   }
 
   async getIssuedPolicyNumber() {
     const policyLabel = this.page.locator('strong', { hasText: 'Policy number' });
     await expect(policyLabel).toBeVisible({ timeout: 20000 });
-    const policyText = (await policyLabel.locator('xpath=following::p[1]').first().textContent())?.trim();
-    expect(policyText ?? '').toMatch(/[A-Z]{2,}-[A-Z]{2,}-\d{6,}/);
-    return policyText as string;
+    const policyText = (await policyLabel.locator('xpath=following::p[1]').first().textContent())?.trim() ?? '';
+    expect(policyText).toMatch(/[A-Z]{2,}-[A-Z]{2,}-\d{6,}/);
+    await logPolicyNumber(policyText, test.info().title, 'EW Residential').catch(() => {});
+    return policyText;
   }
 
   async backToQuoteManager() {

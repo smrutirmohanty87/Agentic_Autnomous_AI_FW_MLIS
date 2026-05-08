@@ -105,57 +105,6 @@ variables:
   SELECTED_TAG: ${{ parameters.tag }}
 
 # ===========================================================================
-# YAML Anchors — shared step blocks (DRY)
-# ===========================================================================
-
-# Reusable: Node install + npm cache + npm ci + Playwright browser install
-.install: &install
-  - task: NodeTool@0
-    displayName: 'Install Node.js $(nodeVersion)'
-    inputs:
-      versionSpec: $(nodeVersion)
-
-  - task: Cache@2
-    displayName: 'Cache npm dependencies'
-    inputs:
-      key: 'npm | "$(Agent.OS)" | package-lock.json'
-      path: '$(System.DefaultWorkingDirectory)/node_modules'
-      restoreKeys: |
-        npm | "$(Agent.OS)"
-
-  - script: npm ci
-    displayName: 'Install dependencies'
-
-  - script: npx playwright install --with-deps $(BROWSER)
-    displayName: 'Install Playwright browser — $(BROWSER)'
-
-# Reusable: environment variable block passed to every test script step
-.env: &env
-  CI: $(CI)
-  TEST_ENV: $(TEST_ENV)
-  # UAT2 credentials
-  MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
-  SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
-  BROKER_USERNAME: $(BROKER_USERNAME)
-  BROKER_PASSWORD: $(BROKER_PASSWORD)
-  SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
-  SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
-  # SIT2 credentials
-  SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
-  SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
-  SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
-  SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
-  SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
-  SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
-  # DURQA credentials
-  DURQA_MLIS_PORTAL_URL: $(DURQA_MLIS_PORTAL_URL)
-  DURQA_SALESFORCE_LIGHTNING_URL: $(DURQA_SALESFORCE_LIGHTNING_URL)
-  DURQA_BROKER_USERNAME: $(DURQA_BROKER_USERNAME)
-  DURQA_BROKER_PASSWORD: $(DURQA_BROKER_PASSWORD)
-  DURQA_SALESFORCE_USERNAME: $(DURQA_SALESFORCE_USERNAME)
-  DURQA_SALESFORCE_PASSWORD: $(DURQA_SALESFORCE_PASSWORD)
-
-# ===========================================================================
 # STAGES
 # ===========================================================================
 stages:
@@ -179,7 +128,24 @@ stages:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 60
         steps:
-          - *install
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browser — $(BROWSER)'
 
           # ----------------------------------------------------------------
           # Tag:  @sanity
@@ -208,7 +174,26 @@ stages:
               --reporter=list,html
             displayName: 'Run Sanity tests —tag @sanity (TC_SAN_001–012)'
             env:
-              <<: *env
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+              DURQA_MLIS_PORTAL_URL: $(DURQA_MLIS_PORTAL_URL)
+              DURQA_SALESFORCE_LIGHTNING_URL: $(DURQA_SALESFORCE_LIGHTNING_URL)
+              DURQA_BROKER_USERNAME: $(DURQA_BROKER_USERNAME)
+              DURQA_BROKER_PASSWORD: $(DURQA_BROKER_PASSWORD)
+              DURQA_SALESFORCE_USERNAME: $(DURQA_SALESFORCE_USERNAME)
+              DURQA_SALESFORCE_PASSWORD: $(DURQA_SALESFORCE_PASSWORD)
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Sanity HTML report'
@@ -249,7 +234,24 @@ stages:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 150
         steps:
-          - *install
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browser — $(BROWSER)'
 
           # ----------------------------------------------------------------
           # Tag:  @regression
@@ -285,7 +287,26 @@ stages:
               --reporter=list,html
             displayName: 'Run Regression tests — tag @regression (TC_REG_001–019)'
             env:
-              <<: *env
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+              DURQA_MLIS_PORTAL_URL: $(DURQA_MLIS_PORTAL_URL)
+              DURQA_SALESFORCE_LIGHTNING_URL: $(DURQA_SALESFORCE_LIGHTNING_URL)
+              DURQA_BROKER_USERNAME: $(DURQA_BROKER_USERNAME)
+              DURQA_BROKER_PASSWORD: $(DURQA_BROKER_PASSWORD)
+              DURQA_SALESFORCE_USERNAME: $(DURQA_SALESFORCE_USERNAME)
+              DURQA_SALESFORCE_PASSWORD: $(DURQA_SALESFORCE_PASSWORD)
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Regression HTML report'
@@ -333,7 +354,24 @@ stages:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 30
         steps:
-          - *install
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browser — $(BROWSER)'
 
           # Tag in spec: @sanity | E2E | BDX | Cancellation | From Inception
           - script: >
@@ -345,7 +383,26 @@ stages:
               --reporter=list,html
             displayName: 'Run TC_BDX_001 — tag @sanity (BDX scope)'
             env:
-              <<: *env
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+              DURQA_MLIS_PORTAL_URL: $(DURQA_MLIS_PORTAL_URL)
+              DURQA_SALESFORCE_LIGHTNING_URL: $(DURQA_SALESFORCE_LIGHTNING_URL)
+              DURQA_BROKER_USERNAME: $(DURQA_BROKER_USERNAME)
+              DURQA_BROKER_PASSWORD: $(DURQA_BROKER_PASSWORD)
+              DURQA_SALESFORCE_USERNAME: $(DURQA_SALESFORCE_USERNAME)
+              DURQA_SALESFORCE_PASSWORD: $(DURQA_SALESFORCE_PASSWORD)
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish TC_BDX_001 report'
@@ -369,7 +426,24 @@ stages:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 60
         steps:
-          - *install
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browser — $(BROWSER)'
 
           # Tags in specs:
           #   TC_BDX_002  @sanity | E2E | BDX | INTER_COMM
@@ -386,7 +460,26 @@ stages:
                 --reporter=list,html
             displayName: 'Run TC_BDX_002/003/004 — tag @sanity (BDX scope)'
             env:
-              <<: *env
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+              DURQA_MLIS_PORTAL_URL: $(DURQA_MLIS_PORTAL_URL)
+              DURQA_SALESFORCE_LIGHTNING_URL: $(DURQA_SALESFORCE_LIGHTNING_URL)
+              DURQA_BROKER_USERNAME: $(DURQA_BROKER_USERNAME)
+              DURQA_BROKER_PASSWORD: $(DURQA_BROKER_PASSWORD)
+              DURQA_SALESFORCE_USERNAME: $(DURQA_SALESFORCE_USERNAME)
+              DURQA_SALESFORCE_PASSWORD: $(DURQA_SALESFORCE_PASSWORD)
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish TC_BDX_002-004 report'
@@ -414,7 +507,24 @@ stages:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 30
         steps:
-          - *install
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browser — $(BROWSER)'
 
           # Tag in spec: @sanity | E2E | BDX | NB_MTA
           - script: >
@@ -426,7 +536,26 @@ stages:
               --reporter=list,html
             displayName: 'Run TC_BDX_005 — tag @sanity (BDX scope)'
             env:
-              <<: *env
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+              DURQA_MLIS_PORTAL_URL: $(DURQA_MLIS_PORTAL_URL)
+              DURQA_SALESFORCE_LIGHTNING_URL: $(DURQA_SALESFORCE_LIGHTNING_URL)
+              DURQA_BROKER_USERNAME: $(DURQA_BROKER_USERNAME)
+              DURQA_BROKER_PASSWORD: $(DURQA_BROKER_PASSWORD)
+              DURQA_SALESFORCE_USERNAME: $(DURQA_SALESFORCE_USERNAME)
+              DURQA_SALESFORCE_PASSWORD: $(DURQA_SALESFORCE_PASSWORD)
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish TC_BDX_005 report'
@@ -450,7 +579,24 @@ stages:
           vmImage: 'ubuntu-latest'
         timeoutInMinutes: 30
         steps:
-          - *install
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm dependencies'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+
+          - script: npm ci
+            displayName: 'Install dependencies'
+
+          - script: npx playwright install --with-deps $(BROWSER)
+            displayName: 'Install Playwright browser — $(BROWSER)'
 
           # Tag in spec: @sanity | E2E | BDX | BDE | Cancel and Reissue | Cancellation
           - script: >
@@ -462,7 +608,26 @@ stages:
               --reporter=list,html
             displayName: 'Run TC_BDX_006 — tag @sanity (BDX scope)'
             env:
-              <<: *env
+              CI: $(CI)
+              TEST_ENV: $(TEST_ENV)
+              MLIS_PORTAL_URL: $(MLIS_PORTAL_URL)
+              SALESFORCE_LIGHTNING_URL: $(SALESFORCE_LIGHTNING_URL)
+              BROKER_USERNAME: $(BROKER_USERNAME)
+              BROKER_PASSWORD: $(BROKER_PASSWORD)
+              SALESFORCE_USERNAME: $(SALESFORCE_USERNAME)
+              SALESFORCE_PASSWORD: $(SALESFORCE_PASSWORD)
+              SIT2_MLIS_PORTAL_URL: $(SIT2_MLIS_PORTAL_URL)
+              SIT2_SALESFORCE_LIGHTNING_URL: $(SIT2_SALESFORCE_LIGHTNING_URL)
+              SIT2_BROKER_USERNAME: $(SIT2_BROKER_USERNAME)
+              SIT2_BROKER_PASSWORD: $(SIT2_BROKER_PASSWORD)
+              SIT2_SALESFORCE_USERNAME: $(SIT2_SALESFORCE_USERNAME)
+              SIT2_SALESFORCE_PASSWORD: $(SIT2_SALESFORCE_PASSWORD)
+              DURQA_MLIS_PORTAL_URL: $(DURQA_MLIS_PORTAL_URL)
+              DURQA_SALESFORCE_LIGHTNING_URL: $(DURQA_SALESFORCE_LIGHTNING_URL)
+              DURQA_BROKER_USERNAME: $(DURQA_BROKER_USERNAME)
+              DURQA_BROKER_PASSWORD: $(DURQA_BROKER_PASSWORD)
+              DURQA_SALESFORCE_USERNAME: $(DURQA_SALESFORCE_USERNAME)
+              DURQA_SALESFORCE_PASSWORD: $(DURQA_SALESFORCE_PASSWORD)
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish TC_BDX_006 report'

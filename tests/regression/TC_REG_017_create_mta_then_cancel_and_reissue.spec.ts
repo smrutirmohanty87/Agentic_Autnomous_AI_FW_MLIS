@@ -101,7 +101,7 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
     await salesforce.openCreateMTADialog();
     await salesforce.fillMTAReasonAndSave('Non Material Amendment');
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
-    await salesforce.editMTAPremium('100');
+    await salesforce.editMTAPremium('1222');
     await salesforce.bindMTA();
 
     // // Re-open the policy record after binding MTA, then run the Cancel and Reissue dialog.
@@ -154,14 +154,7 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
         
             await expect(page.getByRole('heading', { name: /policy issued/i }).first()).toBeVisible({ timeout: 180000 });
         
-            // After Cancel & Re-issue completes, return to the Submission record (test-local tolerant flow).
-            const returnToSubmission = page
-              .getByRole('button', { name: /Return to submission/i })
-              .or(page.getByRole('link', { name: /Return to submission/i }))
-              .first();
-            if (await returnToSubmission.isVisible({ timeout: 15000 }).catch(() => false)) {
-              await returnToSubmission.click();
-            }
-            await page.waitForTimeout(8000);
+            // After Cancel & Re-issue completes, return to the Submission record before continuing.
+            await salesforce.clickReturnToSubmission();
   });
 });

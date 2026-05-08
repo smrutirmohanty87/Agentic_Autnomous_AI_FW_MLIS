@@ -1,4 +1,4 @@
-import { Locator, test } from '@playwright/test';
+import { expect, Locator, test } from '@playwright/test';
 import {
   FinalPolicyDetailsPage,
   LoginPage,
@@ -87,12 +87,12 @@ test.describe('@regression | E2E | MTA', () => {
     await salesforce.openRelatedTab();
     await salesforce.openInsurancePolicyFromRelated(policyNumber);
 
-    // // MTA #1
-    // await salesforce.openCreateMTADialog();
-    // await salesforce.fillMTAReasonAndSave('Non Material Amendment');
-    // await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
-    // await salesforce.editMTAPremium(mtaPremium1);
-    // await salesforce.bindMTA();
+    // MTA #1
+    await salesforce.openCreateMTADialog();
+    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
+    await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
+    await salesforce.editMTAPremium(mtaPremium1);
+    await salesforce.bindMTA();
 
     // // Re-open Insurance Policy record for MTA #2
     // await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
@@ -115,6 +115,16 @@ test.describe('@regression | E2E | MTA', () => {
     
         // Summary step — review and proceed to order
         await salesforce.completeReissueSummary();
+
+        // For this test only: if Summary is still shown after first click, wait and retry once.
+        const reissueSummaryHeading = page.getByRole('heading', { name: /summary/i }).first();
+        const reissueProceedToOrder = page.getByRole('button', { name: /proceed to order/i }).first();
+        if (await reissueSummaryHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
+          await page.waitForTimeout(4000);
+          if (await reissueSummaryHeading.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await reissueProceedToOrder.click();
+          }
+        }
     
         // Try to complete ordering (if required) and capture the reissued policy number.
         const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -134,7 +144,7 @@ test.describe('@regression | E2E | MTA', () => {
           await orderNow.click();
         }
     
-        //await expect(page.getByRole('heading', { name: /policy issued/i }).first()).toBeVisible({ timeout: 180000 });
+        await expect(page.getByRole('heading', { name: /policy issued/i }).first()).toBeVisible({ timeout: 180000 });
     
         // After Cancel & Re-issue completes, return to the Submission record before continuing.
         await salesforce.clickReturnToSubmission();

@@ -43,7 +43,7 @@ test.describe('@sanity | E2E | BDX | BDE | Cancel and Reissue | Cancellation', (
 
     await quoteManager.startResidentialEnglandWalesQuote();
     await productSelection.expectLoaded();
-    await productSelection.fillCaseReferenceAndLimit(caseRef, '500000');
+    await productSelection.fillCaseReferenceAndLimit(caseRef, '192345');
     await productSelection.selectProductsByIndex([1]);
     await productSelection.proceed();
 
@@ -52,14 +52,50 @@ test.describe('@sanity | E2E | BDX | BDE | Cancel and Reissue | Cancellation', (
     await statements.proceed();
 
     await quotes.expectLoaded();
-    await quotes.selectFirstQuote();
+    const axaInsurerLabel = page
+      .locator('p[title="AXA XL Insurance Company UK Limited"] strong, strong')
+      .filter({ hasText: /^AXA XL Insurance Company UK Limited$/i })
+      .first();
+
+    const scrollQuoteContainers = async () => {
+      await page.evaluate(() => {
+        window.scrollBy(0, 900);
+
+        const elements = Array.from(document.querySelectorAll<HTMLElement>('*'));
+        for (const el of elements) {
+          const style = window.getComputedStyle(el);
+          const overflowY = style.overflowY;
+          if (overflowY !== 'auto' && overflowY !== 'scroll') continue;
+          if (el.scrollHeight <= el.clientHeight) continue;
+          el.scrollTop += 900;
+        }
+      });
+    };
+
+    let axaFound = false;
+    for (let i = 0; i < 30; i += 1) {
+      if (await axaInsurerLabel.isVisible({ timeout: 600 }).catch(() => false)) {
+        axaFound = true;
+        break;
+      }
+      await page.mouse.wheel(0, 900);
+      await scrollQuoteContainers();
+      await page.waitForTimeout(250);
+    }
+
+    expect(axaFound).toBeTruthy();
+    await axaInsurerLabel.scrollIntoViewIfNeeded();
+
+    const axaQuoteCard = axaInsurerLabel.locator('xpath=ancestor::*[.//button[normalize-space()="Select quote"]][1]');
+    await expect(axaQuoteCard).toBeVisible({ timeout: 15000 });
+    await axaQuoteCard.getByRole('button', { name: /^Select quote$/i }).click();
 
     await finalDetails.expectLoaded();
     await finalDetails.fillRequiredDetails();
     await finalDetails.proceed();
 
     await summary.expectLoaded();
-    await summary.expectSummaryData(caseRef);
+    await summary.expectSummaryData(caseRef, { limitOfIndemnity: '192345' });
     await summary.proceedToOrder();
     await orderDialog.selectTodayAndOrder();
 
@@ -77,8 +113,21 @@ test.describe('@sanity | E2E | BDX | BDE | Cancel and Reissue | Cancellation', (
     const sfCreds = getSalesforceCredentials();
     await salesforce.login(sfCreds.username, sfCreds.password);
 
-    // Global Search → open the exact policy number from the results grid
-    await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
+    // Global Search → open the exact policy number from the results grid.
+    // Test-local retry for transient Salesforce search UI loading issues.
+    let openedFromSearch = false;
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
+        openedFromSearch = true;
+        break;
+      } catch (error) {
+        if (attempt === 2) throw error;
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(4000);
+      }
+    }
+    expect(openedFromSearch).toBeTruthy();
 
     // Navigate to Related tab → open Insurance Policy record
     await salesforce.openRelatedTab();
@@ -98,6 +147,16 @@ test.describe('@sanity | E2E | BDX | BDE | Cancel and Reissue | Cancellation', (
 
     // Summary step — review and proceed to order
     await salesforce.completeReissueSummary();
+
+    // For this test only: if Summary is still shown after first click, wait and retry once.
+    const reissueSummaryHeading = page.getByRole('heading', { name: /summary/i }).first();
+    const reissueProceedToOrder = page.getByRole('button', { name: /proceed to order/i }).first();
+    if (await reissueSummaryHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await page.waitForTimeout(4000);
+      if (await reissueSummaryHeading.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await reissueProceedToOrder.click();
+      }
+    }
 
     // Try to complete ordering (if required) and capture the reissued policy number.
     const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -164,15 +223,15 @@ test.describe('@sanity | E2E | BDX | BDE | Cancel and Reissue | Cancellation', (
       await salesforce.openCancelPolicyWizard();
 
       // Fill Cancel Policy Step 1 — category, instigated by, reason, notes
-      await salesforce.completeCancelFromInceptionStep1(
+      await salesforce.completeCancelFromInceptionStep3(
         `Policy cancellation from inception - full premium return test (${policyNumber})`,
       );
 
-      // Calculate Tax -> OK -> Next (opt-in flow for this test only)
-      await salesforce.completePremiumStepCalculateTaxOkAndNext();
+      // Enter cancellation premium and calculate tax
+      await salesforce.completePremiumStepWithTaxCalculation('-87.92');
 
-      // Wait for cancellation status/page
-      // await salesforce.submitCancellation();
+      // Submit cancellation and wait for cancellation status/page
+      await salesforce.submitCancellation();
     }
 
     await salesforce.expectPolicyStatusCancelled();

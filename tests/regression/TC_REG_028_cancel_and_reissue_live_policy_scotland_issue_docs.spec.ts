@@ -105,6 +105,16 @@ test.describe('@regression | E2E | Cancellation | Cancel and Reissue | Scotland'
     // Summary step - review and proceed to order
     await salesforce.completeReissueSummary();
 
+    // For this test only: if Summary is still shown after first click, wait and retry once.
+    const reissueSummaryHeading = page.getByRole('heading', { name: /summary/i }).first();
+    const reissueProceedToOrder = page.getByRole('button', { name: /proceed to order/i }).first();
+    if (await reissueSummaryHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await page.waitForTimeout(4000);
+      if (await reissueSummaryHeading.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await reissueProceedToOrder.click();
+      }
+    }
+
     // Assert issue docs question after proceeding to order.
     await expect(page.getByText(/Do you want to issue docs\?/i).first()).toBeVisible({ timeout: 60000 });
 
