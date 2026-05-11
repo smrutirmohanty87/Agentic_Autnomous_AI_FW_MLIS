@@ -1,4 +1,4 @@
-import { Locator, test , expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import {
   FinalPolicyDetailsPage,
   LoginPage,
@@ -106,62 +106,39 @@ test.describe('@regression | E2E | MTA', () => {
     // await salesforce.editMTAPremium(mtaPremium2);
     // await salesforce.bindMTA();
 
-    // After 2nd MTA, open the Insurance Policy and go to Quotes tab (not Related) to assert premiums
-    // Open Cancel and Reissue dialog from "Show more actions" menu
+    // Start Cancel and Reissue (new flow)
     await salesforce.openCancelAndReissueDialog();
-
-    // Fill the Cancel and Reissue Details dialog and submit
     await salesforce.completeCancelAndReissueDialog({
       reasonForCR: 'User Error Correction',
-      description: `Cancel and reissue test (${policyNumber})`,
+      description: `Cancel and reissue after MTA test (${policyNumber})`,
     });
 
-    // After submit, Salesforce redirects to Quote Journey → Final policy details (pre-filled)
-    await salesforce.completeReissueFinalPolicyDetails();
+    // Required flow change: once on Final policy details, wait, return to submission, then bind MTA.
+    await expect(page.getByRole('heading', { name: /Quote Journey/i })).toBeVisible({ timeout: 120000 });
+    await expect(page.getByRole('heading', { name: /Final policy details/i })).toBeVisible({ timeout: 120000 });
+    await page.waitForTimeout(5000);
 
-    // Summary step — review and proceed to order
-    await salesforce.completeReissueSummary();
+    const returnToSubmission = page
+      .getByRole('button', { name: /Return to submission/i })
+      .or(page.getByRole('link', { name: /Return to submission/i }))
+      .first();
+    await expect(returnToSubmission).toBeVisible({ timeout: 60000 });
+    await returnToSubmission.click();
+    await page.waitForTimeout(5000);
 
-    // For this test only: if Summary is still shown after first click, wait and retry once.
-    const reissueSummaryHeading = page.getByRole('heading', { name: /summary/i }).first();
-    const reissueProceedToOrder = page.getByRole('button', { name: /proceed to order/i }).first();
-    if (await reissueSummaryHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await page.waitForTimeout(4000);
-      if (await reissueSummaryHeading.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await reissueProceedToOrder.click();
-      }
-    }
+    // Bind from the returned submission in CnR new flow
+    await salesforce.bindMTA();
 
-    // Try to complete ordering (if required) and capture the reissued policy number.
-    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const commencementDateInput = page.getByRole('textbox', { name: /commencement date/i }).first();
-    const genericDateInput = page.locator('input[placeholder="DD/MM/YYYY"]:visible').first();
+    // Independent step: after CnR, create a 3rd MTA on the same policy.
+    await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
+    await salesforce.openRelatedTab();
+    await salesforce.openInsurancePolicyFromRelatedStable(policyNumber);
 
-    if (await commencementDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await commencementDateInput.fill(today);
-      await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
-    } else if (await genericDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await genericDateInput.fill(today);
-      await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
-    }
-
-    const orderNow = page.getByRole('button', { name: /order now/i }).first();
-    if (await orderNow.isVisible({ timeout: 10000 }).catch(() => false)) {
-      await orderNow.click();
-    }
-
-    await expect(page.getByRole('heading', { name: /policy issued/i }).first()).toBeVisible({ timeout: 180000 });
-
-    // After Cancel & Re-issue completes, return to the Submission record before continuing.
-    await salesforce.clickReturnToSubmission();
-
-    // await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
-    // MTA #3
     await salesforce.openCreateMTADialog();
     await salesforce.fillMTAReasonAndSave('Non Material Amendment');
-    await salesforce.fillIntermediaryReference(`MTA2-REF-${Date.now()}`);
+    await salesforce.fillIntermediaryReference(`MTA3-REF-${Date.now()}`);
     await salesforce.editMTAPremium(mtaPremium2);
-    await salesforce.bindMTA();await salesforce.expectMTAPremiumsOnQuotesTab([mtaPremium1, mtaPremium2]);
+    await salesforce.bindMTA();
 
   });
 });

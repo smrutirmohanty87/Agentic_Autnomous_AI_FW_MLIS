@@ -105,51 +105,27 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue | Cancellation', () 
       description: `Cancel and reissue after MTA test (${policyNumber})`,
     });
 
-    // After submit, Salesforce redirects to Quote Journey → Final policy details (pre-filled)
-    await salesforce.completeReissueFinalPolicyDetails();
+    // New CnR flow: on Final policy details, return to submission, then bind MTA.
+    await expect(page.getByRole('heading', { name: /Quote Journey/i })).toBeVisible({ timeout: 120000 });
+    await expect(page.getByRole('heading', { name: /Final policy details/i })).toBeVisible({ timeout: 120000 });
+    await page.waitForTimeout(5000);
 
-    // Summary step — review and proceed to order
-    await salesforce.completeReissueSummary();
+    const returnToSubmission = page
+      .getByRole('button', { name: /Return to submission/i })
+      .or(page.getByRole('link', { name: /Return to submission/i }))
+      .first();
 
-    // For this test only: if Summary is still shown after first click, wait and retry once.
-    const reissueSummaryHeading = page.getByRole('heading', { name: /summary/i }).first();
-    const reissueProceedToOrder = page.getByRole('button', { name: /proceed to order/i }).first();
-    if (await reissueSummaryHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await page.waitForTimeout(4000);
-      if (await reissueSummaryHeading.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await reissueProceedToOrder.click();
-      }
-    }
+    await expect(returnToSubmission).toBeVisible({ timeout: 60000 });
+    await returnToSubmission.click();
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(5000);
 
-    // Try to complete ordering (if required) and capture the reissued policy number.
-    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const commencementDateInput = page.getByRole('textbox', { name: /commencement date/i }).first();
-    const genericDateInput = page.locator('input[placeholder="DD/MM/YYYY"]:visible').first();
+    await salesforce.bindMTA();
 
-    if (await commencementDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await commencementDateInput.fill(today);
-      await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
-    } else if (await genericDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await genericDateInput.fill(today);
-      await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
-    }
-
-    const orderNow = page.getByRole('button', { name: /order now/i }).first();
-    if (await orderNow.isVisible({ timeout: 10000 }).catch(() => false)) {
-      await orderNow.click();
-    }
-
-    await expect(page.getByRole('heading', { name: /policy issued/i }).first()).toBeVisible({ timeout: 180000 });
-
-    // After Cancel & Re-issue completes, return to the Submission record before continuing.
-    await salesforce.clickReturnToSubmission();
-
-    // Navigate to Related tab → open Insurance Policy record
-    await salesforce.openRelatedTab();
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await salesforce.openInsurancePolicyFromRelated(policyNumber);
+    // // Re-open the policy from global search to avoid stale record context.
+    // await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
+    // await salesforce.openRelatedTab();
+    // await salesforce.openInsurancePolicyFromRelatedStable(policyNumber);
 
     // Step 10: Open Cancel Policy wizard from "Show more actions" menu
     await salesforce.openCancelPolicyWizard();
@@ -158,7 +134,7 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue | Cancellation', () 
     await salesforce.completeCancelFromInceptionStep1(
       `Policy cancellation from inception - full premium return test (${policyNumber})`,
     );
-// Step 12: Calculate Tax -> OK -> Next (opt-in flow for this test only)
+  // Step 12: Calculate Tax -> OK -> Next (opt-in flow for this test only)
     await salesforce.completePremiumStepCalculateTaxOkAndNext();
 
     // Step 13: Click Next and wait for cancellation status/page

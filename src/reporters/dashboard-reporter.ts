@@ -31,6 +31,7 @@ type RunData = {
   runId: string;
   createdAtIso: string;
   createdAtLabel: string;
+  environment: string;
   status: FullResult['status'];
   totalDurationMs: number;
   projects: string[];
@@ -318,6 +319,7 @@ function buildHtml(runs: RunData[]) {
       <div class="controls">
         <span class="muted" style="font-size:12px;">Run</span>
         <select id="runSelect" aria-label="Select a test run"></select>
+        <span class="pill" id="envPill"><span class="dot interrupted"></span><span id="envLabel">Env: -</span></span>
       </div>
     </header>
 
@@ -617,11 +619,14 @@ function buildHtml(runs: RunData[]) {
     }
 
     function render(run) {
+      const environment = String(run.environment || 'UNKNOWN').toUpperCase();
+
       $('totalTests').textContent = run.summary.total;
       $('passedTests').textContent = run.summary.passed;
       $('failedTests').textContent = run.summary.failed;
       $('totalDuration').textContent = humanDuration(run.totalDurationMs);
-      $('projectsMeta').textContent = 'Projects: ' + run.projects.join(', ');
+      $('envLabel').textContent = 'Env: ' + environment;
+      $('projectsMeta').textContent = 'Environment: ' + environment + ' • Projects: ' + run.projects.join(', ');
 
       const sanity = calcGroupSummary(run, 'sanity');
       const regression = calcGroupSummary(run, 'regression');
@@ -649,8 +654,8 @@ function buildHtml(runs: RunData[]) {
       setGroupCard('regression', 'regressionCard', 'regressionStatus', 'regressionMeta', regression);
 
       // Pie meta
-      if (hasSanity) $('sanityPieMeta').textContent = run.createdAtLabel + ' • ' + sanityCounts.total + ' tests • Status: ' + run.status;
-      if (hasRegression) $('regressionPieMeta').textContent = run.createdAtLabel + ' • ' + regressionCounts.total + ' tests • Status: ' + run.status;
+      if (hasSanity) $('sanityPieMeta').textContent = run.createdAtLabel + ' • ' + environment + ' • ' + sanityCounts.total + ' tests • Status: ' + run.status;
+      if (hasRegression) $('regressionPieMeta').textContent = run.createdAtLabel + ' • ' + environment + ' • ' + regressionCounts.total + ' tests • Status: ' + run.status;
 
       if (hasSanity) {
         drawDoughnut(
@@ -715,6 +720,7 @@ function buildHtml(runs: RunData[]) {
       const opt = document.createElement('option');
       opt.value = run.runId;
       opt.textContent = run.createdAtLabel + '  •  ' + (run.summary.failed ? 'FAILED' : 'PASSED') +
+        '  •  ' + String(run.environment || 'UNKNOWN').toUpperCase() +
         '  •  ' + run.summary.total + ' tests  •  ' + humanDuration(run.totalDurationMs);
       runSelect.appendChild(opt);
     }
@@ -742,6 +748,7 @@ class DashboardReporter implements Reporter {
   private runStartedAt = new Date();
   private runId = toRunId(this.runStartedAt);
   private runLabel = formatLocalLabel(this.runStartedAt);
+  private runEnvironment = 'SIT2';
   private testEntries: TestEntry[] = [];
   private projectsUsed = new Set<string>();
 
@@ -756,6 +763,8 @@ class DashboardReporter implements Reporter {
     this.runStartedAt = new Date();
     this.runId = toRunId(this.runStartedAt);
     this.runLabel = formatLocalLabel(this.runStartedAt);
+    const envValue = (process.env.TEST_ENV ?? '').trim();
+    this.runEnvironment = envValue ? envValue.toUpperCase() : 'SIT2';
     this.testEntries = [];
     this.projectsUsed = new Set<string>();
   }
@@ -798,6 +807,7 @@ class DashboardReporter implements Reporter {
       runId: this.runId,
       createdAtIso: this.runStartedAt.toISOString(),
       createdAtLabel: this.runLabel,
+      environment: this.runEnvironment,
       status: result.status,
       totalDurationMs: durationMs,
       projects: Array.from(this.projectsUsed).sort(),
