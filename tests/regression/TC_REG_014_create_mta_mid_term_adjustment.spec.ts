@@ -93,7 +93,7 @@ test.describe('@regression | E2E | MTA', () => {
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
 
     // Step 3: Edit MTA Premium — enter value and press OK
-    await salesforce.editMTAPremium('1111');
+    await salesforce.editMTAPremium('111');
 
     // Step 4: Bind MTA — insert today's date and click Bind
     await salesforce.bindMTA();
