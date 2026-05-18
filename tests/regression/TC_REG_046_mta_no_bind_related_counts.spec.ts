@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   FinalPolicyDetailsPage,
   LoginPage,
@@ -14,12 +14,12 @@ import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
 
-test.describe('@regression | E2E | MTA', () => {
-  test('TC_REG_014 | Create MTA (Mid-Term Adjustment) on a live policy', async ({ page }) => {
+test.describe('@regression | E2E | MTA | No Bind | Related Counts', () => {
+  test('TC_REG_046 | Create MTA without bind, assert Insurance Policies (0) and Quotes (1), open Quote', async ({ page }) => {
     test.setTimeout(900000);
     test.slow();
 
-    const caseRef = `E2E-MTA-${Date.now()}`;
+    const caseRef = `E2E-MTA-NOBIND-${Date.now()}`;
 
     const brokerLogin = new LoginPage(page);
     const quoteManager = new QuoteManagerPage(page);
@@ -34,7 +34,7 @@ test.describe('@regression | E2E | MTA', () => {
     const brokerPortal = new BrokerPortalPage(page);
     const salesforce = new SalesforcePortalPage(page);
 
-    // Create a fresh policy in Broker Portal
+    // Create a fresh live policy in Broker Portal.
     await brokerLogin.goto();
     const brokerCreds = getBrokerCredentials();
     await brokerLogin.login(brokerCreds.username, brokerCreds.password);
@@ -67,40 +67,57 @@ test.describe('@regression | E2E | MTA', () => {
     const policyNumber = await policyIssued.getIssuedPolicyNumber();
     await policyIssued.backToQuoteManager();
 
-    // Verify policy is live
+    // Verify policy is live.
     await brokerPortal.expectQuoteManagerLoaded();
     await brokerPortal.searchPolicy(policyNumber);
     await brokerPortal.expectPolicyStatus(policyNumber, 'Live');
 
-    // Login to Salesforce Portal
+    // Open policy in Salesforce and start MTA.
     await salesforce.goto();
     const sfCreds = getSalesforceCredentials();
     await salesforce.login(sfCreds.username, sfCreds.password);
 
-    // Step 5-6: Global Search → open the exact policy number from the results grid
     await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
-
-
-    // Navigate to Related tab → open Insurance Policy record
     await salesforce.openRelatedTab();
-    await salesforce.openInsurancePolicyFromRelated(policyNumber);
+    await salesforce.openInsurancePolicyFromRelatedStable(policyNumber);
 
-    // Step 1: Click Create MTA and fill MTA Reason dropdown, then Save
     await salesforce.openCreateMTADialog();
     await salesforce.fillMTAReasonAndSave(
-      'Non Material Amendment',
-      `MTA Description - mandatory field update for ${policyNumber}`,
+      'Non Material Change',
+      `MTA Description - no bind related counts for ${policyNumber}`,
     );
-
-    // Step 2: Fill Intermediary Reference (inline-editable pencil icon field)
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
+    await salesforce.editMTAPremium('125');
 
-    // Step 3: Edit MTA Premium — enter value and press OK
-    await salesforce.editMTAPremium('111');
+    // Do NOT bind MTA. Go to Related tab, then scroll to Insurance Policies and Quotes.
+    await salesforce.openRelatedTab();
+    await page.mouse.wheel(0, 1200);
 
-    // Step 4: Bind MTA — insert today's date and click Bind
-    await salesforce.bindMTA();
-    // await salesforce.searchAndOpenQuotedFromGlobalSearchGrid(policyNumber);
-    // await salesforce.openQuotesTab1();
+    const insurancePoliciesCountLink = page
+      .getByRole('link', { name: /Insurance Policies\s*\(\s*0\s*\)/i })
+      .or(page.locator('a:visible').filter({ hasText: /Insurance Policies\s*\(\s*0\s*\)/i }))
+      .first();
+    await insurancePoliciesCountLink.scrollIntoViewIfNeeded();
+    await expect(insurancePoliciesCountLink).toBeVisible({ timeout: 120000 });
+
+    const quotesCountLink = page
+      .getByRole('link', { name: /Quotes\s*\(\s*1\s*\)/i })
+      .or(page.locator('a:visible').filter({ hasText: /Quotes\s*\(\s*1\s*\)/i }))
+      .first();
+
+    await page.mouse.wheel(0, 1200);
+    await quotesCountLink.scrollIntoViewIfNeeded();
+    await expect(quotesCountLink).toBeVisible({ timeout: 120000 });
+    await quotesCountLink.click();
+
+    // Open first quote row and end flow.
+    const firstQuoteLink = page
+      .locator('table:visible tbody tr a:visible')
+      .filter({ hasText: /\S+/ })
+      .first();
+    await expect(firstQuoteLink).toBeVisible({ timeout: 60000 });
+    await firstQuoteLink.click();
+
+    await expect(page.getByRole('heading', { name: /Quote|Quote Journey/i }).first()).toBeVisible({ timeout: 60000 });
   });
 });

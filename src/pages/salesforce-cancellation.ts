@@ -1087,11 +1087,26 @@ export class SalesforcePortalPage {
   }
 
   /**
-   * Step 1: Fill the Create MTA dialog — select MTA Reason and click Save.
+   * Step 1: Fill the Create MTA dialog — select MTA Reason,
+   * optionally fill MTA Description, then submit.
    */
-  async fillMTAReasonAndSave(mtaReason: string) {
+  async fillMTAReasonAndSave(mtaReason: string, mtaDescription?: string) {
     // Select MTA Reason from the dropdown (Lightning combobox)
     await this.selectLightningCombobox('MTA Reason', mtaReason);
+
+    if (mtaDescription) {
+      const descriptionField = this.page
+        .getByRole('textbox', { name: /MTA Description/i })
+        .or(this.page.getByLabel(/MTA Description/i).first())
+        .or(this.page.locator('textarea[aria-label*="MTA Description" i]:visible').first())
+        .first();
+
+      if (await descriptionField.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await descriptionField.click();
+        await descriptionField.fill(mtaDescription);
+        await this.waitForLightningIdle();
+      }
+    }
 
     // Click Submit on the flow screen
     const submitButton = this.page.getByRole('button', { name: /Submit/i }).first();
@@ -1210,7 +1225,10 @@ export class SalesforcePortalPage {
     }
 
     // Click the Bind MTA button
-    const bindMTAButton = this.page.getByRole('button', { name: /Bind MTA/i }).first();
+    const bindMTAButton = this.page
+      .getByRole('button', { name: /Bind MTA/i })
+      .or(this.page.getByRole('button', { name: /^Bind$/i }))
+      .first();
     await expect(bindMTAButton).toBeVisible({ timeout: 30000 });
     await bindMTAButton.click();
     await this.waitForLightningIdle();
