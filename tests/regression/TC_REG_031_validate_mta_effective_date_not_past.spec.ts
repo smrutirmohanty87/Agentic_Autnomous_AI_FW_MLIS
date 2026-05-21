@@ -112,7 +112,7 @@ test.describe('@regression | E2E | MTA', () => {
 
     // Start MTA flow.
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
+    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
     await salesforce.editMTAPremium('100');
 

@@ -150,14 +150,14 @@ test.describe('@regression | E2E | MTA | Commercial', () => {
 
     // MTA #1
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
+    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
     await salesforce.fillIntermediaryReference(`MTA1-REF-${Date.now()}`);
     await salesforce.editMTAPremium(mtaPremium1);
     await salesforce.bindMTA(mta1EffectiveGb);
 
     // MTA #2
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Limit Increase', 'MTA Description - mandatory field update');
+    await salesforce.fillMTAReasonAndSave('Limit Increase');
     await salesforce.fillIntermediaryReference(`MTA2-REF-${Date.now()}`);
     await salesforce.editMTAPremium(mtaPremium2);
 

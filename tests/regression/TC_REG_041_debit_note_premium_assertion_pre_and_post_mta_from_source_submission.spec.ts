@@ -154,7 +154,7 @@ test.describe('@regression | E2E | Notes & Attachments | MTA | Source Submission
     await salesforce.openInsurancePolicyFromRelatedStable(policyNumber);
 
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
+    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
     await salesforce.editMTAPremium(mtaPremium);
     await salesforce.bindMTA();
