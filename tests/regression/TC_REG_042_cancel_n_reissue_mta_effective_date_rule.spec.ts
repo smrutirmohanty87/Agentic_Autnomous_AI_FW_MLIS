@@ -183,7 +183,7 @@ test.describe('@regression | E2E | Cancel and Reissue | MTA', () => {
 
     // Start MTA after CnR.
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
+    await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
     await salesforce.editMTAPremium('100');
 

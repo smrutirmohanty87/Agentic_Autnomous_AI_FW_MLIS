@@ -266,5 +266,37 @@ test.describe('@regression | E2E | MTA | Clear Baseline', () => {
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
     await salesforce.editMTAPremium('125');
     await salesforce.bindMTA();
+
+    // Wait for policy update and assert top-left Risk ID is shown in expected Salesforce format.
+    const riskIdPattern = /\bDAU\/\d{8}\/[A-Z]{4}\/\d{2}\/\d{2}\b/;
+    const highlightsTopLeft = page.locator(
+      '.slds-page-header, .forceHighlightsPanel, [data-aura-class*="forceHighlightsPanel"]',
+    ).first();
+
+    await expect
+      .poll(async () => {
+        await page.waitForLoadState('domcontentloaded');
+
+        const topLeftText = await highlightsTopLeft.innerText().catch(() => '');
+        if (riskIdPattern.test(topLeftText)) {
+          return topLeftText.match(riskIdPattern)?.[0] ?? '';
+        }
+
+        const bodyText = await page.locator('body').innerText();
+        return bodyText.match(riskIdPattern)?.[0] ?? '';
+      }, { timeout: 180000, intervals: [2000, 5000] })
+      .toMatch(riskIdPattern);
+
+    const finalTopLeftText = await highlightsTopLeft.innerText().catch(() => '');
+    const finalBodyText = await page.locator('body').innerText();
+    const generatedRiskId =
+      finalTopLeftText.match(riskIdPattern)?.[0]
+      ?? finalBodyText.match(riskIdPattern)?.[0]
+      ?? '';
+
+    expect(
+      generatedRiskId,
+      'Expected Risk ID in format DAU/########/AAAA/##/## after Bind MTA (top-left highlights).',
+    ).toMatch(riskIdPattern);
   });
 });

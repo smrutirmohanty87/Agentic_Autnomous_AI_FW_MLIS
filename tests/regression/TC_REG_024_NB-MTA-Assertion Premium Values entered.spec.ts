@@ -87,7 +87,7 @@ test.describe('@regression | E2E | MTA', () => {
 
     // Step 1: Click Create MTA and fill MTA Reason dropdown, then Save
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
+    await salesforce.fillMTAReasonAndSave('Exposure/Limit Changes', 'MTA Description - mandatory field update');
 
     // Step 2: Fill Intermediary Reference (inline-editable pencil icon field)
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);

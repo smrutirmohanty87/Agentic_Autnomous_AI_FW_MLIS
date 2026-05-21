@@ -96,7 +96,7 @@ test.describe('@regression | E2E | MTA | Stage Change', () => {
 
     // Create MTA and fill intermediary reference.
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
+    await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
 
     // Change Stage -> Declined -> Save (test-local flow).
