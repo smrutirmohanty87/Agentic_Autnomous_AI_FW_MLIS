@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 import {
   FinalPolicyDetailsPage,
   LoginPage,
@@ -14,12 +14,48 @@ import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
 
-test.describe('@regression | E2E | MTA', () => {
-  test('TC_REG_014 | Create MTA (Mid-Term Adjustment) on a live policy', async ({ page }) => {
+async function verifyEditTermsDiscountAndUpdatePremiumOrClose(page: Page) {
+  const editTermsButton = page
+    .getByRole('button', { name: /Edit Terms/i })
+    .or(page.getByRole('link', { name: /Edit Terms/i }))
+    .first();
+
+  await expect(editTermsButton).toBeVisible({ timeout: 60000 });
+  await editTermsButton.click();
+
+  const discountField = page
+    .getByRole('spinbutton', { name: /Discount/i })
+    .or(page.getByRole('textbox', { name: /Discount/i }))
+    .or(page.locator('input[aria-label*="Discount" i]:visible').first())
+    .first();
+
+  const updatePremiumButton = page.getByRole('button', { name: /Update Premium/i }).first();
+
+  const hasDiscount = await discountField.isVisible({ timeout: 7000 }).catch(() => false);
+  const hasUpdatePremium = await updatePremiumButton.isVisible({ timeout: 7000 }).catch(() => false);
+
+  if (hasDiscount && hasUpdatePremium) {
+    await expect(discountField).toBeVisible({ timeout: 10000 });
+    await expect(updatePremiumButton).toBeVisible({ timeout: 10000 });
+  }
+
+  const closeButton = page
+    .locator('[role="dialog"] button:has-text("Close"), [role="dialog"] button[title*="Close" i], button:has-text("Close")')
+    .first();
+
+  if (await closeButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+    await closeButton.click();
+  } else {
+    await page.keyboard.press('Escape').catch(() => undefined);
+  }
+}
+
+test.describe('@regression | E2E | NB-MTA | Edit Terms', () => {
+  test('TC_REG_048 | NB-MTA validate Edit Terms Discount + Update Premium fallback and complete bind', async ({ page }) => {
     test.setTimeout(900000);
     test.slow();
 
-    const caseRef = `E2E-MTA-${Date.now()}`;
+    const caseRef = `E2E-NB-MTA-ET-${Date.now()}`;
 
     const brokerLogin = new LoginPage(page);
     const quoteManager = new QuoteManagerPage(page);
@@ -34,7 +70,7 @@ test.describe('@regression | E2E | MTA', () => {
     const brokerPortal = new BrokerPortalPage(page);
     const salesforce = new SalesforcePortalPage(page);
 
-    // Create a fresh policy in Broker Portal
+    // Create NB policy in Broker Portal.
     await brokerLogin.goto();
     const brokerCreds = getBrokerCredentials();
     await brokerLogin.login(brokerCreds.username, brokerCreds.password);
@@ -67,38 +103,34 @@ test.describe('@regression | E2E | MTA', () => {
     const policyNumber = await policyIssued.getIssuedPolicyNumber();
     await policyIssued.backToQuoteManager();
 
-    // Verify policy is live
+    // Verify policy is live before MTA.
     await brokerPortal.expectQuoteManagerLoaded();
     await brokerPortal.searchPolicy(policyNumber);
     await brokerPortal.expectPolicyStatus(policyNumber, 'Live');
 
-    // Login to Salesforce Portal
+    // Open policy in Salesforce.
     await salesforce.goto();
     const sfCreds = getSalesforceCredentials();
     await salesforce.login(sfCreds.username, sfCreds.password);
-
-    // Step 5-6: Global Search → open the exact policy number from the results grid
     await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
-
-
-    // Navigate to Related tab → open Insurance Policy record
     await salesforce.openRelatedTab();
-    await salesforce.openInsurancePolicyFromRelated(policyNumber);
+    await salesforce.openInsurancePolicyFromRelatedStable(policyNumber);
 
-    // Step 1: Click Create MTA and fill MTA Reason dropdown, then Save
+    // Create MTA and fill mandatory reason + description.
     await salesforce.openCreateMTADialog();
     await salesforce.fillMTAReasonAndSave(
       'Exposure/Limit Changes',
-      `MTA Description - mandatory field update for ${policyNumber}`,
+      `MTA Description - edit terms check for ${policyNumber}`,
     );
 
-    // Step 2: Fill Intermediary Reference (inline-editable pencil icon field)
+    // Condition: open Quotes tab -> click Edit Terms -> assert Discount and Update Premium if present;
+    // otherwise close dialog and continue the MTA flow.
+    await salesforce.openQuotesTab1();
+    await verifyEditTermsDiscountAndUpdatePremiumOrClose(page);
+    await salesforce.openDetailsTab();
+
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
-
-    // Step 3: Edit MTA Premium — enter value and press OK
-    await salesforce.editMTAPremium('111');
-
-    // Step 4: Bind MTA — insert today's date and click Bind
+    await salesforce.editMTAPremium('100');
     await salesforce.bindMTA();
 
     // Wait for policy update and assert top-left Risk ID is shown in expected Salesforce format.

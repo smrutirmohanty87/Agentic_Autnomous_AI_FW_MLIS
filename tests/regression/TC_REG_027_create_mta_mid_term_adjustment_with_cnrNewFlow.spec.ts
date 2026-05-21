@@ -86,7 +86,7 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
 
     // Create MTA
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
+    await salesforce.fillMTAReasonAndSave('Exposure/Limit Changes', 'MTA Description - mandatory field update');
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
     await salesforce.editMTAPremium('100');
     await salesforce.bindMTA();

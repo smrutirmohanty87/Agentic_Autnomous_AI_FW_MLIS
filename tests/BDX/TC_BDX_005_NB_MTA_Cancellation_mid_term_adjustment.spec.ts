@@ -86,7 +86,7 @@ test.describe('@sanity | E2E | BDX | NB_MTA', () => {
 
     // Create MTA and save reason
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Limit Increase');
+    await salesforce.fillMTAReasonAndSave('Limit Increase', 'MTA Description - mandatory field update');
 
     // Fill Intermediary Reference (inline-editable pencil icon field)
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);

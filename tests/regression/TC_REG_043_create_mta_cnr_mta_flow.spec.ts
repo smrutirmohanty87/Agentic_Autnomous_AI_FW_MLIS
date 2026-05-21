@@ -159,7 +159,7 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
     // MTA #1
     logStep('MTA1-01', 'Open Create MTA dialog');
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
+    await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
 
     logStep('MTA1-02', 'Set Status Reason to Internal referral before intermediary reference');
     await setStatusReasonInternalReferral(page);
@@ -210,7 +210,7 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
     // await salesforce.openInsurancePolicyFromRelatedStable(policyNumber);
 
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
+    await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
 
     logStep('MTA2-02', 'Set Status Reason to Internal referral before intermediary reference');
     await setStatusReasonInternalReferral(page);

@@ -85,14 +85,14 @@ test.describe('@regression | E2E | MTA | Cancellation | NI Residential', () => {
 
     // MTA #1
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Non Material Amendment');
+    await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
     await salesforce.fillIntermediaryReference(`MTA1-REF-${Date.now()}`);
     await salesforce.editMTAPremium('100');
     await salesforce.bindMTA();
 
     // MTA #2
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Limit Increase');
+    await salesforce.fillMTAReasonAndSave('Limit Increase', 'MTA Description - mandatory field update');
     await salesforce.fillIntermediaryReference(`MTA2-REF-${Date.now()}`);
     await salesforce.editMTAPremium('200');
     await salesforce.bindMTA();
