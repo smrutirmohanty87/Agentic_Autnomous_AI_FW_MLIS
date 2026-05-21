@@ -127,7 +127,7 @@ test.describe('@regression | E2E | NB-MTA | Edit Terms', () => {
     // otherwise close dialog and continue the MTA flow.
     await salesforce.openQuotesTab1();
     await verifyEditTermsDiscountAndUpdatePremiumOrClose(page);
-    await salesforce.openDetailsTab();
+    await page.getByRole('tab', { name: /^Details$/i }).first().click();
 
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
     await salesforce.editMTAPremium('100');

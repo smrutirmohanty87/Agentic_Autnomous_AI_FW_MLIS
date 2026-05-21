@@ -788,8 +788,8 @@ class DashboardReporter implements Reporter {
   }
 
   async onEnd(result: FullResult) {
-    // Avoid generating/opening on list-only operations.
-    if (this.testEntries.length === 0) return;
+    // Always generate dashboard artifacts so every execution produces a run entry,
+    // even when startup/config errors prevent tests from starting.
 
     const runEndedAt = new Date();
     const durationMs = runEndedAt.getTime() - this.runStartedAt.getTime();
@@ -849,7 +849,7 @@ class DashboardReporter implements Reporter {
     // (The dashboard is still generated regardless.)
     console.log(`[dashboard] Written: ${indexPath}`);
 
-    if (this.openAfterRun && result.status === 'passed') {
+    if (this.openAfterRun) {
       const platform = process.platform;
       const url = pathToFileURL(indexPath).toString();
 

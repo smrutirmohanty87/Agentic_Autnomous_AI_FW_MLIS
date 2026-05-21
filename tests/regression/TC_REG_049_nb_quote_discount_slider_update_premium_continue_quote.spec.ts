@@ -10,7 +10,7 @@ import {
   SummaryPage,
 } from '../../src/pages/mlis-portal';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
-import { getBrokerCredentials, getDefaultUwCredentials } from '../../src/config/env';
+import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
 
 async function firstVisible(candidates: Locator[]): Promise<Locator | null> {
   for (const candidate of candidates) {
@@ -243,7 +243,7 @@ test.describe('@regression | E2E | NB | Quotes Discount Slider', () => {
 
     // Login to Salesforce with dedicated default underwriter credentials.
     await salesforce.goto();
-    const sfCreds = getDefaultUwCredentials();
+    const sfCreds = getSalesforceCredentials();
     await salesforce.login(sfCreds.username, sfCreds.password);
 
     // Open policy, go to Quotes tab, adjust discount slider, update premium, continue quote.
@@ -267,7 +267,7 @@ test.describe('@regression | E2E | NB | Quotes Discount Slider', () => {
     // otherwise close dialog and continue the MTA flow.
     await salesforce.openQuotesTab1();
     await verifyEditTermsDiscountAndUpdatePremiumOrClose(page);
-    await salesforce.openDetailsTab();
+    await page.getByRole('tab', { name: /^Details$/i }).first().click();
 
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
     await salesforce.editMTAPremium('100');

@@ -1,0 +1,40 @@
+# ===================================================
+# ACTIVE ENVIRONMENT: UAT2
+# Set TEST_ENV to switch: UAT2 or SIT2
+# ===================================================
+
+# MLIS Broker Portal (Experience Cloud)
+MLIS_PORTAL_URL=https://dualgroup--uat2.sandbox.my.site.com/mlisportal/
+
+# Salesforce Lightning
+SALESFORCE_LIGHTNING_URL=https://dualgroup--uat2.sandbox.my.salesforce.com/
+
+# Broker Portal credentials
+BROKER_USERNAME=girish.kulkarni+uat2t131a1@dualgroup.com
+BROKER_PASSWORD="UAT2-t0131-01$"
+
+# Salesforce credentials
+SALESFORCE_USERNAME=t-0116-mlis-uw-enhance-auto-provar@mlis.uat2
+SALESFORCE_PASSWORD="UAT2t0116!"
+
+
+# ===================================================
+# SIT2 Environment
+# ===================================================
+SIT2_MLIS_PORTAL_URL=https://dualgroup--sitp.sandbox.my.site.com/mlisportal/broker-zone
+SIT2_SALESFORCE_LIGHTNING_URL=https://dualgroup--sitp.sandbox.lightning.force.com/
+SIT2_BROKER_USERNAME=girish.kulkarni+sit2t131a1@dualgroup.com
+SIT2_BROKER_PASSWORD="SIT2-t0131-01#"
+SIT2_SALESFORCE_USERNAME=t-0116-mlis-uw-enhance-auto-provar@mlis.sit2
+SIT2_SALESFORCE_PASSWORD="SIT2-t0116-02#"
+
+
+# ===================================================
+# DURQA Environment
+# ===================================================
+DURQA_MLIS_PORTAL_URL=https://dualgroup--durqa.sandbox.my.site.com/mlisportal/
+DURQA_SALESFORCE_LIGHTNING_URL=https://dualgroup--durqa.sandbox.my.salesforce.com/
+DURQA_BROKER_USERNAME=girish.kulkarni+durqat131a1@dualgroup.com
+DURQA_BROKER_PASSWORD="DURQA-t0131-01#+"
+DURQA_SALESFORCE_USERNAME=t-0116-mlis-uw-enhance-auto-provar@mlis.durqa
+DURQA_SALESFORCE_PASSWORD="DURQAt0116#"
