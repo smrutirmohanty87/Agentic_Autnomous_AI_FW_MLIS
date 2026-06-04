@@ -8,6 +8,35 @@ export class SalesforcePortalPage {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
+  private tokenizeForMatch(text: string) {
+    return (text ?? '')
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length >= 3);
+  }
+
+  private optionMatchScore(optionText: string, targetText: string) {
+    const option = (optionText ?? '').toLowerCase();
+    const target = (targetText ?? '').toLowerCase();
+
+    if (!option || !target) return 0;
+    if (option === target) return 1000;
+    if (option.includes(target)) return 500;
+
+    const targetTokens = this.tokenizeForMatch(target);
+    if (!targetTokens.length) return 0;
+
+    let score = 0;
+    for (const token of targetTokens) {
+      if (option.includes(token)) {
+        score += 10;
+      }
+    }
+
+    return score;
+  }
+
   private async clickWhenUiReady(target: ReturnType<Page['locator']>) {
     for (let attempt = 1; attempt <= 4; attempt += 1) {
       await this.waitForLightningIdle();
@@ -87,11 +116,39 @@ export class SalesforcePortalPage {
         await combobox.scrollIntoViewIfNeeded();
         await combobox.click({ timeout: 10000 });
 
-        // Wait for the floating options overlay to render
-        const option = this.page.getByRole('option', { name: optionText });
-        await expect(option).toBeVisible({ timeout: 10000 });
-        await option.scrollIntoViewIfNeeded();
-        await option.click({ timeout: 10000 });
+        // Wait for the floating options overlay to render.
+        const options = this.page.getByRole('option');
+        await expect(options.first()).toBeVisible({ timeout: 10000 });
+
+        // First try exact option name.
+        const exactOption = this.page.getByRole('option', { name: new RegExp(`^${this.escapeForRegex(optionText)}$`, 'i') });
+        if (await exactOption.first().isVisible({ timeout: 2000 }).catch(() => false)) {
+          await exactOption.first().scrollIntoViewIfNeeded();
+          await exactOption.first().click({ timeout: 10000 });
+        } else {
+          // Fallback: match by words from the requested value and pick best scoring option.
+          const optionCount = await options.count();
+          let bestIndex = -1;
+          let bestScore = 0;
+
+          for (let i = 0; i < optionCount; i += 1) {
+            const candidate = options.nth(i);
+            const text = (await candidate.innerText().catch(() => '')).trim();
+            const score = this.optionMatchScore(text, optionText);
+            if (score > bestScore) {
+              bestScore = score;
+              bestIndex = i;
+            }
+          }
+
+          if (bestIndex < 0 || bestScore <= 0) {
+            throw new Error(`Unable to find combobox option for '${optionText}' in '${label}'.`);
+          }
+
+          const matchedOption = options.nth(bestIndex);
+          await matchedOption.scrollIntoViewIfNeeded();
+          await matchedOption.click({ timeout: 10000 });
+        }
 
         // Wait for DOM to settle after selection (Salesforce re-renders dynamically)
         await this.waitForLightningIdle();

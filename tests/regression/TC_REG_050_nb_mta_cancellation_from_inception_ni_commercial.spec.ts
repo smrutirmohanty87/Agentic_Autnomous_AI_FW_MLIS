@@ -14,6 +14,8 @@ import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
 
+const updatedIntermediaryLegalEntity = 'Portal MLIS | Partner a/c (automated) | Bde-Comm';
+
 async function setLookupField(page: Page, fieldLabel: string, searchText: string, skipEdit = false) {
   // Salesforce Lightning inline-edit lookup — 4 steps.
 
@@ -76,7 +78,7 @@ async function updateSubmissionSourceIntermediaryFields(page: Page) {
   await page.waitForTimeout(800);
 
   // 1. Set Intermediary Legal Entity to the complete requested value.
-  await setLookupField(page, 'Intermediary Legal Entity', 'Portal MLIS | Partner a/c (automated) | Bde-Comm');
+  await setLookupField(page, 'Intermediary Legal Entity', updatedIntermediaryLegalEntity);
 
   // 2. Scroll down so the Intermediary Contact field (not Telephone) is in view.
   await page.mouse.wheel(0, 600);
@@ -91,14 +93,15 @@ async function updateSubmissionSourceIntermediaryFields(page: Page) {
   await saveButton.click();
   await page.waitForTimeout(10000);
 }
-test.describe('@regression | E2E | NI Commercial | NB | CNR | MTA | Cancellation Midterm', () => {
+
+test.describe('@regression | E2E | NI Commercial | NB | MTA | Cancellation From Inception', () => {
   test(
-    'DT-MLIS-DF25.5.0 | CR-237340 |TC_34_S6_Verify Cancellation premiums are applied to the appropriate intermediary when user change the Intermediary Legal Entity on MTA _NB>CRN>MTA_Cancel the Policy Mid-term_NI commercial_Broker portal',
+    'DT-MLIS-DF25.5.0 | CR-237340 | TC_34_S6_Verify Cancellation premiums are applied to the appropriate intermediary when user change the Intermediary Legal Entity on MTA _NB>MTA>Cancel the Policy from Inception_NI commercial_Broker portal',
     async ({ page }) => {
       test.setTimeout(900000);
       test.slow();
 
-      const caseRef = `E2E-NI-COMM-NB-CNR-MTA-CAN-${Date.now()}`;
+      const caseRef = `E2E-NI-COMM-NB-MTA-CAN-INF-${Date.now()}`;
 
       const brokerLogin = new NiCommercialLoginPage(page);
       const quoteManager = new NiCommercialQuoteManagerPage(page);
@@ -147,7 +150,7 @@ test.describe('@regression | E2E | NI Commercial | NB | CNR | MTA | Cancellation
       const policyNumber = (await policyLabel.locator('xpath=following::p[1]').first().innerText()).trim();
       await policyIssued.backToQuoteManager();
 
-      // Verify policy is live before CNR.
+      // Verify policy is live before MTA/cancellation.
       await brokerPortal.expectQuoteManagerLoaded();
       await brokerPortal.searchPolicy(policyNumber);
       await brokerPortal.expectPolicyStatus(policyNumber, 'Live');
@@ -161,70 +164,175 @@ test.describe('@regression | E2E | NI Commercial | NB | CNR | MTA | Cancellation
       await salesforce.openRelatedTab();
       await salesforce.openInsurancePolicyFromRelated(policyNumber);
 
-      // CNR: complete cancel and reissue flow.
-      await salesforce.openCancelAndReissueDialog();
-      await salesforce.completeCancelAndReissueDialog({
-        reasonForCR: 'User Error Correction',
-        description: `NB CNR MTA midterm flow (${policyNumber})`,
-      });
-
-      await salesforce.completeReissueFinalPolicyDetails();
-      await salesforce.completeReissueSummary();
-
-      // If Summary remains visible after first click, retry once.
-      const reissueSummaryHeading = page.getByRole('heading', { name: /summary/i }).first();
-      const reissueProceedToOrder = page.getByRole('button', { name: /proceed to order/i }).first();
-      if (await reissueSummaryHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await page.waitForTimeout(4000);
-        if (await reissueSummaryHeading.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await reissueProceedToOrder.click();
-        }
-      }
-
-      const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const commencementDateInput = page.getByRole('textbox', { name: /commencement date/i }).first();
-      const genericDateInput = page.locator('input[placeholder="DD/MM/YYYY"]:visible').first();
-
-      if (await commencementDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await commencementDateInput.fill(today);
-        await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
-      } else if (await genericDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await genericDateInput.fill(today);
-        await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
-      }
-
-      const orderNow = page.getByRole('button', { name: /order now/i }).first();
-      if (await orderNow.isVisible({ timeout: 10000 }).catch(() => false)) {
-        await orderNow.click();
-      }
-
-      await expect(page.getByRole('heading', { name: /policy issued/i }).first()).toBeVisible({ timeout: 180000 });
-      await salesforce.clickReturnToSubmission();
-
-      // Re-open policy after CNR, then create MTA.
-      //await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
-      await salesforce.openRelatedTab();
-      
-      await salesforce.openInsurancePolicyFromRelated(policyNumber);
-
+      // Create MTA on policy.
       await salesforce.openCreateMTADialog();
       await salesforce.fillMTAReasonAndSave(
         'Exposure/Limit Changes',
         `MTA Description - Intermediary Legal Entity change for ${policyNumber}`,
       );
       await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
-      await updateSubmissionSourceIntermediaryFields(page);  
+      await updateSubmissionSourceIntermediaryFields(page);
       await salesforce.editMTAPremium('100');
       await salesforce.bindMTA();
 
-      // Cancel policy mid-term after MTA.
+      // Cancel policy from inception after MTA.
       await salesforce.openCancelPolicyWizard();
-      await salesforce.completeCancelFromInceptionStep3(
-        `Mid-term cancellation after NB->CNR->MTA flow (${policyNumber})`,
+      await salesforce.completeCancelFromInceptionStep1(
+        `Cancellation from inception after NB->MTA flow (${policyNumber})`,
       );
       await salesforce.completePremiumStepWithTaxCalculation();
       await salesforce.submitCancellation();
       await salesforce.expectPolicyStatusCancelled();
+
+      // Post-cancellation navigation sequence:
+      // Tax Jurisdiction (View All) -> Back -> BDX (View All) -> Back -> SFI to FFA Transactions (View All)
+      await salesforce.openRelatedTab();
+
+      const scrollLightningContainers = async () => {
+        await page.evaluate(() => {
+          window.scrollBy(0, 1200);
+
+          const elements = Array.from(document.querySelectorAll<HTMLElement>('*'));
+          for (const el of elements) {
+            const style = window.getComputedStyle(el);
+            const overflowY = style.overflowY;
+            if (overflowY !== 'auto' && overflowY !== 'scroll') continue;
+            if (el.scrollHeight <= el.clientHeight) continue;
+            el.scrollTop += 1200;
+          }
+        });
+      };
+
+      const resetLightningScrollToTop = async () => {
+        await page.evaluate(() => {
+          window.scrollTo(0, 0);
+
+          const elements = Array.from(document.querySelectorAll<HTMLElement>('*'));
+          for (const el of elements) {
+            const style = window.getComputedStyle(el);
+            const overflowY = style.overflowY;
+            if (overflowY !== 'auto' && overflowY !== 'scroll') continue;
+            if (el.scrollHeight <= el.clientHeight) continue;
+            el.scrollTop = 0;
+          }
+        });
+      };
+
+      const openViewAllFromRelatedCard = async (titleRegex: RegExp) => {
+        // Always start scanning from the top of the Related tab to avoid stale/offset scroll state.
+        await resetLightningScrollToTop();
+        await page.waitForTimeout(500);
+
+        const card = page.locator('article:visible').filter({ hasText: titleRegex }).first();
+
+        for (let i = 0; i < 40; i += 1) {
+          if (await card.isVisible({ timeout: 500 }).catch(() => false)) {
+            break;
+          }
+
+          await card.scrollIntoViewIfNeeded().catch(() => undefined);
+          if (await card.isVisible({ timeout: 500 }).catch(() => false)) {
+            break;
+          }
+
+          await page.mouse.wheel(0, 1200);
+          await scrollLightningContainers();
+          await page.waitForTimeout(300);
+        }
+
+        await expect(card).toBeVisible({ timeout: 120000 });
+
+        const viewAllLink = card.getByRole('link', { name: /^View All/i }).first();
+        const viewAllAnchor = card.locator('a:visible').filter({ hasText: /^View All/i }).first();
+        const viewAllButton = card.getByRole('button', { name: /^View All/i }).first();
+
+        const deadline = Date.now() + 120000;
+        let clicked = false;
+        while (Date.now() < deadline && !clicked) {
+          if (await viewAllLink.isVisible({ timeout: 300 }).catch(() => false)) {
+            await viewAllLink.click();
+            clicked = true;
+            break;
+          }
+          if (await viewAllAnchor.isVisible({ timeout: 300 }).catch(() => false)) {
+            await viewAllAnchor.click();
+            clicked = true;
+            break;
+          }
+          if (await viewAllButton.isVisible({ timeout: 300 }).catch(() => false)) {
+            await viewAllButton.click();
+            clicked = true;
+            break;
+          }
+
+          await page.mouse.wheel(0, 1200);
+          await scrollLightningContainers();
+          await page.waitForTimeout(300);
+        }
+
+        expect(clicked).toBeTruthy();
+
+        const table = page.locator('table:visible').first();
+        await expect(table).toBeVisible({ timeout: 120000 });
+        await expect.poll(async () => table.locator('tbody tr').count(), { timeout: 120000 }).toBeGreaterThan(0);
+
+        return table;
+      };
+
+      // 1) Tax Jurisdiction -> View All -> Back
+      await openViewAllFromRelatedCard(/Tax\s*Jurisdiction/i);
+      await page.goBack({ waitUntil: 'domcontentloaded' });
+      await salesforce.openRelatedTab();
+      await resetLightningScrollToTop();
+
+      // 2) BDX -> View All -> Back
+      await openViewAllFromRelatedCard(/\bBDX\b/i);
+      await page.goBack({ waitUntil: 'domcontentloaded' });
+      await salesforce.openRelatedTab();
+      await resetLightningScrollToTop();
+
+      // 3) SFI to FFA Transactions -> View All
+      await openViewAllFromRelatedCard(/SFI\s*to\s*FFA\s*Transactions/i);
+
+      // Final assertion: return to BDX -> View All -> open one BDX line
+      // -> CR0090 Intermediary 1 - Name should match updated MTA value.
+      await page.goBack({ waitUntil: 'domcontentloaded' });
+      await salesforce.openRelatedTab();
+      await resetLightningScrollToTop();
+
+      const bdxTable = await openViewAllFromRelatedCard(/\bBDX\b/i);
+      const bdxRowLink = bdxTable
+        .locator('tbody tr th[scope="row"] a:visible, tbody tr td a:visible')
+        .first();
+      await expect(bdxRowLink).toBeVisible({ timeout: 120000 });
+      await bdxRowLink.click();
+
+      const cr0090ByLabelAttribute = page
+        .locator('records-record-layout-item[field-label*="CR0090 Intermediary 1 - Name" i], records-record-layout-item[field-label*="CR0090" i]')
+        .first();
+
+      const cr0090ByVisibleText = page
+        .locator('records-record-layout-item:visible, .slds-form-element:visible')
+        .filter({ hasText: /CR0090\s*Intermediary\s*1\s*-\s*Name/i })
+        .first();
+
+      const cr0090Field = (await cr0090ByLabelAttribute.isVisible({ timeout: 5000 }).catch(() => false))
+        ? cr0090ByLabelAttribute
+        : cr0090ByVisibleText;
+
+      await expect(cr0090Field).toBeVisible({ timeout: 120000 });
+      await expect(cr0090Field).toContainText(updatedIntermediaryLegalEntity);
+
+      const cr0090ValueLocator = cr0090Field
+        .locator('.slds-form-element__static:visible, lightning-formatted-text:visible, .test-id__field-value:visible, span:visible, div:visible')
+        .first();
+
+      const cr0090RawText = (await cr0090ValueLocator.innerText().catch(async () => cr0090Field.innerText())).trim();
+      const cr0090Value = cr0090RawText
+        .replace(/CR0090\s*Intermediary\s*1\s*-\s*Name/gi, '')
+        .trim();
+
+      expect(cr0090Value).toContain(updatedIntermediaryLegalEntity);
     },
   );
 });

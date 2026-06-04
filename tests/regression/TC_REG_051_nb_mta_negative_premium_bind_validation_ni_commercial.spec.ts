@@ -14,6 +14,8 @@ import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
 
+const updatedIntermediaryLegalEntity = 'Portal MLIS | Partner a/c (automated) | Bde-Comm';
+
 async function setLookupField(page: Page, fieldLabel: string, searchText: string, skipEdit = false) {
   // Salesforce Lightning inline-edit lookup — 4 steps.
 
@@ -49,13 +51,10 @@ async function setLookupField(page: Page, fieldLabel: string, searchText: string
     .first();
   await expect(fieldInput).toBeVisible({ timeout: 15_000 });
   await fieldInput.click();
-  // pressSequentially fires keyboard events one character at a time, properly
-  // triggering Salesforce's debounced search without an empty-query race condition.
   await fieldInput.pressSequentially(searchText, { delay: 80 });
   await page.waitForTimeout(1_000);
 
   // Step 4: Select from the Search Results dropdown section only.
-  // Exclude helper/action rows such as Advanced Search / Show More Results / Show All Results.
   const searchResultsList = page
     .locator('[role="listbox"]')
     .filter({ hasText: /search results/i })
@@ -71,34 +70,30 @@ async function setLookupField(page: Page, fieldLabel: string, searchText: string
 }
 
 async function updateSubmissionSourceIntermediaryFields(page: Page) {
-  // Scroll down to reach the Submission Source section on the MTA record.
   await page.mouse.wheel(0, 1200);
   await page.waitForTimeout(800);
 
-  // 1. Set Intermediary Legal Entity to the complete requested value.
-  await setLookupField(page, 'Intermediary Legal Entity', 'Portal MLIS | Partner a/c (automated) | Bde-Comm');
+  await setLookupField(page, 'Intermediary Legal Entity', updatedIntermediaryLegalEntity);
 
-  // 2. Scroll down so the Intermediary Contact field (not Telephone) is in view.
   await page.mouse.wheel(0, 600);
   await page.waitForTimeout(500);
 
-  // 3. Set Intermediary Contact — field is already in edit mode (no Edit pencil needed).
   await setLookupField(page, 'Intermediary Contact', 'T-013', true);
 
-  // 4. Save both fields together.
   const saveButton = page.getByRole('button', { name: /^Save$/i }).first();
   await expect(saveButton).toBeVisible({ timeout: 30000 });
   await saveButton.click();
   await page.waitForTimeout(10000);
 }
-test.describe('@regression | E2E | NI Commercial | NB | CNR | MTA | Cancellation Midterm', () => {
+
+test.describe('@regression | E2E | NI Commercial | NB | MTA | Negative Premium Bind Validation', () => {
   test(
-    'DT-MLIS-DF25.5.0 | CR-237340 |TC_34_S6_Verify Cancellation premiums are applied to the appropriate intermediary when user change the Intermediary Legal Entity on MTA _NB>CRN>MTA_Cancel the Policy Mid-term_NI commercial_Broker portal',
+    'DT-MLIS-DF25.5.0 | CR-237340 | TC_34_S6_NB>MTA_Negative MTA Premium should not allow Bind_NI commercial_Broker portal',
     async ({ page }) => {
       test.setTimeout(900000);
       test.slow();
 
-      const caseRef = `E2E-NI-COMM-NB-CNR-MTA-CAN-${Date.now()}`;
+      const caseRef = `E2E-NI-COMM-NB-MTA-NEG-${Date.now()}`;
 
       const brokerLogin = new NiCommercialLoginPage(page);
       const quoteManager = new NiCommercialQuoteManagerPage(page);
@@ -147,7 +142,7 @@ test.describe('@regression | E2E | NI Commercial | NB | CNR | MTA | Cancellation
       const policyNumber = (await policyLabel.locator('xpath=following::p[1]').first().innerText()).trim();
       await policyIssued.backToQuoteManager();
 
-      // Verify policy is live before CNR.
+      // Verify policy is live before MTA.
       await brokerPortal.expectQuoteManagerLoaded();
       await brokerPortal.searchPolicy(policyNumber);
       await brokerPortal.expectPolicyStatus(policyNumber, 'Live');
@@ -161,70 +156,61 @@ test.describe('@regression | E2E | NI Commercial | NB | CNR | MTA | Cancellation
       await salesforce.openRelatedTab();
       await salesforce.openInsurancePolicyFromRelated(policyNumber);
 
-      // CNR: complete cancel and reissue flow.
-      await salesforce.openCancelAndReissueDialog();
-      await salesforce.completeCancelAndReissueDialog({
-        reasonForCR: 'User Error Correction',
-        description: `NB CNR MTA midterm flow (${policyNumber})`,
-      });
-
-      await salesforce.completeReissueFinalPolicyDetails();
-      await salesforce.completeReissueSummary();
-
-      // If Summary remains visible after first click, retry once.
-      const reissueSummaryHeading = page.getByRole('heading', { name: /summary/i }).first();
-      const reissueProceedToOrder = page.getByRole('button', { name: /proceed to order/i }).first();
-      if (await reissueSummaryHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await page.waitForTimeout(4000);
-        if (await reissueSummaryHeading.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await reissueProceedToOrder.click();
-        }
-      }
-
-      const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const commencementDateInput = page.getByRole('textbox', { name: /commencement date/i }).first();
-      const genericDateInput = page.locator('input[placeholder="DD/MM/YYYY"]:visible').first();
-
-      if (await commencementDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await commencementDateInput.fill(today);
-        await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
-      } else if (await genericDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await genericDateInput.fill(today);
-        await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
-      }
-
-      const orderNow = page.getByRole('button', { name: /order now/i }).first();
-      if (await orderNow.isVisible({ timeout: 10000 }).catch(() => false)) {
-        await orderNow.click();
-      }
-
-      await expect(page.getByRole('heading', { name: /policy issued/i }).first()).toBeVisible({ timeout: 180000 });
-      await salesforce.clickReturnToSubmission();
-
-      // Re-open policy after CNR, then create MTA.
-      //await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
-      await salesforce.openRelatedTab();
-      
-      await salesforce.openInsurancePolicyFromRelated(policyNumber);
-
+      // NB -> MTA flow (no CNR, no cancellation)
       await salesforce.openCreateMTADialog();
       await salesforce.fillMTAReasonAndSave(
         'Exposure/Limit Changes',
-        `MTA Description - Intermediary Legal Entity change for ${policyNumber}`,
+        `MTA Description - negative premium bind validation for ${policyNumber}`,
       );
-      await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
-      await updateSubmissionSourceIntermediaryFields(page);  
-      await salesforce.editMTAPremium('100');
-      await salesforce.bindMTA();
+      await salesforce.fillIntermediaryReference(`MTA-NEG-REF-${Date.now()}`);
+      await updateSubmissionSourceIntermediaryFields(page);
 
-      // Cancel policy mid-term after MTA.
-      await salesforce.openCancelPolicyWizard();
-      await salesforce.completeCancelFromInceptionStep3(
-        `Mid-term cancellation after NB->CNR->MTA flow (${policyNumber})`,
-      );
-      await salesforce.completePremiumStepWithTaxCalculation();
-      await salesforce.submitCancellation();
-      await salesforce.expectPolicyStatusCancelled();
+      // Enter negative MTA premium and assert Save is not enabled.
+      const editPremiumButton = page.getByRole('button', { name: /Edit MTA Premium/i }).first();
+      await expect(editPremiumButton).toBeVisible({ timeout: 30000 });
+      await editPremiumButton.click();
+
+      const premiumDialog = page.getByRole('dialog', { name: /Edit MTA Premium/i });
+      await expect(premiumDialog).toBeVisible({ timeout: 30000 });
+
+      const spinInput = premiumDialog.getByRole('spinbutton', { name: /MTA.*Premium/i }).first();
+      const textInput = premiumDialog.getByRole('textbox', { name: /MTA.*Premium/i }).first();
+      const numberInput = premiumDialog.locator('input[type="number"]:visible').first();
+      const visibleTextInput = premiumDialog.locator('input[type="text"]:visible').first();
+      const anyVisibleInput = premiumDialog.locator('input:visible').first();
+
+      let enteredNegativePremium = false;
+      for (const input of [spinInput, textInput, numberInput, visibleTextInput, anyVisibleInput]) {
+        const isVisible = await input.isVisible({ timeout: 2000 }).catch(() => false);
+        if (!isVisible) continue;
+
+        const isEditable = await input.isEditable().catch(() => false);
+        if (!isEditable) continue;
+
+        await input.fill('-100');
+        await input.press('Tab').catch(() => undefined);
+        enteredNegativePremium = true;
+        break;
+      }
+
+      expect(enteredNegativePremium, 'Could not find editable premium input in Edit MTA Premium dialog.').toBeTruthy();
+
+      const saveButton = premiumDialog.getByRole('button', { name: /Save/i }).first();
+      await expect(saveButton).toBeVisible({ timeout: 15000 });
+
+      const saveDisabled = await saveButton.isDisabled().catch(() => false);
+      const saveAriaDisabled = (await saveButton.getAttribute('aria-disabled').catch(() => null)) === 'true';
+
+      expect(
+        saveDisabled || saveAriaDisabled,
+        `Save button is enabled for negative MTA premium (-100) on policy ${policyNumber}.`,
+      ).toBeTruthy();
+
+      // Close dialog only if explicit close is available.
+      const closeButton = premiumDialog.getByRole('button', { name: /Close|Cancel/i }).first();
+      if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await closeButton.click();
+      }
     },
   );
 });

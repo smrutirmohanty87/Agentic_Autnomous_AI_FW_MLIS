@@ -14,12 +14,12 @@ import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
 
-test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
-  test('TC_REG_027_CNR | Create MTA then start cancel and reissue with return-and-bind at final policy details', async ({ page }) => {
+test.describe('@sanity | E2E | MTA', () => {
+  test('TC_SAN_015 | Create MTA (Mid-Term Adjustment) on a live policy', async ({ page }) => {
     test.setTimeout(900000);
     test.slow();
 
-    const caseRef = `E2E-MTA-CNR-${Date.now()}`;
+    const caseRef = `E2E-MTA-${Date.now()}`;
 
     const brokerLogin = new LoginPage(page);
     const quoteManager = new QuoteManagerPage(page);
@@ -77,41 +77,29 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
     const sfCreds = getSalesforceCredentials();
     await salesforce.login(sfCreds.username, sfCreds.password);
 
-    // Global Search -> open the exact policy number from the results grid
+    // Step 5-6: Global Search -> open the exact policy number from the results grid
     await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
 
     // Navigate to Related tab -> open Insurance Policy record
     await salesforce.openRelatedTab();
     await salesforce.openInsurancePolicyFromRelated(policyNumber);
 
-    // Create MTA
+    // Step 1: Click Create MTA and fill MTA Reason dropdown, then Save
     await salesforce.openCreateMTADialog();
-    await salesforce.fillMTAReasonAndSave('Exposure/Limit Changes', 'MTA Description - mandatory field update');
+    await salesforce.fillMTAReasonAndSave(
+      'Exposure/Limit Changes',
+      `MTA Description - mandatory field update for ${policyNumber}`,
+    );
+
+    // Step 2: Fill Intermediary Reference (inline-editable pencil icon field)
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
-    await salesforce.editMTAPremium('100');
+
+    // Step 3: Edit MTA Premium -> enter value and press OK
+    await salesforce.editMTAPremium('111');
+
+    // Step 4: Bind MTA -> insert today's date and click Bind
     await salesforce.bindMTA();
 
-    // Start Cancel and Reissue
-    await salesforce.openCancelAndReissueDialog();
-    await salesforce.completeCancelAndReissueDialog({
-      reasonForCR: 'User Error Correction',
-      description: `Cancel and reissue after MTA test (${policyNumber})`,
-    });
-
-    // Required flow change: once on Final policy details, wait, return to submission, then bind MTA.
-    await expect(page.getByRole('heading', { name: /Quote Journey/i })).toBeVisible({ timeout: 120000 });
-    await expect(page.getByRole('heading', { name: /Final policy details/i })).toBeVisible({ timeout: 120000 });
-    await page.waitForTimeout(5000);
-
-    const returnToSubmission = page
-      .getByRole('button', { name: /Return to submission/i })
-      .or(page.getByRole('link', { name: /Return to submission/i }))
-      .first();
-    await expect(returnToSubmission).toBeVisible({ timeout: 60000 });
-    await returnToSubmission.click();
-    await page.waitForTimeout(5000);
-
-    await salesforce.bindMTA();
     // Wait for policy update and assert top-left Risk ID is shown in expected Salesforce format.
     const riskIdPattern = /\bDAU\/\d{8}\/[A-Z]{4}\/\d{2}\/\d{2}\b/;
     const highlightsTopLeft = page.locator(
