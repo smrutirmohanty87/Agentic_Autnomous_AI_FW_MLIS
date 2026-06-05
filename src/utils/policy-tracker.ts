@@ -1,11 +1,13 @@
 import * as ExcelJS from 'exceljs';
+import { spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
 declare const __dirname: string;
-declare const process: { env: Record<string, string | undefined> };
+declare const process: { env: Record<string, string | undefined>; platform?: string };
 
 const EXCEL_PATH = path.resolve(__dirname, '../../reports/policy-tracker.xlsx');
+const LIVE_UPDATER_SCRIPT_PATH = path.resolve(__dirname, '../../scripts/update-policy-tracker-live.ps1');
 const loggedKeys = new Set<string>();
 
 const HEADERS = [
@@ -19,6 +21,51 @@ const HEADERS = [
 
 function getEnvironment(): string {
   return (process.env.TEST_ENV ?? 'SIT2').trim().toUpperCase();
+}
+
+function tryAppendToOpenWorkbookLive(args: {
+  policyNumber: string;
+  testName: string;
+  portalType: string;
+  environment: string;
+  dateTime: string;
+}): boolean {
+  if (process.platform !== 'win32') {
+    return false;
+  }
+  if (!fs.existsSync(LIVE_UPDATER_SCRIPT_PATH)) {
+    return false;
+  }
+
+  const psArgs = [
+    '-NoProfile',
+    '-ExecutionPolicy',
+    'Bypass',
+    '-File',
+    LIVE_UPDATER_SCRIPT_PATH,
+    '-ExcelPath',
+    EXCEL_PATH,
+    '-SheetName',
+    'Policy Numbers',
+    '-PolicyNumber',
+    args.policyNumber,
+    '-TestName',
+    args.testName,
+    '-PortalType',
+    args.portalType,
+    '-Environment',
+    args.environment,
+    '-DateTime',
+    args.dateTime,
+  ];
+
+  const result = spawnSync('powershell', psArgs, {
+    encoding: 'utf8',
+    timeout: 25000,
+    windowsHide: true,
+  });
+
+  return result.status === 0;
 }
 
 /**
@@ -37,6 +84,33 @@ export async function logPolicyNumber(
   const environment = getEnvironment();
   const dedupeKey = `${environment}|${testName}|${policyNumber}`;
   if (loggedKeys.has(dedupeKey)) {
+    return;
+  }
+
+  const now = new Date();
+  const dateTimeStr = now.toLocaleString('en-GB', {
+    day:    '2-digit',
+    month:  '2-digit',
+    year:   'numeric',
+    hour:   '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const updatedOpenWorkbook = tryAppendToOpenWorkbookLive({
+    policyNumber,
+    testName,
+    portalType,
+    environment,
+    dateTime: dateTimeStr,
+  });
+
+  if (updatedOpenWorkbook) {
+    loggedKeys.add(dedupeKey);
+    console.log(
+      `[PolicyTracker] Live update (open workbook) | ${policyNumber} | ${environment} | ${dateTimeStr}`,
+    );
     return;
   }
 
@@ -91,17 +165,6 @@ export async function logPolicyNumber(
   const nextRun = prevRun + 1;
 
   // Append data row.
-  const now = new Date();
-  const dateTimeStr = now.toLocaleString('en-GB', {
-    day:    '2-digit',
-    month:  '2-digit',
-    year:   'numeric',
-    hour:   '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
-
   const dataRow = sheet.addRow({
     run:          nextRun,
     policyNumber: policyNumber,

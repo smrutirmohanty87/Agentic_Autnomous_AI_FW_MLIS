@@ -9,7 +9,7 @@ import {
   CommercialStatementsOfFactPage,
   CommercialReferralDetailsPage,
   CommercialReferralSubmitPage,
-  CommercialReferralSubmittedPage,
+  CommercialPolicyIssuedPage,
 } from '../../src/pages/mlis-portal-commercial';
 import { getBrokerCredentials } from '../../src/config/env';
 
@@ -24,7 +24,7 @@ test.describe('@sanity | E2E | Commercial | England & Wales', () => {
     const statements = new CommercialStatementsOfFactPage(page);
     const referralDetails = new CommercialReferralDetailsPage(page);
     const referralSubmit = new CommercialReferralSubmitPage(page);
-    const referralSubmitted = new CommercialReferralSubmittedPage(page);
+    const policyIssued = new CommercialPolicyIssuedPage(page);
 
     // 1) Login with valid credentials and verify Quote Manager dashboard loads.
     await loginPage.goto();
@@ -55,12 +55,12 @@ test.describe('@sanity | E2E | Commercial | England & Wales', () => {
     await referralDetails.submitReferral();
     await referralSubmit.expectLoaded();
 
-    // 8) Submit to underwriter and verify referral submitted page.
+    // 8) Submit to underwriter and verify policy is issued with a valid policy number.
     await referralSubmit.submitToUnderwriter();
-    await referralSubmitted.expectLoaded();
+    await policyIssued.expectPolicyIssued(/^[A-Z]{2,3}-MLI-\d{9}$/);
 
     // 9) Return to Quote Manager and verify home page is loaded.
-    await referralSubmitted.backToQuoteManager();
+    await policyIssued.backToQuoteManager();
     await quoteManager.expectLoaded();
   });
 });

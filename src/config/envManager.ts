@@ -41,6 +41,58 @@ function getEnvVarWithOptionalFallback(envName: string, baseName: string): strin
   return requiredEnvVar(primaryVar);
 }
 
+function normalizeBrokerProfile(value: string | undefined): string {
+  const profile = (value ?? '').trim().toUpperCase();
+  if (!profile) return 'NO_COMM';
+  return profile.replace(/[^A-Z0-9]+/g, '_');
+}
+
+function getBrokerUsernameWithAlias(envName: string): string {
+  const brokerProfile = normalizeBrokerProfile(process.env.TEST_BROKER_PROFILE);
+  const aliasCandidates = [
+    `SALEFORCE_${envName}_${brokerProfile}_BROKERUSER`,
+    `SALEFORCE_${envName}_NO_COMM_BROKERUSER`,
+  ];
+
+  for (const aliasVar of aliasCandidates) {
+    const aliasValue = process.env[aliasVar];
+    if (aliasValue) return aliasValue;
+  }
+
+  return getEnvVarWithOptionalFallback(envName, 'BROKER_USERNAME');
+}
+
+function getSalesforceUsernameWithAlias(envName: string): string {
+  const aliasVar = `SALEFORCE_${envName}_ENHANCEDUSER`;
+  const aliasValue = process.env[aliasVar];
+  if (aliasValue) return aliasValue;
+
+  return getEnvVarWithOptionalFallback(envName, 'SALESFORCE_USERNAME');
+}
+
+function getBrokerPasswordWithAlias(envName: string): string {
+  const brokerProfile = normalizeBrokerProfile(process.env.TEST_BROKER_PROFILE);
+  const aliasCandidates = [
+    `SALEFORCE_${envName}_${brokerProfile}_BROKERPASSWORD`,
+    `SALEFORCE_${envName}_NO_COMM_BROKERPASSWORD`,
+  ];
+
+  for (const aliasVar of aliasCandidates) {
+    const aliasValue = process.env[aliasVar];
+    if (aliasValue) return aliasValue;
+  }
+
+  return getEnvVarWithOptionalFallback(envName, 'BROKER_PASSWORD');
+}
+
+function getSalesforcePasswordWithAlias(envName: string): string {
+  const aliasVar = `SALEFORCE_${envName}_ENHANCEDUSER_PASSWORD`;
+  const aliasValue = process.env[aliasVar];
+  if (aliasValue) return aliasValue;
+
+  return getEnvVarWithOptionalFallback(envName, 'SALESFORCE_PASSWORD');
+}
+
 /**
  * Centralized environment config resolver.
  *
@@ -62,10 +114,10 @@ export function getEnvConfig(): EnvConfig {
   cached = {
     portalUrl: getEnvVarWithOptionalFallback(envName, 'MLIS_PORTAL_URL'),
     salesforceUrl: getEnvVarWithOptionalFallback(envName, 'SALESFORCE_LIGHTNING_URL'),
-    brokerUsername: getEnvVarWithOptionalFallback(envName, 'BROKER_USERNAME'),
-    brokerPassword: getEnvVarWithOptionalFallback(envName, 'BROKER_PASSWORD'),
-    salesforceUsername: getEnvVarWithOptionalFallback(envName, 'SALESFORCE_USERNAME'),
-    salesforcePassword: getEnvVarWithOptionalFallback(envName, 'SALESFORCE_PASSWORD'),
+    brokerUsername: getBrokerUsernameWithAlias(envName),
+    brokerPassword: getBrokerPasswordWithAlias(envName),
+    salesforceUsername: getSalesforceUsernameWithAlias(envName),
+    salesforcePassword: getSalesforcePasswordWithAlias(envName),
   };
 
   return cached;

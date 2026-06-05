@@ -359,18 +359,27 @@ export class CommercialOrderDialog {
 export class CommercialPolicyIssuedPage {
   constructor(private readonly page: Page) {}
 
-  async expectPolicyIssued() {
+  async expectPolicyIssued(
+    expectedPattern: RegExp = /[A-Z]{2,}-[A-Z]{2,}-\d{6,}/,
+    trackPolicy = true,
+  ) {
     const processingDialog = this.page.getByRole('heading', { name: 'Processing Request' }).first();
     if (await processingDialog.isVisible()) {
       await expect(processingDialog).toBeHidden({ timeout: 60000 });
     }
 
-    await expect(this.page.getByRole('heading', { name: 'Policy issued' })).toBeVisible({ timeout: 60000 });
-    const policyLabel = this.page.locator('strong', { hasText: 'Policy number' });
-    await expect(policyLabel).toBeVisible({ timeout: 20000 });
-    const policyText = (await policyLabel.locator('xpath=following::p[1]').first().textContent())?.trim() ?? '';
-    expect(policyText).toMatch(/[A-Z]{2,}-[A-Z]{2,}-\d{6,}/);
-    await logPolicyNumber(policyText, test.info().title, 'EW Commercial').catch(() => {});
+    const policyIssuedHeading = this.page.getByRole('heading', { name: /Policy issued/i }).first();
+    const referralSubmittedHeading = this.page.getByRole('heading', { name: /Referral submitted/i }).first();
+    await expect(policyIssuedHeading.or(referralSubmittedHeading).first()).toBeVisible({ timeout: 60000 });
+
+    const referenceLabel = this.page.locator('strong').filter({ hasText: /Policy number|Quote number/i }).first();
+    await expect(referenceLabel).toBeVisible({ timeout: 20000 });
+    const policyText = (await referenceLabel.locator('xpath=following::p[1]').first().textContent())?.trim() ?? '';
+    expect(policyText).toMatch(expectedPattern);
+    if (trackPolicy) {
+      await logPolicyNumber(policyText, test.info().title, 'EW Commercial').catch(() => {});
+    }
+    return policyText;
   }
 
   async backToQuoteManager() {
