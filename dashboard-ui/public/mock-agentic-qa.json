@@ -1,0 +1,87 @@
+{
+  "title": "Agentic QA Platform",
+  "generatedAt": "2026-06-02T11:42:00.000Z",
+  "kpis": {
+    "workflowStatus": "SUCCESS",
+    "testsPassed": 24,
+    "testsFailed": 2,
+    "healEvents": 7,
+    "successfulHeals": 6,
+    "rcaEvents": 3,
+    "executionDurationMs": 6260
+  },
+  "agents": [
+    { "name": "Planner", "status": "SUCCESS", "durationMs": 220 },
+    { "name": "Designer", "status": "SUCCESS", "durationMs": 180 },
+    { "name": "Generator", "status": "SUCCESS", "durationMs": 310 },
+    { "name": "Execution", "status": "SUCCESS", "durationMs": 4620 },
+    { "name": "Healing", "status": "SUCCESS", "durationMs": 540 },
+    { "name": "RCA", "status": "SUCCESS", "durationMs": 390 }
+  ],
+  "rcaSummary": [
+    {
+      "failureType": "MultipleMatches",
+      "rootCause": "Two fields shared the same placeholder in PIM search form.",
+      "recoveryAction": "Scoped locator to first autocomplete input in employee filter.",
+      "confidence": 90
+    },
+    {
+      "failureType": "Timeout",
+      "rootCause": "Sidebar navigation element rendered late under network jitter.",
+      "recoveryAction": "Added sidebar visibility gate before navigation click.",
+      "confidence": 86
+    },
+    {
+      "failureType": "LocatorBreakage",
+      "rootCause": "Username attribute drifted after UI release.",
+      "recoveryAction": "Fallback locator by role+label recovered element.",
+      "confidence": 82
+    }
+  ],
+  "healingAnalytics": [
+    {
+      "failedLocator": "placeholder=Type for hints...",
+      "recoveredLocator": ".oxd-form .oxd-autocomplete-text-input input:first-of-type",
+      "recoveryStatus": "SUCCESS"
+    },
+    {
+      "failedLocator": "css=.oxd-main-menu-item--pim",
+      "recoveredLocator": "role=link[name=PIM]",
+      "recoveryStatus": "SUCCESS"
+    },
+    {
+      "failedLocator": "name=username",
+      "recoveredLocator": "label=Username",
+      "recoveryStatus": "SUCCESS"
+    }
+  ],
+  "workflowTimeline": [
+    "Requirement",
+    "Planner",
+    "Designer",
+    "Generator",
+    "Execution",
+    "Healing",
+    "RCA"
+  ],
+  "visualizations": {
+    "testTrend": [
+      { "run": "Run 1", "passed": 6, "failed": 2 },
+      { "run": "Run 2", "passed": 8, "failed": 1 },
+      { "run": "Run 3", "passed": 10, "failed": 0 }
+    ],
+    "eventDistribution": [
+      { "name": "Heal", "value": 7 },
+      { "name": "RCA", "value": 3 },
+      { "name": "Failed", "value": 2 }
+    ],
+    "agentDurations": [
+      { "agent": "Planner", "durationMs": 220 },
+      { "agent": "Designer", "durationMs": 180 },
+      { "agent": "Generator", "durationMs": 310 },
+      { "agent": "Execution", "durationMs": 4620 },
+      { "agent": "Healing", "durationMs": 540 },
+      { "agent": "RCA", "durationMs": 390 }
+    ]
+  }
+}

@@ -1,0 +1,219 @@
+{
+  "Submit Button": {
+    "primary": "#submit-btn",
+    "fallbacks": [
+      "[data-testid='submit']",
+      "//button[contains(text(),'Submit')]"
+    ],
+    "successCount": 10,
+    "failureCount": 2,
+    "lastUsed": ""
+  },
+  "SauceDemo Username": {
+    "primary": "#user-name",
+    "fallbacks": [
+      "[data-test='username']",
+      "input[placeholder*='Username' i]",
+      "//input[contains(@id,'user') or contains(@name,'user')]"
+    ],
+    "successCount": 8,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:41:15.834Z"
+  },
+  "SauceDemo Password": {
+    "primary": "#password",
+    "fallbacks": [
+      "[data-test='password']",
+      "input[placeholder*='Password' i]",
+      "//input[contains(@id,'pass') or contains(@name,'pass')]"
+    ],
+    "successCount": 8,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:41:15.886Z"
+  },
+  "SauceDemo Login Button": {
+    "primary": "#login-button",
+    "fallbacks": [
+      "[data-test='login-button']",
+      "role=button[name=/login/i]",
+      "//input[@type='submit' or @type='button']"
+    ],
+    "successCount": 8,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:41:15.985Z"
+  },
+  "MLIS Email address": {
+    "primary": "role=textbox[name=/Email address/i]",
+    "fallbacks": [
+      "input[type='email']",
+      "input[name*='email' i]",
+      "[placeholder*='email' i]"
+    ],
+    "successCount": 3,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:46:32.315Z"
+  },
+  "MLIS Password": {
+    "primary": "role=textbox[name=/Password/i]",
+    "fallbacks": [
+      "input[type='password']",
+      "input[name*='pass' i]",
+      "[placeholder*='password' i]"
+    ],
+    "successCount": 3,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:46:32.404Z"
+  },
+  "MLIS Login": {
+    "primary": "role=link[name=/^Login$/i]",
+    "fallbacks": [
+      "role=button[name=/^Login$/i]",
+      "text=/^Login$/i"
+    ],
+    "successCount": 3,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:46:32.533Z"
+  },
+  "MLIS Commercial England & Wales Start quote": {
+    "primary": "role=link[name=/England\\s*&\\s*Wales\\s*Start quote/i]",
+    "fallbacks": [
+      "text=/England\\s*&\\s*Wales\\s*Start quote/i",
+      "role=button[name=/England\\s*&\\s*Wales\\s*Start quote/i]",
+      "a:has-text('England')"
+    ],
+    "successCount": 2,
+    "failureCount": 1,
+    "lastUsed": "2026-05-13T03:46:39.586Z"
+  },
+  "MLIS Commercial Case reference": {
+    "primary": "xpath=//*[contains(normalize-space(.), 'My case reference')]/following::input[1]",
+    "fallbacks": [
+      "role=textbox[name=/My case reference/ file number/i]",
+      "input[name*='case' i]",
+      "input[placeholder*='case' i]"
+    ],
+    "successCount": 1,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:47:12.007Z"
+  },
+  "MLIS Commercial Limit of indemnity": {
+    "primary": "role=spinbutton[name=/Limit of indemnity/i]",
+    "fallbacks": [
+      "input[name*='limit' i]",
+      "xpath=//*[contains(normalize-space(.), 'Limit of indemnity')]/following::input[1]"
+    ],
+    "successCount": 1,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:47:12.173Z"
+  },
+  "MLIS Commercial Product Select": {
+    "primary": "role=button[name=/^Select$/i]",
+    "fallbacks": [
+      "text=/^Select$/i",
+      "button:has-text('Select')"
+    ],
+    "successCount": 4,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:47:13.144Z"
+  },
+  "MLIS Commercial Proceed": {
+    "primary": "role=button[name=/^Proceed$/i]",
+    "fallbacks": [
+      "text=/^Proceed$/i",
+      "button:has-text('Proceed')"
+    ],
+    "successCount": 1,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:47:13.311Z"
+  },
+  "MLIS Commercial Statements Confirm": {
+    "primary": "role=button[name=/^Confirm$/i]",
+    "fallbacks": [
+      "text=/^Confirm$/i",
+      "button:has-text('Confirm')"
+    ],
+    "successCount": 13,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:47:32.635Z"
+  },
+  "MLIS Commercial Select quote": {
+    "primary": "role=button[name=/Select quote/i]",
+    "fallbacks": [
+      "text=/Select quote/i",
+      "button:has-text('Select quote')"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Commercial Final details required input": {
+    "primary": "input[required]",
+    "fallbacks": [
+      "input[aria-required='true']",
+      "xpath=//input[@required]"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Commercial Enter manually": {
+    "primary": "role=button[name=/enter manually/i]",
+    "fallbacks": [
+      "role=link[name=/enter manually/i]",
+      "text=/enter manually/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Commercial Proceed to order": {
+    "primary": "role=button[name=/Proceed to order/i]",
+    "fallbacks": [
+      "text=/Proceed to order/i",
+      "button:has-text('Proceed to order')"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Commercial Confirm policy commencement": {
+    "primary": "role=textbox[name=/Confirm policy commencement/i]",
+    "fallbacks": [
+      "text=/Confirm policy commencement/i",
+      "input[aria-label*='commencement' i]"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Commercial Today": {
+    "primary": "role=button[name=/^Today$/i]",
+    "fallbacks": [
+      "text=/^Today$/i",
+      "button:has-text('Today')"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Commercial Order now": {
+    "primary": "role=button[name=/Order now/i]",
+    "fallbacks": [
+      "text=/Order now/i",
+      "button:has-text('Order now')"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Commercial Back to quote manager": {
+    "primary": "role=button[name=/Back to quote manager/i]",
+    "fallbacks": [
+      "text=/Back to quote manager/i",
+      "button:has-text('Back to quote manager')"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "autonomous-ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:debug": "npx playwright test --debug",
+    "test:sanity": "npx playwright test tests/sanity/",
+    "test:regression": "npx playwright test tests/regression/",
+    "test:uat2": "TEST_ENV=UAT2 npx playwright test",
+    "test:sit2": "TEST_ENV=SIT2 npx playwright test",
+    "test:report": "npx playwright show-report",
+    "demo:live": "npx ts-node orchestrator/live-demo.ts",
+    "demo:commercial-2p": "npx ts-node orchestrator/live-demo-commercial-2p.ts",
+    "dashboard:ui": "npx ts-node dashboard/dashboardUi.ts",
+    "dashboard:runtime": "npx ts-node dashboard/exportDashboardArtifacts.ts",
+    "dashboard:pim": "npx ts-node dashboard/exportPimDashboard.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.9.1",
+    "dotenv": "^17.4.2"
+  }
+}

@@ -1,0 +1,631 @@
+{
+  "Submit Button": {
+    "primary": "#submit-btn",
+    "fallbacks": [
+      "[data-testid='submit']",
+      "//button[contains(text(),'Submit')]"
+    ],
+    "successCount": 10,
+    "failureCount": 2,
+    "lastUsed": ""
+  },
+  "SauceDemo Username": {
+    "primary": "#user-name",
+    "fallbacks": [
+      "[data-test='username']",
+      "input[placeholder*='Username' i]",
+      "//input[contains(@id,'user') or contains(@name,'user')]"
+    ],
+    "successCount": 8,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:41:15.834Z"
+  },
+  "SauceDemo Password": {
+    "primary": "#password",
+    "fallbacks": [
+      "[data-test='password']",
+      "input[placeholder*='Password' i]",
+      "//input[contains(@id,'pass') or contains(@name,'pass')]"
+    ],
+    "successCount": 8,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:41:15.886Z"
+  },
+  "SauceDemo Login Button": {
+    "primary": "#login-button",
+    "fallbacks": [
+      "[data-test='login-button']",
+      "role=button[name=/login/i]",
+      "//input[@type='submit' or @type='button']"
+    ],
+    "successCount": 8,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T03:41:15.985Z"
+  },
+  "MLIS Email address": {
+    "primary": "role=textbox[name=/Email address/i]",
+    "fallbacks": [
+      "input[type='email']",
+      "input[name*='email' i]",
+      "[placeholder*='email' i]"
+    ],
+    "successCount": 25,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:12:29.196Z"
+  },
+  "MLIS Password": {
+    "primary": "role=textbox[name=/Password/i]",
+    "fallbacks": [
+      "input[type='password']",
+      "input[name*='pass' i]",
+      "[placeholder*='password' i]"
+    ],
+    "successCount": 25,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:12:29.359Z"
+  },
+  "MLIS Login": {
+    "primary": "role=link[name=/^Login$/i]",
+    "fallbacks": [
+      "role=button[name=/^Login$/i]",
+      "text=/^Login$/i"
+    ],
+    "successCount": 25,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:12:29.615Z"
+  },
+  "MLIS Commercial England & Wales Start quote": {
+    "primary": "role=link[name=/England\\s*&\\s*Wales\\s*Start quote/i]",
+    "fallbacks": [
+      "text=/England\\s*&\\s*Wales\\s*Start quote/i",
+      "role=button[name=/England\\s*&\\s*Wales\\s*Start quote/i]",
+      "a:has-text('England')"
+    ],
+    "successCount": 20,
+    "failureCount": 1,
+    "lastUsed": "2026-06-09T08:12:35.529Z"
+  },
+  "MLIS Commercial Northern Ireland Start quote": {
+    "primary": "role=link[name=/Northern\\s*Ireland\\s*Start quote/i]",
+    "fallbacks": [
+      "text=/Northern\\s*Ireland\\s*Start quote/i",
+      "role=button[name=/Northern\\s*Ireland\\s*Start quote/i]",
+      "a:has-text('Northern Ireland')"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Commercial Scotland Start quote": {
+    "primary": "role=link[name=/Scotland\\s*Start quote/i]",
+    "fallbacks": [
+      "text=/Scotland\\s*Start quote/i",
+      "role=button[name=/Scotland\\s*Start quote/i]",
+      "a:has-text('Scotland')"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Scotland Start quote": {
+    "primary": "role=link[name=/Scotland\\s*Start quote/i]",
+    "fallbacks": [
+      "text=/Scotland\\s*Start quote/i",
+      "role=button[name=/Scotland\\s*Start quote/i]",
+      "a:has-text('Scotland')"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS England & Wales Start quote": {
+    "primary": "role=link[name=/England\\s*&\\s*Wales\\s*Start quote/i]",
+    "fallbacks": [
+      "text=/England\\s*&\\s*Wales\\s*Start quote/i",
+      "role=button[name=/England\\s*&\\s*Wales\\s*Start quote/i]",
+      "a:has-text('England')"
+    ],
+    "successCount": 3,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T05:10:37.479Z"
+  },
+  "MLIS Land register number": {
+    "primary": "role=textbox[name=/(Land\\s*register|Land\\s*registry|Title\\s*(number|no\\.?))/i]",
+    "fallbacks": [
+      "input[name*='title' i]",
+      "input[name*='register' i]",
+      "xpath=//*[matches(normalize-space(.), 'Land\\s*register|Land\\s*registry|Title\\s*(number|no\\.?)', 'i')]/following::input[1]"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "Broker Portal Search all fields": {
+    "primary": "role=textbox[name=/Search all fields/i]",
+    "fallbacks": [
+      "input[placeholder*='Search' i]",
+      "input[type='search']"
+    ],
+    "successCount": 2,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T05:11:32.466Z"
+  },
+  "Broker Portal Search": {
+    "primary": "role=link[name=/^Search$/i]",
+    "fallbacks": [
+      "role=button[name=/^Search$/i]",
+      "text=/^Search$/i"
+    ],
+    "successCount": 2,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T05:11:32.709Z"
+  },
+  "SF Username": {
+    "primary": "role=textbox[name=/^Username$/i]",
+    "fallbacks": [
+      "input#username",
+      "input[name='username']",
+      "input[placeholder*='User' i]"
+    ],
+    "successCount": 2,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T05:11:36.198Z"
+  },
+  "SF Password": {
+    "primary": "role=textbox[name=/^Password$/i]",
+    "fallbacks": [
+      "input#password",
+      "input[name='pw']",
+      "input[type='password']"
+    ],
+    "successCount": 2,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T05:11:36.259Z"
+  },
+  "SF Log In": {
+    "primary": "role=button[name=/Log In/i]",
+    "fallbacks": [
+      "input#Login",
+      "text=/Log In/i"
+    ],
+    "successCount": 2,
+    "failureCount": 0,
+    "lastUsed": "2026-05-13T05:11:39.086Z"
+  },
+  "SF Global Search launcher": {
+    "primary": "role=button[name=/^Search$/i]",
+    "fallbacks": [
+      "xpath=//*[@id='oneHeader']/div[2]/div[2]/div/div/button",
+      "role=button[name=/Search/i]"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Global Search input": {
+    "primary": "input[type='search'][placeholder='Search...']",
+    "fallbacks": [
+      "[role='dialog'] input[type='search']",
+      "#oneHeader input[type='search']",
+      "input[placeholder*='Search' i]"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Header Search input": {
+    "primary": "#oneHeader [role='search'] input:visible, #oneHeader input[type='search']:visible, #oneHeader input[placeholder='Search...']:visible",
+    "fallbacks": [
+      "#oneHeader input[type='search']",
+      "#oneHeader input[placeholder*='Search' i]"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Dialog Search input": {
+    "primary": "[role='dialog'] input[type='search']:visible, [role='dialog'] input[placeholder*='Search' i]:visible",
+    "fallbacks": [
+      "[role='dialog'] input[type='search']",
+      "[role='dialog'] input[placeholder*='Search' i]"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Related tab": {
+    "primary": "role=tab[name=/^Related$/i]",
+    "fallbacks": [
+      "text=/^Related$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Notes & Attachments link": {
+    "primary": "role=link[name=/Notes\\s*&\\s*Attachments/i]",
+    "fallbacks": [
+      "text=/Notes\\s*&\\s*Attachments/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Show more actions": {
+    "primary": "role=button[name=/^Show more actions$/i]",
+    "fallbacks": [
+      "button[title='Show more actions']",
+      "text=/Show more actions/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Menu Cancel Policy": {
+    "primary": "role=menuitem[name=/^Cancel Policy$/i]",
+    "fallbacks": [
+      "text=/^Cancel Policy$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Menu Cancel and Reissue": {
+    "primary": "role=menuitem[name=/^Cancel and Reissue$/i]",
+    "fallbacks": [
+      "text=/^Cancel and Reissue$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Wizard Next": {
+    "primary": "role=button[name=/^Next$/i]",
+    "fallbacks": [
+      "text=/^Next$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF OK": {
+    "primary": "role=button[name=/^OK$/i]",
+    "fallbacks": [
+      "text=/^OK$/i",
+      "[role='dialog'] >> role=button[name=/^OK$/i]"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Calculate Tax": {
+    "primary": "role=button[name=/^Calculate Tax$/i]",
+    "fallbacks": [
+      "text=/^Calculate Tax$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Cancellation Notes": {
+    "primary": "role=textbox[name=/Cancellation Notes/i]",
+    "fallbacks": [
+      "role=textbox[name=/Cancellation Notes\\/Narrative/i]",
+      "textarea:visible"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Cancellation Effective Date": {
+    "primary": "role=textbox[name=/Cancellation Effective Date/i]",
+    "fallbacks": [
+      "input[placeholder*='dd' i]",
+      "input[type='text']:visible"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Cancellation Return Premium": {
+    "primary": "role=spinbutton[name=/Cancellation Return Premium/i]",
+    "fallbacks": [
+      "input[type='number']:visible",
+      "input:visible"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Toast Close": {
+    "primary": "button[title='Close']:visible",
+    "fallbacks": [
+      "role=button[name=/Close/i]"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Create MTA": {
+    "primary": "role=button[name=/^Create MTA$/i]",
+    "fallbacks": [
+      "text=/^Create MTA$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Flow Submit": {
+    "primary": "role=button[name=/^Submit$/i]",
+    "fallbacks": [
+      "text=/^Submit$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Edit Intermediary Reference": {
+    "primary": "role=button[name=/Edit Intermediary Reference/i]",
+    "fallbacks": [
+      "text=/Edit Intermediary Reference/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Intermediary Reference": {
+    "primary": "role=textbox[name=/Intermediary Reference/i]",
+    "fallbacks": [
+      "input:visible",
+      "role=textbox"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Edit MTA Premium": {
+    "primary": "role=button[name=/Edit MTA Premium/i]",
+    "fallbacks": [
+      "text=/Edit MTA Premium/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF MTA Premium (dialog)": {
+    "primary": "[role='dialog']:visible >> role=spinbutton[name=/MTA.*Premium/i]",
+    "fallbacks": [
+      "[role='dialog']:visible >> role=textbox[name=/MTA.*Premium/i]",
+      "[role='dialog']:visible input:visible"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Dialog Save": {
+    "primary": "[role='dialog']:visible >> role=button[name=/^Save$/i]",
+    "fallbacks": [
+      "[role='dialog']:visible >> role=button[name=/Save/i]",
+      "text=/^Save$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Dialog Close": {
+    "primary": "[role='dialog']:visible >> role=button[name=/^Close$/i]",
+    "fallbacks": [
+      "[role='dialog']:visible >> role=button[name=/Close/i]",
+      "text=/^Close$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Bind MTA": {
+    "primary": "role=button[name=/Bind MTA/i]",
+    "fallbacks": [
+      "text=/Bind MTA/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Bind Effective Date": {
+    "primary": "role=textbox[name=/Date|Effective/i]",
+    "fallbacks": [
+      "input[type='text']:visible"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Bind": {
+    "primary": "role=button[name=/^Bind$/i]",
+    "fallbacks": [
+      "text=/^Bind$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Cancel & Reissue Description": {
+    "primary": "[role='dialog']:visible >> role=textbox",
+    "fallbacks": [
+      "[role='dialog']:visible textarea:visible",
+      "[role='dialog']:visible input:visible"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Cancel & Reissue Submit": {
+    "primary": "[role='dialog']:visible >> role=button[name=/^Submit$/i]",
+    "fallbacks": [
+      "[role='dialog']:visible >> text=/^Submit$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Proceed": {
+    "primary": "role=button[name=/^Proceed$/i]",
+    "fallbacks": [
+      "text=/^Proceed$/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "SF Reissue Order": {
+    "primary": "role=button[name=/Proceed to order|Order|Submit/i]",
+    "fallbacks": [
+      "text=/Proceed to order|Order|Submit/i"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Northern Ireland Start quote": {
+    "primary": "role=link[name=/Northern\\s*Ireland\\s*Start quote/i]",
+    "fallbacks": [
+      "text=/Northern\\s*Ireland\\s*Start quote/i",
+      "role=button[name=/Northern\\s*Ireland\\s*Start quote/i]",
+      "a:has-text('Northern Ireland')"
+    ],
+    "successCount": 0,
+    "failureCount": 0,
+    "lastUsed": ""
+  },
+  "MLIS Commercial Case reference": {
+    "primary": "xpath=//*[contains(normalize-space(.), 'My case reference')]/following::input[1]",
+    "fallbacks": [
+      "role=textbox[name=\"My case reference/ file number\"]",
+      "input[name*='case' i]",
+      "input[placeholder*='case' i]"
+    ],
+    "successCount": 22,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:12:38.202Z"
+  },
+  "MLIS Commercial Limit of indemnity": {
+    "primary": "role=spinbutton[name=/Limit of indemnity/i]",
+    "fallbacks": [
+      "input[name*='limit' i]",
+      "xpath=//*[contains(normalize-space(.), 'Limit of indemnity')]/following::input[1]"
+    ],
+    "successCount": 22,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:12:38.326Z"
+  },
+  "MLIS Commercial Product Select": {
+    "primary": "role=button[name=/^Select$/i]",
+    "fallbacks": [
+      "text=/^Select$/i",
+      "button:has-text('Select')"
+    ],
+    "successCount": 63,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:12:39.443Z"
+  },
+  "MLIS Commercial Proceed": {
+    "primary": "role=button[name=/^Proceed$/i]",
+    "fallbacks": [
+      "text=/^Proceed$/i",
+      "button:has-text('Proceed')"
+    ],
+    "successCount": 51,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:13:10.207Z"
+  },
+  "MLIS Commercial Statements Confirm": {
+    "primary": "role=button[name=/^Confirm$/i]",
+    "fallbacks": [
+      "text=/^Confirm$/i",
+      "button:has-text('Confirm')"
+    ],
+    "successCount": 172,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:12:51.080Z"
+  },
+  "MLIS Commercial Select quote": {
+    "primary": "role=button[name=/Select quote/i]",
+    "fallbacks": [
+      "text=/Select quote/i",
+      "button:has-text('Select quote')"
+    ],
+    "successCount": 15,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:13:04.075Z"
+  },
+  "MLIS Commercial Final details required input": {
+    "primary": "input[required]",
+    "fallbacks": [
+      "input[aria-required='true']",
+      "xpath=//input[@required]"
+    ],
+    "successCount": 60,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:13:10.089Z"
+  },
+  "MLIS Commercial Enter manually": {
+    "primary": "role=button[name=/enter manually/i]",
+    "fallbacks": [
+      "role=link[name=/enter manually/i]",
+      "text=/enter manually/i"
+    ],
+    "successCount": 15,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:13:09.919Z"
+  },
+  "MLIS Commercial Proceed to order": {
+    "primary": "role=button[name=/Proceed to order/i]",
+    "fallbacks": [
+      "text=/Proceed to order/i",
+      "button:has-text('Proceed to order')"
+    ],
+    "successCount": 13,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:11:49.229Z"
+  },
+  "MLIS Commercial Confirm policy commencement": {
+    "primary": "role=textbox[name=/Confirm policy commencement/i]",
+    "fallbacks": [
+      "text=/Confirm policy commencement/i",
+      "input[aria-label*='commencement' i]"
+    ],
+    "successCount": 13,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:11:50.937Z"
+  },
+  "MLIS Commercial Today": {
+    "primary": "role=button[name=/^Today$/i]",
+    "fallbacks": [
+      "text=/^Today$/i",
+      "button:has-text('Today')"
+    ],
+    "successCount": 13,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:11:51.223Z"
+  },
+  "MLIS Commercial Order now": {
+    "primary": "role=button[name=/Order now/i]",
+    "fallbacks": [
+      "text=/Order now/i",
+      "button:has-text('Order now')"
+    ],
+    "successCount": 13,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:11:51.600Z"
+  },
+  "MLIS Commercial Back to quote manager": {
+    "primary": "role=button[name=/Back to quote manager/i]",
+    "fallbacks": [
+      "text=/Back to quote manager/i",
+      "button:has-text('Back to quote manager')"
+    ],
+    "successCount": 13,
+    "failureCount": 0,
+    "lastUsed": "2026-06-09T08:12:07.390Z"
+  }
+}

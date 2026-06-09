@@ -1,0 +1,737 @@
+﻿{
+  "config": {
+    "configFile": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\playwright.config.ts",
+    "rootDir": "C:/Users/smruti.r.a.mohanty/Autonomous AI/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 6
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/smruti.r.a.mohanty/Autonomous AI/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/smruti.r.a.mohanty/Autonomous AI/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 6,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "example.spec.ts",
+      "file": "example.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "has title",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 30118,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\example.spec.ts",
+                        "column": 14,
+                        "line": 4
+                      },
+                      "message": "Error: page.goto: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://playwright.dev/\", waiting until \"load\"\u001b[22m\n\n\n  2 |\n  3 | test('has title', async ({ page }) => {\n> 4 |   await page.goto('https://playwright.dev/');\n    |              ^\n  5 |\n  6 |   // Expect a title \"to contain\" a substring.\n  7 |   await expect(page).toHaveTitle(/Playwright/);\n    at C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\example.spec.ts:4:14"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-03T07:23:38.999Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\test-results\\example-has-title-chromium\\error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a30a6eba6312f6b87ea5-b06063a3e613764d08f8",
+          "file": "example.spec.ts",
+          "line": 3,
+          "column": 5
+        },
+        {
+          "title": "get started link",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "timedOut",
+                  "duration": 30086,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\example.spec.ts",
+                        "column": 14,
+                        "line": 11
+                      },
+                      "message": "Error: page.goto: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://playwright.dev/\", waiting until \"load\"\u001b[22m\n\n\n   9 |\n  10 | test('get started link', async ({ page }) => {\n> 11 |   await page.goto('https://playwright.dev/');\n     |              ^\n  12 |\n  13 |   // Click the get started link.\n  14 |   await page.getByRole('link', { name: 'Get started' }).click();\n    at C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\example.spec.ts:11:14"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-03T07:23:38.352Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\test-results\\example-get-started-link-chromium\\error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a30a6eba6312f6b87ea5-274e97907a6e3638a22f",
+          "file": "example.spec.ts",
+          "line": 10,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "healing-demo.spec.ts",
+      "file": "healing-demo.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "OrangeHRM Login ΓÇô Self-Healing Demo",
+          "file": "healing-demo.spec.ts",
+          "line": 92,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TC_001 ΓÇô Login page loads with self-healing locators",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 18502,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[healer] No healing events recorded.\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-03T07:23:39.016Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26d88967f1e6d48e8f77-8c35dc32eb7b89aa338b",
+              "file": "healing-demo.spec.ts",
+              "line": 110,
+              "column": 7
+            },
+            {
+              "title": "TC_002 ΓÇô Successful login with self-healing locators",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "timedOut",
+                      "duration": 30116,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\healing-demo.spec.ts",
+                            "column": 14,
+                            "line": 81
+                          },
+                          "message": "Error: page.goto: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\", waiting until \"load\"\u001b[22m\n\n\n  79 | /** Navigate to the login page and wait for the SPA to render the form. */\n  80 | async function gotoLogin(page: Page): Promise<void> {\n> 81 |   await page.goto('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');\n     |              ^\n  82 |   // Wait for domcontentloaded (faster than networkidle on SPAs) then\n  83 |   // gate on the username field being visible ΓÇö guarantees the form is ready.\n  84 |   await page.waitForLoadState('domcontentloaded');\n    at gotoLogin (C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\healing-demo.spec.ts:81:14)\n    at C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\healing-demo.spec.ts:120:11"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "[healer] No healing events recorded.\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-03T07:23:39.016Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\test-results\\healing-demo-OrangeHRM-Log-ca512--with-self-healing-locators-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "26d88967f1e6d48e8f77-be789e54582b5c6fe8a2",
+              "file": "healing-demo.spec.ts",
+              "line": 119,
+              "column": 7
+            },
+            {
+              "title": "TC_003 ΓÇô Healing fallback: CSS used when primary name strategy is broken",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 15149,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n[healer] Heal summary (1 event(s)):\n"
+                        },
+                        {
+                          "text": "  ΓÇó 2026-06-03T07:23:58.458Z | key=\"loginUsername-fallback-demo\" | failed: strategy[0] (name) ΓåÆ healed: strategy[1] (css) | url: https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\n"
+                        }
+                      ],
+                      "stderr": [
+                        {
+                          "text": "[healer] HEALED \"loginUsername-fallback-demo\": strategy[0] (name) failed ΓåÆ strategy[1] (css) succeeded on https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-06-03T07:23:39.709Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "26d88967f1e6d48e8f77-04592da1d5d8b3371af7",
+              "file": "healing-demo.spec.ts",
+              "line": 132,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "login.spec.ts",
+      "file": "login.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "OrangeHRM Login Verification",
+          "file": "login.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TC_001 - OrangeHRM Login Verification",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "timedOut",
+                      "duration": 30123,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\login.spec.ts",
+                            "column": 16,
+                            "line": 6
+                          },
+                          "message": "Error: page.goto: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\", waiting until \"load\"\u001b[22m\n\n\n  4 |   test('TC_001 - OrangeHRM Login Verification', async ({ page }) => {\n  5 |     // 1. Open OrangeHRM website\n> 6 |     await page.goto('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');\n    |                ^\n  7 |\n  8 |     // 2. Verify Login page displayed\n  9 |     await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible();\n    at C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\login.spec.ts:6:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-03T07:23:38.999Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\test-results\\login-OrangeHRM-Login-Veri-130ac-rangeHRM-Login-Verification-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "41d3fd2474a19feb00a1-a2206a036cfffa12ef5c",
+              "file": "login.spec.ts",
+              "line": 4,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "seed.spec.ts",
+      "file": "seed.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Test group",
+          "file": "seed.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "seed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 1807,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-03T07:23:58.553Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "11ceb7af692008938f3b-e93327a24cf4dbee4058",
+              "file": "seed.spec.ts",
+              "line": 4,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "tc_001-orangehrm-login-verification.spec.ts",
+      "file": "tc_001-orangehrm-login-verification.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "OrangeHRM Login Verification",
+          "file": "tc_001-orangehrm-login-verification.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TC_001 - OrangeHRM Login Verification",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "timedOut",
+                      "duration": 30076,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_001-orangehrm-login-verification.spec.ts",
+                            "column": 16,
+                            "line": 6
+                          },
+                          "message": "Error: page.goto: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\", waiting until \"load\"\u001b[22m\n\n\n  4 |   test('TC_001 - OrangeHRM Login Verification', async ({ page }) => {\n  5 |     // 1. Open OrangeHRM website\n> 6 |     await page.goto('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');\n    |                ^\n  7 |\n  8 |     // 2. Verify Login page displayed\n  9 |     await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible();\n    at C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_001-orangehrm-login-verification.spec.ts:6:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-03T07:24:00.385Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\test-results\\tc_001-orangehrm-login-ver-afd3b-rangeHRM-Login-Verification-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "3a6de6c64772eee511e3-5fdd453363e4a94f0c52",
+              "file": "tc_001-orangehrm-login-verification.spec.ts",
+              "line": 4,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "tc_004-pim-employee-search.spec.ts",
+      "file": "tc_004-pim-employee-search.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "OrangeHRM PIM ΓÇö Employee Search",
+          "file": "tc_004-pim-employee-search.spec.ts",
+          "line": 138,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TC_004 ΓÇô Login, navigate to PIM, search employee, verify record",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 62003,
+                      "error": {
+                        "message": "TimeoutError: page.goto: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "TimeoutError: page.goto: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\", waiting until \"load\"\u001b[22m\n\n    at loginAs (C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_004-pim-employee-search.spec.ts:118:14)\n    at C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_004-pim-employee-search.spec.ts:151:11",
+                        "location": {
+                          "file": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_004-pim-employee-search.spec.ts",
+                          "column": 14,
+                          "line": 118
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 116 |\u001b[39m\n \u001b[90m 117 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m loginAs(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m username\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m password\u001b[33m:\u001b[39m string)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 118 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mBASE_URL\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 119 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"username\"]'\u001b[39m)\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 120 |\u001b[39m\n \u001b[90m 121 |\u001b[39m   \u001b[36mconst\u001b[39m userInput \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m locate(page\u001b[33m,\u001b[39m \u001b[32m'loginUsername'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_004-pim-employee-search.spec.ts",
+                            "column": 14,
+                            "line": 118
+                          },
+                          "message": "TimeoutError: page.goto: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\", waiting until \"load\"\u001b[22m\n\n\n  116 |\n  117 | async function loginAs(page: Page, username: string, password: string): Promise<void> {\n> 118 |   await page.goto(BASE_URL);\n      |              ^\n  119 |   await page.locator('input[name=\"username\"]').waitFor({ state: 'visible', timeout: 30000 });\n  120 |\n  121 |   const userInput = await locate(page, 'loginUsername');\n    at loginAs (C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_004-pim-employee-search.spec.ts:118:14)\n    at C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_004-pim-employee-search.spec.ts:151:11"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "[healer] No healing events recorded.\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-03T07:24:01.361Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\test-results\\tc_004-pim-employee-search-c2805-arch-employee-verify-record-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_004-pim-employee-search.spec.ts",
+                        "column": 14,
+                        "line": 118
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "66e092913d90d077e5bb-b64550d074e8e1633ed4",
+              "file": "tc_004-pim-employee-search.spec.ts",
+              "line": 147,
+              "column": 7
+            },
+            {
+              "title": "TC_005 ΓÇô Direct PIM URL access, verify Employee List table and records count",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 1,
+                      "status": "timedOut",
+                      "duration": 30055,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_004-pim-employee-search.spec.ts",
+                            "column": 14,
+                            "line": 118
+                          },
+                          "message": "Error: page.goto: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\", waiting until \"load\"\u001b[22m\n\n\n  116 |\n  117 | async function loginAs(page: Page, username: string, password: string): Promise<void> {\n> 118 |   await page.goto(BASE_URL);\n      |              ^\n  119 |   await page.locator('input[name=\"username\"]').waitFor({ state: 'visible', timeout: 30000 });\n  120 |\n  121 |   const userInput = await locate(page, 'loginUsername');\n    at loginAs (C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_004-pim-employee-search.spec.ts:118:14)\n    at C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\tests\\tc_004-pim-employee-search.spec.ts:205:11"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "[healer] No healing events recorded.\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-03T07:24:14.090Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\smruti.r.a.mohanty\\Autonomous AI\\test-results\\tc_004-pim-employee-search-5fd12-ist-table-and-records-count-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "66e092913d90d077e5bb-0141831f2580d9b0d308",
+              "file": "tc_004-pim-employee-search.spec.ts",
+              "line": 203,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "tc_pim_001_add_employee.spec.ts",
+      "file": "tc_pim_001_add_employee.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "PIM Module ΓÇô Employee Management",
+          "file": "tc_pim_001_add_employee.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Add New Employee (John Agentic) and Verify Profile Creation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 155246,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-03T07:24:14.640Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "52445c3dab239bc85cbd-aa2a532950bcc80a2bae",
+              "file": "tc_pim_001_add_employee.spec.ts",
+              "line": 7,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-06-03T07:23:33.624Z",
+    "duration": 198610.93600000002,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 7,
+    "flaky": 0
+  }
+}

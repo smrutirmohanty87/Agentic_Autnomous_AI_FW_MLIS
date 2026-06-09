@@ -1,0 +1,51 @@
+{
+  "workflowId": "run-1780993283706",
+  "startedAt": "2026-06-09T08:21:23.706Z",
+  "overallStatus": "FAILED",
+  "currentAgent": null,
+  "agents": [
+    {
+      "name": "Planner",
+      "state": "SUCCESS",
+      "startedAt": "2026-06-09T08:21:23.729Z",
+      "finishedAt": "2026-06-09T08:21:23.735Z",
+      "durationMs": 6
+    },
+    {
+      "name": "Designer",
+      "state": "SUCCESS",
+      "startedAt": "2026-06-09T08:21:28.745Z",
+      "finishedAt": "2026-06-09T08:21:28.752Z",
+      "durationMs": 7
+    },
+    {
+      "name": "Generator",
+      "state": "SUCCESS",
+      "startedAt": "2026-06-09T08:21:33.778Z",
+      "finishedAt": "2026-06-09T08:21:33.784Z",
+      "durationMs": 6
+    },
+    {
+      "name": "Execution",
+      "state": "FAILED",
+      "startedAt": "2026-06-09T08:22:21.781Z",
+      "finishedAt": "2026-06-09T08:23:04.595Z",
+      "durationMs": 42814
+    },
+    {
+      "name": "Healing",
+      "state": "SUCCESS",
+      "startedAt": "2026-06-09T08:22:21.772Z",
+      "finishedAt": "2026-06-09T08:23:04.601Z",
+      "durationMs": 42829
+    },
+    {
+      "name": "RCA",
+      "state": "FAILED",
+      "startedAt": "2026-06-09T08:23:04.609Z",
+      "finishedAt": "2026-06-09T08:23:04.625Z",
+      "durationMs": 16
+    }
+  ],
+  "completedAt": "2026-06-09T08:23:04.647Z"
+}

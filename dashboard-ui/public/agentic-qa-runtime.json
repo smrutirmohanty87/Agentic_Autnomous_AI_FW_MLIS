@@ -1,0 +1,118 @@
+{
+  "title": "Agentic QA Platform",
+  "generatedAt": "2026-06-09T08:23:04.672Z",
+  "kpis": {
+    "workflowStatus": "FAILED",
+    "testsPassed": 0,
+    "testsFailed": 1,
+    "healEvents": 0,
+    "rcaEvents": 1,
+    "executionDurationMs": 41964
+  },
+  "agents": [
+    {
+      "name": "Planner",
+      "status": "SUCCESS",
+      "durationMs": 7
+    },
+    {
+      "name": "Designer",
+      "status": "SUCCESS",
+      "durationMs": 10
+    },
+    {
+      "name": "Generator",
+      "status": "SUCCESS",
+      "durationMs": 9
+    },
+    {
+      "name": "Execution",
+      "status": "FAILED",
+      "durationMs": 41964
+    },
+    {
+      "name": "Healing",
+      "status": "SUCCESS",
+      "durationMs": 42829
+    },
+    {
+      "name": "RCA",
+      "status": "FAILED",
+      "durationMs": 17
+    }
+  ],
+  "rcaSummary": [
+    {
+      "testName": "Create Commercial England & Wales policy with exactly 6 products",
+      "elementKey": "unhealed-failure",
+      "failureType": "Timeout",
+      "affectedElement": "error=\"\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name\"",
+      "rootCause": "The test timed out waiting for an element or navigation at \"https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index\". Likely causes: slow network on the demo environment, a missing waitFor, or a selector that never matched.",
+      "recoveryAction": "Increase test/action timeout and add explicit waitFor before the failing step.",
+      "recoveryStatus": "FAILED",
+      "confidence": 80,
+      "recommendation": "Profile the page load time in the CI environment. Consider raising `navigationTimeout` in playwright.config.ts and switching `waitForLoadState` from 'networkidle' to 'domcontentloaded'.",
+      "timestamp": "2026-06-09T08:23:01.834Z",
+      "pageUrl": "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index"
+    }
+  ],
+  "healingAnalytics": [],
+  "workflowTimeline": [
+    "Requirement",
+    "Planner",
+    "Designer",
+    "Generator",
+    "Execution",
+    "Healing",
+    "RCA"
+  ],
+  "visualizations": {
+    "testTrend": [
+      {
+        "run": "TC_COMM_6P_001",
+        "passed": 0,
+        "failed": 1
+      }
+    ],
+    "eventDistribution": [
+      {
+        "name": "Heal",
+        "value": 0
+      },
+      {
+        "name": "RCA",
+        "value": 1
+      },
+      {
+        "name": "Failed",
+        "value": 1
+      }
+    ],
+    "agentDurations": [
+      {
+        "agent": "Planner",
+        "durationMs": 7
+      },
+      {
+        "agent": "Designer",
+        "durationMs": 10
+      },
+      {
+        "agent": "Generator",
+        "durationMs": 9
+      },
+      {
+        "agent": "Execution",
+        "durationMs": 41964
+      },
+      {
+        "agent": "Healing",
+        "durationMs": 42829
+      },
+      {
+        "agent": "RCA",
+        "durationMs": 17
+      }
+    ]
+  }
+}
