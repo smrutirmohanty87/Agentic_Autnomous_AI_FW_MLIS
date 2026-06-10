@@ -13,6 +13,10 @@
     "test:report": "npx playwright show-report",
     "demo:live": "npx ts-node orchestrator/live-demo.ts",
     "demo:commercial-2p": "npx ts-node orchestrator/live-demo-commercial-2p.ts",
+    "demo:mta-live": "npx ts-node orchestrator/live-demo-mta.ts",
+    "demo:mta-live-002": "npx ts-node orchestrator/live-demo-mta-002.ts",
+    "demo:mta-live-003": "npx ts-node orchestrator/live-demo-mta-003.ts",
+    "demo:cnr-live": "npx ts-node orchestrator/live-demo-cnr.ts",
     "dashboard:ui": "npx ts-node dashboard/dashboardUi.ts",
     "dashboard:runtime": "npx ts-node dashboard/exportDashboardArtifacts.ts",
     "dashboard:pim": "npx ts-node dashboard/exportPimDashboard.ts"

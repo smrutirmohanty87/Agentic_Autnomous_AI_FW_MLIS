@@ -13,13 +13,18 @@
 import { createInterface } from 'readline/promises';
 import { stdin as input, stdout as output } from 'process';
 import { Page } from 'playwright';
+import * as dotenv from 'dotenv';
+import { resolve } from 'path';
 import { orchestrate, TestCase } from './orchestrator';
 import { healLocator, HealerOptions } from '../healing/healer';
 import { LocatorEntry } from '../healing/locatorRegistry';
+import { getBrokerCredentials, getMlisPortalUrl } from '../src/config/env';
 
-const BASE_URL = 'https://opensource-demo.orangehrmlive.com/web/index.php/auth/login';
+dotenv.config({ path: resolve(__dirname, '../.env') });
+
+const BASE_URL = getMlisPortalUrl();
 const DEFAULT_SUITE = 'Live Demo Test Suite';
-const DEFAULT_OBJECTIVE = 'Verify OrangeHRM login with live healing and re-execution';
+const DEFAULT_OBJECTIVE = 'Verify MLIS login with live healing and re-execution';
 
 const HEAL_OPTS: HealerOptions = {
   strategyTimeout: 10_000,
@@ -30,9 +35,9 @@ const LOCATORS: LocatorEntry[] = [
   {
     key: 'loginHeading',
     strategies: [
-      { type: 'role', role: 'heading', options: { name: 'Login' } },
-      { type: 'text', value: 'Login', exact: true },
-      { type: 'css', selector: 'h5.orangehrm-login-title' },
+      { type: 'role', role: 'textbox', options: { name: /Email address/i } },
+      { type: 'placeholder', value: 'Email address' },
+      { type: 'css', selector: 'input[name="username"], input[type="email"]' },
     ],
   },
   {
@@ -123,19 +128,26 @@ async function buildTestCases(objective: string, recoveryGate: { ready: boolean 
         {
           description: 'Fill username with healable locator',
           action: async (page) => {
+            const brokerCreds = getBrokerCredentials();
             const locator = await healLocator(
               page,
               'loginUsername-live-demo',
               [
                 { type: 'name', value: '__broken_name_that_needs_healing__' },
-                { type: 'css', selector: 'input[name="username"]' },
+                { type: 'css', selector: 'input[name="username"], input[type="email"]' },
               ],
               { ...HEAL_OPTS, strategyTimeout: 500 }
             );
-            await locator.fill('Admin');
+            await locator.fill(brokerCreds.username);
           },
         },
-        { description: 'Fill password', action: (page) => fill(page, 'loginPassword', 'admin123') },
+        {
+          description: 'Fill password',
+          action: (page) => {
+            const brokerCreds = getBrokerCredentials();
+            return fill(page, 'loginPassword', brokerCreds.password);
+          },
+        },
         { description: 'Click login', action: (page) => click(page, 'loginButton') },
         {
           description: 'Wait for dashboard',

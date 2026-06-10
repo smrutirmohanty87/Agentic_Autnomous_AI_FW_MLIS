@@ -5,6 +5,7 @@ export interface Kpis {
   testsPassed: number;
   testsFailed: number;
   healEvents: number;
+  healingActivity?: string;
   successfulHeals?: number;
   rcaEvents: number;
   executionDurationMs?: number;

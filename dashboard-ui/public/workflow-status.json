@@ -1,51 +1,51 @@
 {
-  "workflowId": "run-1780993283706",
-  "startedAt": "2026-06-09T08:21:23.706Z",
+  "workflowId": "run-1781018930613",
+  "startedAt": "2026-06-09T15:28:50.614Z",
   "overallStatus": "FAILED",
   "currentAgent": null,
   "agents": [
     {
       "name": "Planner",
       "state": "SUCCESS",
-      "startedAt": "2026-06-09T08:21:23.729Z",
-      "finishedAt": "2026-06-09T08:21:23.735Z",
-      "durationMs": 6
+      "startedAt": "2026-06-09T15:28:50.670Z",
+      "finishedAt": "2026-06-09T15:28:50.687Z",
+      "durationMs": 17
     },
     {
       "name": "Designer",
       "state": "SUCCESS",
-      "startedAt": "2026-06-09T08:21:28.745Z",
-      "finishedAt": "2026-06-09T08:21:28.752Z",
-      "durationMs": 7
+      "startedAt": "2026-06-09T15:28:55.707Z",
+      "finishedAt": "2026-06-09T15:28:55.727Z",
+      "durationMs": 20
     },
     {
       "name": "Generator",
       "state": "SUCCESS",
-      "startedAt": "2026-06-09T08:21:33.778Z",
-      "finishedAt": "2026-06-09T08:21:33.784Z",
-      "durationMs": 6
+      "startedAt": "2026-06-09T15:29:00.760Z",
+      "finishedAt": "2026-06-09T15:29:00.786Z",
+      "durationMs": 26
     },
     {
       "name": "Execution",
       "state": "FAILED",
-      "startedAt": "2026-06-09T08:22:21.781Z",
-      "finishedAt": "2026-06-09T08:23:04.595Z",
-      "durationMs": 42814
+      "startedAt": "2026-06-09T15:31:41.350Z",
+      "finishedAt": "2026-06-09T15:32:33.409Z",
+      "durationMs": 52059
     },
     {
       "name": "Healing",
       "state": "SUCCESS",
-      "startedAt": "2026-06-09T08:22:21.772Z",
-      "finishedAt": "2026-06-09T08:23:04.601Z",
-      "durationMs": 42829
+      "startedAt": "2026-06-09T15:31:41.340Z",
+      "finishedAt": "2026-06-09T15:32:33.418Z",
+      "durationMs": 52078
     },
     {
       "name": "RCA",
       "state": "FAILED",
-      "startedAt": "2026-06-09T08:23:04.609Z",
-      "finishedAt": "2026-06-09T08:23:04.625Z",
+      "startedAt": "2026-06-09T15:32:33.428Z",
+      "finishedAt": "2026-06-09T15:32:33.444Z",
       "durationMs": 16
     }
   ],
-  "completedAt": "2026-06-09T08:23:04.647Z"
+  "completedAt": "2026-06-09T15:32:33.453Z"
 }

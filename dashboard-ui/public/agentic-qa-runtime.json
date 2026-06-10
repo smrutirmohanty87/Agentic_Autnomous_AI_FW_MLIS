@@ -1,39 +1,39 @@
 {
   "title": "Agentic QA Platform",
-  "generatedAt": "2026-06-09T08:23:04.672Z",
+  "generatedAt": "2026-06-09T15:32:33.464Z",
   "kpis": {
     "workflowStatus": "FAILED",
     "testsPassed": 0,
     "testsFailed": 1,
     "healEvents": 0,
     "rcaEvents": 1,
-    "executionDurationMs": 41964
+    "executionDurationMs": 154494
   },
   "agents": [
     {
       "name": "Planner",
       "status": "SUCCESS",
-      "durationMs": 7
+      "durationMs": 18
     },
     {
       "name": "Designer",
       "status": "SUCCESS",
-      "durationMs": 10
+      "durationMs": 23
     },
     {
       "name": "Generator",
       "status": "SUCCESS",
-      "durationMs": 9
+      "durationMs": 28
     },
     {
       "name": "Execution",
       "status": "FAILED",
-      "durationMs": 41964
+      "durationMs": 154494
     },
     {
       "name": "Healing",
       "status": "SUCCESS",
-      "durationMs": 42829
+      "durationMs": 52078
     },
     {
       "name": "RCA",
@@ -43,17 +43,17 @@
   ],
   "rcaSummary": [
     {
-      "testName": "Create Commercial England & Wales policy with exactly 6 products",
+      "testName": "Create policy then perform MTA (live demo 003)",
       "elementKey": "unhealed-failure",
       "failureType": "Timeout",
       "affectedElement": "error=\"\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name\"",
-      "rootCause": "The test timed out waiting for an element or navigation at \"https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index\". Likely causes: slow network on the demo environment, a missing waitFor, or a selector that never matched.",
+      "rootCause": "The test timed out waiting for an element or navigation at \"https://dualgroup--uat2.sandbox.my.site.com/mlisportal/sale?quoteType=Residential&jurisdiction=EnglandAndWales#-68\". Likely causes: slow network on the demo environment, a missing waitFor, or a selector that never matched.",
       "recoveryAction": "Increase test/action timeout and add explicit waitFor before the failing step.",
       "recoveryStatus": "FAILED",
       "confidence": 80,
       "recommendation": "Profile the page load time in the CI environment. Consider raising `navigationTimeout` in playwright.config.ts and switching `waitForLoadState` from 'networkidle' to 'domcontentloaded'.",
-      "timestamp": "2026-06-09T08:23:01.834Z",
-      "pageUrl": "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index"
+      "timestamp": "2026-06-09T15:32:31.077Z",
+      "pageUrl": "https://dualgroup--uat2.sandbox.my.site.com/mlisportal/sale?quoteType=Residential&jurisdiction=EnglandAndWales#-68"
     }
   ],
   "healingAnalytics": [],
@@ -69,7 +69,7 @@
   "visualizations": {
     "testTrend": [
       {
-        "run": "TC_COMM_6P_001",
+        "run": "TC_MTA_003",
         "passed": 0,
         "failed": 1
       }
@@ -91,23 +91,23 @@
     "agentDurations": [
       {
         "agent": "Planner",
-        "durationMs": 7
+        "durationMs": 18
       },
       {
         "agent": "Designer",
-        "durationMs": 10
+        "durationMs": 23
       },
       {
         "agent": "Generator",
-        "durationMs": 9
+        "durationMs": 28
       },
       {
         "agent": "Execution",
-        "durationMs": 41964
+        "durationMs": 154494
       },
       {
         "agent": "Healing",
-        "durationMs": 42829
+        "durationMs": 52078
       },
       {
         "agent": "RCA",

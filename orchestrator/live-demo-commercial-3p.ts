@@ -13,12 +13,10 @@
  *   npx ts-node orchestrator/live-demo-commercial-3p.ts
  */
 
-import { Page } from 'playwright';
-import { chromium } from 'playwright';
+import * as dotenv from 'dotenv';
 import { orchestrate, TestCase } from './orchestrator';
-import { healLocator, HealerOptions } from '../healing/healer';
-import { LocatorEntry, registerLocators } from '../healing/locatorRegistry';
-import { updateAgent } from '../runtime/workflowStatus';
+import { HealerOptions } from '../healing/healer';
+import { LocatorEntry } from '../healing/locatorRegistry';
 import { writeFileSync, mkdirSync } from 'fs';
 import { resolve } from 'path';
 import {
@@ -32,9 +30,11 @@ import {
   CommercialOrderDialog,
   CommercialPolicyIssuedPage,
 } from '../src/pages/mlis-portal-commercial';
-import { getBrokerCredentials } from '../src/config/env';
+import { getBrokerCredentials, getMlisPortalUrl } from '../src/config/env';
 
-const BASE_URL = 'https://opensource-demo.orangehrmlive.com/web/index.php/auth/login';
+dotenv.config({ path: resolve(__dirname, '../.env') });
+
+const BASE_URL = getMlisPortalUrl();
 const SUITE = 'Commercial England & Wales 3-Product Live Demo';
 
 const HEAL_OPTS: HealerOptions = {
@@ -44,59 +44,36 @@ const HEAL_OPTS: HealerOptions = {
 
 const LOCATORS: LocatorEntry[] = [
   {
-    key: 'loginUsername',
+    key: 'mlisEmail',
     strategies: [
-      { type: 'name', value: 'username' },
-      { type: 'placeholder', value: 'Username' },
-      { type: 'css', selector: 'input.oxd-input[name="username"]' },
+      { type: 'label', value: 'Email address' },
+      { type: 'placeholder', value: 'Email address' },
+      { type: 'css', selector: 'input[name="username"], input[type="email"]' },
     ],
   },
   {
-    key: 'loginPassword',
+    key: 'mlisPassword',
     strategies: [
       { type: 'name', value: 'password' },
       { type: 'placeholder', value: 'Password' },
-      { type: 'css', selector: 'input.oxd-input[name="password"]' },
+      { type: 'css', selector: 'input[type="password"]' },
     ],
   },
   {
-    key: 'loginButton',
+    key: 'mlisLoginButton',
     strategies: [
       { type: 'role', role: 'button', options: { name: 'Login' } },
-      { type: 'css', selector: 'button[type="submit"]' },
+      { type: 'css', selector: 'button[type="submit"], button:has-text("Login")' },
     ],
   },
   {
-    key: 'dashboardHeading',
+    key: 'quoteManagerHeading',
     strategies: [
-      { type: 'role', role: 'heading', options: { name: 'Dashboard' } },
-      { type: 'text', value: 'Dashboard', exact: true },
-      { type: 'css', selector: 'h6.oxd-text--h6' },
+      { type: 'role', role: 'heading', options: { name: /Quote manager/i } },
+      { type: 'text', value: 'Quote manager' },
     ],
   },
 ];
-
-function strategiesOf(key: string) {
-  const entry = LOCATORS.find(item => item.key === key);
-  if (!entry) throw new Error(`[commercial-live-demo-3p] No locator entry for key "${key}"`);
-  return entry.strategies;
-}
-
-async function fill(page: Page, key: string, value: string): Promise<void> {
-  const locator = await healLocator(page, key, strategiesOf(key), HEAL_OPTS);
-  await locator.fill(value);
-}
-
-async function click(page: Page, key: string): Promise<void> {
-  const locator = await healLocator(page, key, strategiesOf(key), HEAL_OPTS);
-  await locator.click();
-}
-
-async function assertVisible(page: Page, key: string): Promise<void> {
-  const { expect } = await import('@playwright/test');
-  const locator = await healLocator(page, key, strategiesOf(key), HEAL_OPTS);
-  await expect(locator).toBeVisible();
-}
 
 /**
  * Create the test case file dynamically (called AFTER Generator phase)
@@ -189,12 +166,8 @@ test.describe('@sanity | E2E | Commercial | England & Wales', () => {
 }
 
 async function main(): Promise<void> {
-  process.env.MLIS_PORTAL_URL = process.env.MLIS_PORTAL_URL || BASE_URL;
-  process.env.SALESFORCE_LIGHTNING_URL = process.env.SALESFORCE_LIGHTNING_URL || 'https://example.lightning.force.com';
-  process.env.BROKER_USERNAME = process.env.BROKER_USERNAME || 'Admin';
-  process.env.BROKER_PASSWORD = process.env.BROKER_PASSWORD || 'admin123';
-  process.env.SALESFORCE_USERNAME = process.env.SALESFORCE_USERNAME || 'demo@example.com';
-  process.env.SALESFORCE_PASSWORD = process.env.SALESFORCE_PASSWORD || 'demo-password';
+  getMlisPortalUrl();
+  getBrokerCredentials();
 
   const recoveryGate = { ready: false };
 
@@ -211,22 +184,14 @@ async function main(): Promise<void> {
       url: BASE_URL,
       steps: [
         {
-          description: 'Open login page and wait for form',
+          description: 'Login to MLIS portal and load quote manager',
           action: async (page) => {
-            await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120_000 });
-            await page.locator('input[name="username"]').waitFor({ state: 'visible', timeout: 60_000 });
-          },
-        },
-        {
-          description: 'Login with healable locators',
-          action: async (page) => {
+            const loginPage = new CommercialLoginPage(page);
+            const quoteManager = new CommercialQuoteManagerPage(page);
             const brokerCreds = getBrokerCredentials();
-            await fill(page, 'loginUsername', brokerCreds.username);
-            await fill(page, 'loginPassword', brokerCreds.password);
-            await click(page, 'loginButton');
-            await page.waitForURL(/\/dashboard/i, { timeout: 60_000 });
-            await page.waitForLoadState('domcontentloaded');
-            await assertVisible(page, 'dashboardHeading');
+            await loginPage.goto();
+            await loginPage.login(brokerCreds.username, brokerCreds.password);
+            await quoteManager.expectLoaded();
           },
         },
         {
@@ -295,6 +260,10 @@ async function main(): Promise<void> {
     locatorMap: LOCATORS,
     healerOptions: HEAL_OPTS,
     demoMode: true,
+    onAfterGenerator: () => {
+      console.log('\n[commercial-live-demo-3p] Creating test case file after Generator phase...');
+      createTestCaseFile();
+    },
     postExecutionSelfHealRetry: {
       enabled: true,
       maxAttempts: 1,
@@ -308,13 +277,6 @@ async function main(): Promise<void> {
 
   process.exit(result.workflowStatus === 'SUCCESS' ? 0 : 1);
 }
-
-// Hook: Create test case file AFTER Generator phase
-// This will be triggered by the orchestrator's internal workflow
-setTimeout(() => {
-  console.log('\n[commercial-live-demo-3p] Creating test case file after Generator phase...');
-  createTestCaseFile();
-}, 4000); // ~4 seconds gives Planner (5s) + Designer (5s) + Generator (6s) time to complete
 
 main().catch(err => {
   console.error('[commercial-live-demo-3p] Unhandled error:', err);

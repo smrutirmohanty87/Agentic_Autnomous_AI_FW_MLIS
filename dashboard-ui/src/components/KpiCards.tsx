@@ -21,6 +21,9 @@ function cardBase(value: string): string {
 
 export function KpiCards({ kpis }: KpiCardsProps) {
   const recoveryRate =
+    kpis.healingActivity === 'Retry Running'
+      ? 'Pending'
+      :
     kpis.healEvents > 0
       ? `${Math.round(((kpis.successfulHeals ?? kpis.healEvents) / kpis.healEvents) * 100)}%`
       : 'N/A';
@@ -54,6 +57,12 @@ export function KpiCards({ kpis }: KpiCardsProps) {
       style: 'ring-1 ring-amber-300/45 bg-amber-500/10',
     },
     {
+      label: 'Healing Activity',
+      value: kpis.healingActivity ?? 'Idle',
+      icon: Activity,
+      style: 'ring-1 ring-orange-300/45 bg-orange-500/10',
+    },
+    {
       label: 'RCA Events',
       value: String(kpis.rcaEvents),
       icon: SearchCheck,
@@ -74,7 +83,7 @@ export function KpiCards({ kpis }: KpiCardsProps) {
   ] as const;
 
   return (
-    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
+    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-8">
       {items.map(item => {
         const Icon = item.icon;
         return (

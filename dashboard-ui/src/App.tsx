@@ -89,6 +89,16 @@ function App() {
   // or when both files clearly belong to the same run.
   const useSuiteForReport = hasCompletedRun && (!workflowCompleted || suiteAlignedWithWorkflow);
 
+  const healingAgentState = workflowStatus?.agents.find(a => a.name === 'Healing')?.state;
+  const healingActivity =
+    healingAgentState === 'RUNNING'
+      ? 'Retry Running'
+      : healingAgentState === 'SUCCESS'
+      ? (healLog.length > 0 ? `Fallback Heals: ${healLog.length}` : 'Retry Complete (No Fallback Heal)')
+      : healingAgentState === 'FAILED'
+      ? 'Retry Failed'
+      : 'Idle';
+
   const liveKpis = isTestRunning
     ? {
         ...data.kpis,
@@ -96,6 +106,7 @@ function App() {
         testsPassed: suiteProgress?.passed ?? 0,
         testsFailed: suiteProgress?.failed ?? 0,
         healEvents: healLog.length,
+        healingActivity,
         rcaEvents: rcaEntries.length,
         successfulHeals: healLog.filter(h => !h.recoveryStatus || h.recoveryStatus === 'SUCCESS').length,
         // Use suite startedAt for accurate elapsed time (not yesterday's orchestrator run)
@@ -112,6 +123,7 @@ function App() {
         executionDurationMs: suiteProgress!.durationMs ?? data.kpis.executionDurationMs,
         rcaEvents: rcaEntries.length,
         healEvents: healLog.length,
+        healingActivity,
         successfulHeals: healLog.length > 0
           ? healLog.filter(h => !h.recoveryStatus || h.recoveryStatus === 'SUCCESS').length
           : 0,
