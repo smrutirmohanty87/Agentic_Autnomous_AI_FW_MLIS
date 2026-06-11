@@ -26,16 +26,16 @@ export type AgentName =
   | 'Designer'
   | 'Generator'
   | 'Execution'
-  | 'Healing'
-  | 'RCA';
+  | 'RCA'
+  | 'Healing';
 
 export const AGENT_NAMES: AgentName[] = [
   'Planner',
   'Designer',
   'Generator',
   'Execution',
-  'Healing',
   'RCA',
+  'Healing',
 ];
 
 export type WorkflowOverallStatus = 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
@@ -54,6 +54,9 @@ export interface WorkflowStatus {
   completedAt?: string;
   overallStatus: WorkflowOverallStatus;
   currentAgent: AgentName | null;
+  requirement?: string;
+  generatedTestName?: string;
+  currentStep?: string;
   agents: AgentStatusEntry[];
 }
 
@@ -98,16 +101,43 @@ function read(): WorkflowStatus {
  * Initialize (or reset) the workflow status file.
  * Must be called at the start of every orchestrator run.
  */
-export function initializeWorkflow(workflowId: string = `run-${Date.now()}`): void {
+export function initializeWorkflow(
+  workflowId: string = `run-${Date.now()}`,
+  metadata?: { requirement?: string; generatedTestName?: string; currentStep?: string }
+): void {
   const status: WorkflowStatus = {
     workflowId,
     startedAt: new Date().toISOString(),
     overallStatus: 'RUNNING',
     currentAgent: null,
+    requirement: metadata?.requirement,
+    generatedTestName: metadata?.generatedTestName,
+    currentStep: metadata?.currentStep,
     agents: buildInitialAgents(),
   };
   write(status);
   console.log(`[workflowStatus] Initialized — ${workflowId}`);
+}
+
+/**
+ * Update live workflow metadata (non-agent state), used by dashboard widgets.
+ */
+export function updateWorkflowContext(
+  patch: { requirement?: string; generatedTestName?: string; currentStep?: string }
+): void {
+  const status = read();
+
+  if (patch.requirement !== undefined) {
+    status.requirement = patch.requirement;
+  }
+  if (patch.generatedTestName !== undefined) {
+    status.generatedTestName = patch.generatedTestName;
+  }
+  if (patch.currentStep !== undefined) {
+    status.currentStep = patch.currentStep;
+  }
+
+  write(status);
 }
 
 /**

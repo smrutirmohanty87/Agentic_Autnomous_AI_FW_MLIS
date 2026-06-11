@@ -11,6 +11,14 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 /**
+ * Determine if tests should run in headed mode
+ * - Default: true (headed) for local development
+ * - Override: false if HEADLESS=true or in CI environment
+ */
+const isHeaded = process.env.HEADLESS !== 'true' && !process.env.CI;
+const isHeadedEnv = process.env.HEADED === 'true' || isHeaded;
+
+/**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
@@ -30,6 +38,9 @@ export default defineConfig({
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
+    /* Run in headed mode by default for manual execution (can be overridden with HEADLESS=true) */
+    headless: !isHeadedEnv,
+
     /* Base URL to use in actions like `await page.goto('')`. */
     // baseURL: 'http://localhost:3000',
 
@@ -41,7 +52,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        /* Override: Run headless if HEADLESS=true is set */
+        headless: !isHeadedEnv,
+      },
     },
 
     /* Test against mobile viewports. */

@@ -83,6 +83,15 @@ const LOCATORS: LocatorEntry[] = [
 ];
 
 /**
+ * Helper to sync runtime files to dashboard public folder for live serving
+ */
+function syncToPublic(filename: string, data: string): void {
+  const publicDir = resolve(ROOT_DIR, 'dashboard-ui/public');
+  mkdirSync(publicDir, { recursive: true });
+  writeFileSync(resolve(publicDir, filename), data, 'utf-8');
+}
+
+/**
  * Clear all old test results and runtime data
  */
 function clearOldResults(): void {
@@ -135,19 +144,28 @@ function clearOldResults(): void {
     updatedAt: new Date().toISOString(),
   };
 
+  const workflowStatusStr = JSON.stringify(freshWorkflowStatus, null, 2);
+  const suiteProgressStr = JSON.stringify(freshSuiteProgress, null, 2);
+
   writeFileSync(
     resolve(runtimeDir, 'workflow-status.json'),
-    JSON.stringify(freshWorkflowStatus, null, 2),
+    workflowStatusStr,
     'utf-8'
   );
   console.log('[cleanup] ✔ Initialized fresh workflow-status.json');
 
+  // Also sync to public for dashboard live serving
+  syncToPublic('workflow-status.json', workflowStatusStr);
+
   writeFileSync(
     resolve(runtimeDir, 'suite-progress.json'),
-    JSON.stringify(freshSuiteProgress, null, 2),
+    suiteProgressStr,
     'utf-8'
   );
   console.log('[cleanup] ✔ Initialized fresh suite-progress.json');
+
+  // Also sync to public for dashboard live serving
+  syncToPublic('suite-progress.json', suiteProgressStr);
 
   // Clear heal and RCA logs
   const healLogPath = resolve(runtimeDir, 'heal-log.json');
@@ -264,8 +282,6 @@ async function main(): Promise<void> {
   // PHASE 0: Cleanup old results
   clearOldResults();
 
-  const recoveryGate = { ready: false };
-
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 1: Planner + Designer + Generator
   // Test cases will be created AFTER Generator completes
@@ -292,9 +308,7 @@ async function main(): Promise<void> {
         {
           description: 'Open Quote Manager and start Commercial England & Wales quote',
           action: async (page) => {
-            const loginPage = new CommercialLoginPage(page);
             const quoteManager = new CommercialQuoteManagerPage(page);
-            await loginPage.goto();
             await quoteManager.expectLoaded();
             await quoteManager.startCommercialEnglandWalesQuote();
           },
@@ -328,10 +342,6 @@ async function main(): Promise<void> {
             await summary.expectLoaded();
             await summary.expectSummaryData(caseRef);
 
-            if (!recoveryGate.ready) {
-              throw new Error('Intentional live-demo failure to trigger Healing and re-execution');
-            }
-
             await summary.proceedToOrder();
             await orderDialog.selectTodayAndOrder();
             await policyIssued.expectPolicyIssued();
@@ -364,10 +374,6 @@ async function main(): Promise<void> {
       enabled: true,
       maxAttempts: 1,
       strategyTimeoutMs: 10_000,
-      onBeforeRetry: () => {
-        recoveryGate.ready = true;
-        console.log('[fresh-demo] Recovery gate opened for the retry run.');
-      },
     },
   });
 

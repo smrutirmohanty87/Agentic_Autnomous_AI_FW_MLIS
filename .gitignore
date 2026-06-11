@@ -1,8 +1,47 @@
 
-# Playwright
+# Dependencies
 node_modules/
+package-lock.json
+
+# Playwright
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Runtime & Execution
+runtime/workflow-status.json
+runtime/suite-progress.json
+runtime/heal-log.json
+runtime/rca-results.json
+runtime/current-test.json
+
+# Build Artifacts
+artifacts/
+dist/
+build/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test Results
+*.json.backup
+pw-results.json

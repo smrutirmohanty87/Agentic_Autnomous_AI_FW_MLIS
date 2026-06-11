@@ -22,6 +22,7 @@ import {
   initializeWorkflow,
   updateAgent,
   markWorkflowComplete,
+  updateWorkflowContext,
 } from '../runtime/workflowStatus';
 import type { AgentName as StatusAgentName } from '../runtime/workflowStatus';
 
@@ -79,8 +80,8 @@ const AGENTS = [
   'Designer',
   'Generator',
   'Execution',
-  'Healing',
   'RCA',
+  'Healing',
 ] as const;
 
 
@@ -161,15 +162,18 @@ async function runExecution(
   testCases: TestCase[],
   healerOptions: HealerOptions,
   agents: Record<AgentName, AgentRecord>,
-  options: { trackExecutionAgent?: boolean; phaseLabel?: string } = {}
+  options: { trackExecutionAgent?: boolean; phaseLabel?: string; onStep?: (stepText: string) => void } = {}
 ): Promise<{ results: TestRunResult[]; unhealedFailures: UnhealedFailure[] }> {
-  const { trackExecutionAgent = true, phaseLabel = 'Execution' } = options;
+  const { trackExecutionAgent = true, phaseLabel = 'Execution', onStep } = options;
 
   if (trackExecutionAgent) {
     startAgent(agents.Execution);
   }
 
-  const browser = await chromium.launch({ headless: true });
+  // Show browser during Execution by default for live demo visibility.
+  // Override with EXECUTION_HEADED=false or run in CI for headless mode.
+  const executionHeaded = process.env.EXECUTION_HEADED !== 'false' && !process.env.CI;
+  const browser = await chromium.launch({ headless: !executionHeaded });
   const results: TestRunResult[] = [];
   const unhealedFailures: UnhealedFailure[] = [];
 
@@ -181,11 +185,13 @@ async function runExecution(
       let error: string | undefined;
 
       try {
+        onStep?.(`Executing ${tc.id}: ${tc.name}`);
         await page.goto(tc.url, { timeout: 60000 });
         await page.waitForLoadState('domcontentloaded');
 
         for (const step of tc.steps) {
           console.log(`[orchestrator]     Step: ${step.description}`);
+          onStep?.(step.description);
           await step.action(page);
         }
 
@@ -386,7 +392,11 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
   clearHealLog();
 
   // Initialize live workflow status tracking
-  initializeWorkflow(`run-${Date.now()}`);
+  initializeWorkflow(`run-${Date.now()}`, {
+    requirement: suiteName,
+    generatedTestName: testCases.length === 1 ? testCases[0].name : `${testCases.length} generated tests`,
+    currentStep: 'Planner started',
+  });
 
   // Auto-launch dashboard in default browser (once per run, non-blocking)
   openDashboard();
@@ -407,111 +417,157 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
 
   try {
     // 1. Planner
+    updateWorkflowContext({ currentStep: 'Planner: planning test cases' });
     runPlanner(testCases, agentRecords);
     if (delay.planner) await sleep(delay.planner);
 
     // 2. Designer
+    updateWorkflowContext({ currentStep: 'Designer: registering locators' });
     runDesigner(testCases, locatorMap, agentRecords);
     if (delay.designer) await sleep(delay.designer);
 
     // 3. Generator
+    updateWorkflowContext({ currentStep: 'Generator: creating executable test plan' });
     runGenerator(testCases, agentRecords);
+    updateWorkflowContext({
+      generatedTestName: testCases.length === 1
+        ? `[${testCases[0].id}] ${testCases[0].name}`
+        : `${testCases.length} generated tests`,
+    });
     if (onAfterGenerator) {
       await onAfterGenerator();
     }
     if (delay.generator) await sleep(delay.generator);
 
     // 4. Execution
-    const execOut = await runExecution(testCases, healerOptions, agentRecords);
+    updateWorkflowContext({ currentStep: 'Execution: running generated test(s)' });
+    const execOut = await runExecution(testCases, healerOptions, agentRecords, {
+      onStep: (stepText) => {
+        try { updateWorkflowContext({ currentStep: `Execution: ${stepText}` }); } catch { /* status file may not exist in isolated tests */ }
+      },
+    });
     testResults = execOut.results;
     unhealedFailures = execOut.unhealedFailures;
 
-    // 5. Healing (with optional post-execution retry mode)
-    startAgent(agentRecords.Healing);
-
-    let retryAttemptsUsed = 0;
-    let recoveredCount = 0;
-
-    if (retryEnabled) {
-      let remainingFailedIds = new Set(testResults.filter(r => r.status === 'FAIL').map(r => r.testId));
-
-      while (remainingFailedIds.size > 0 && retryAttemptsUsed < retryMaxAttempts) {
-        retryAttemptsUsed += 1;
-        const failedCases = testCases.filter(tc => remainingFailedIds.has(tc.id));
-        if (failedCases.length === 0) break;
-
-        if (retryAttemptsUsed === 1 && postExecutionSelfHealRetry?.onBeforeRetry) {
-          await postExecutionSelfHealRetry.onBeforeRetry();
-        }
-
-        try { updateAgent('Execution', 'RUNNING'); } catch { /* status file may not exist in isolated tests */ }
-
-        console.log(
-          `[orchestrator] Healing retry ${retryAttemptsUsed}/${retryMaxAttempts}: ` +
-          `re-running ${failedCases.length} failed test(s) with aggressive locator recovery...`
-        );
-
-        const retryOut = await runExecution(
-          failedCases,
-          retryHealerOptions,
-          agentRecords,
-          { trackExecutionAgent: false, phaseLabel: `Healing Retry #${retryAttemptsUsed}` }
-        );
-
-        // Merge retry results back into the main test result set
-        for (const rr of retryOut.results) {
-          const idx = testResults.findIndex(tr => tr.testId === rr.testId);
-          const prevFailed = idx >= 0 && testResults[idx].status === 'FAIL';
-
-          if (idx >= 0) testResults[idx] = rr;
-          else testResults.push(rr);
-
-          if (prevFailed && rr.status === 'PASS') {
-            recoveredCount += 1;
-          }
-        }
-
-        remainingFailedIds = new Set(testResults.filter(r => r.status === 'FAIL').map(r => r.testId));
-        unhealedFailures = retryOut.unhealedFailures;
-
-        const retryExecStatus: 'PASS' | 'FAIL' = remainingFailedIds.size === 0 ? 'PASS' : 'FAIL';
-        try { updateAgent('Execution', retryExecStatus === 'PASS' ? 'SUCCESS' : 'FAILED'); } catch { /* status file may not exist in isolated tests */ }
-      }
-    }
-
-    healingEvents = [...getHealLog()];
-    const stillFailed = testResults.filter(r => r.status === 'FAIL').length;
-    if (retryEnabled) {
-      if (stillFailed === 0) {
-        // Reconcile the Execution agent when post-execution retries recover all failures.
-        agentRecords.Execution.status = 'PASS';
-        agentRecords.Execution.detail =
-          `Recovered after healing retries: attempts=${retryAttemptsUsed}, recovered=${recoveredCount}`;
-        try { updateAgent('Execution', 'SUCCESS'); } catch { /* status file may not exist in isolated tests */ }
-        console.log('[orchestrator] ✔ Execution agent reconciled to PASS after successful healing retries');
-      } else {
-        agentRecords.Execution.status = 'FAIL';
-        agentRecords.Execution.detail =
-          `Healing retries exhausted: attempts=${retryAttemptsUsed}, remainingFailed=${stillFailed}`;
-        try { updateAgent('Execution', 'FAILED'); } catch { /* status file may not exist in isolated tests */ }
-      }
-    }
-
-    if (retryEnabled) {
-      finishAgent(
-        agentRecords.Healing,
-        'PASS',
-        `Self-heal retry enabled: attempts=${retryAttemptsUsed}, recovered=${recoveredCount}, remainingFailed=${stillFailed}, healEvents=${healingEvents.length}`
-      );
-    } else if (healingEvents.length === 0) {
-      finishAgent(agentRecords.Healing, 'PASS', 'No healing events — all primary strategies succeeded');
-    } else {
-      printHealSummary();
-      finishAgent(agentRecords.Healing, 'PASS', `${healingEvents.length} heal event(s) recorded`);
-    }
-
-    // 6. RCA
+    // 5. RCA (immediately after execution)
+    updateWorkflowContext({ currentStep: 'RCA: analyzing execution results' });
     rcaResult = runRCA(suiteName, unhealedFailures, agentRecords);
+
+    // 6. Healing (conditional, based on RCA outcome)
+    const healingRequired = rcaResult.overallStatus === 'FAIL' || unhealedFailures.length > 0;
+
+    if (!healingRequired) {
+      startAgent(agentRecords.Healing);
+      finishAgent(agentRecords.Healing, 'PASS', 'Not required based on RCA');
+      updateWorkflowContext({ currentStep: 'Completed: RCA indicates no healing required' });
+    } else {
+      updateWorkflowContext({ currentStep: 'Healing: triggered by RCA recommendation' });
+      startAgent(agentRecords.Healing);
+
+      let retryAttemptsUsed = 0;
+      let recoveredCount = 0;
+
+      if (retryEnabled) {
+        let remainingFailedIds = new Set(testResults.filter(r => r.status === 'FAIL').map(r => r.testId));
+
+        while (remainingFailedIds.size > 0 && retryAttemptsUsed < retryMaxAttempts) {
+          retryAttemptsUsed += 1;
+          const failedCases = testCases.filter(tc => remainingFailedIds.has(tc.id));
+          if (failedCases.length === 0) break;
+
+          if (retryAttemptsUsed === 1 && postExecutionSelfHealRetry?.onBeforeRetry) {
+            await postExecutionSelfHealRetry.onBeforeRetry();
+          }
+
+          try { updateAgent('Execution', 'RUNNING'); } catch { /* status file may not exist in isolated tests */ }
+          updateWorkflowContext({ currentStep: `Execution Re-run ${retryAttemptsUsed}/${retryMaxAttempts}: re-validating failed test(s)` });
+
+          console.log(
+            `[orchestrator] Healing retry ${retryAttemptsUsed}/${retryMaxAttempts}: ` +
+            `re-running ${failedCases.length} failed test(s) with aggressive locator recovery...`
+          );
+
+          const retryOut = await runExecution(
+            failedCases,
+            retryHealerOptions,
+            agentRecords,
+            {
+              trackExecutionAgent: false,
+              phaseLabel: `Healing Retry #${retryAttemptsUsed}`,
+              onStep: (stepText) => {
+                try { updateWorkflowContext({ currentStep: `Execution Re-run: ${stepText}` }); } catch { /* status file may not exist in isolated tests */ }
+              },
+            }
+          );
+
+          // Merge retry results back into the main test result set
+          for (const rr of retryOut.results) {
+            const idx = testResults.findIndex(tr => tr.testId === rr.testId);
+            const prevFailed = idx >= 0 && testResults[idx].status === 'FAIL';
+
+            if (idx >= 0) testResults[idx] = rr;
+            else testResults.push(rr);
+
+            if (prevFailed && rr.status === 'PASS') {
+              recoveredCount += 1;
+            }
+          }
+
+          remainingFailedIds = new Set(testResults.filter(r => r.status === 'FAIL').map(r => r.testId));
+          unhealedFailures = retryOut.unhealedFailures;
+
+          const retryExecStatus: 'PASS' | 'FAIL' = remainingFailedIds.size === 0 ? 'PASS' : 'FAIL';
+          try { updateAgent('Execution', retryExecStatus === 'PASS' ? 'SUCCESS' : 'FAILED'); } catch { /* status file may not exist in isolated tests */ }
+        }
+      }
+
+      healingEvents = [...getHealLog()];
+      const stillFailed = testResults.filter(r => r.status === 'FAIL').length;
+      if (retryEnabled) {
+        if (stillFailed === 0) {
+          // Reconcile the Execution agent when post-RCA retries recover all failures.
+          agentRecords.Execution.status = 'PASS';
+          agentRecords.Execution.detail =
+            `Recovered after healing retries: attempts=${retryAttemptsUsed}, recovered=${recoveredCount}`;
+          try { updateAgent('Execution', 'SUCCESS'); } catch { /* status file may not exist in isolated tests */ }
+          console.log('[orchestrator] ✔ Execution agent reconciled to PASS after successful healing retries');
+        } else {
+          agentRecords.Execution.status = 'FAIL';
+          agentRecords.Execution.detail =
+            `Healing retries exhausted: attempts=${retryAttemptsUsed}, remainingFailed=${stillFailed}`;
+          try { updateAgent('Execution', 'FAILED'); } catch { /* status file may not exist in isolated tests */ }
+        }
+      }
+
+      if (retryEnabled) {
+        finishAgent(
+          agentRecords.Healing,
+          'PASS',
+          `Self-heal retry enabled: attempts=${retryAttemptsUsed}, recovered=${recoveredCount}, remainingFailed=${stillFailed}, healEvents=${healingEvents.length}`
+        );
+      } else if (healingEvents.length === 0) {
+        finishAgent(agentRecords.Healing, 'PASS', 'No healing events — all primary strategies succeeded');
+      } else {
+        printHealSummary();
+        finishAgent(agentRecords.Healing, 'PASS', `${healingEvents.length} heal event(s) recorded`);
+      }
+
+      // Refresh RCA summary after healing/re-execution to reflect final system state.
+      updateWorkflowContext({ currentStep: 'RCA: re-validating after healing and re-execution' });
+      rcaResult = analyze(suiteName, unhealedFailures);
+      printAnalyzerResult(rcaResult);
+      const finalRcaStatus: 'PASS' | 'FAIL' = rcaResult.overallStatus === 'FAIL' ? 'FAIL' : 'PASS';
+      agentRecords.RCA.status = finalRcaStatus;
+      agentRecords.RCA.detail = rcaResult.summary;
+      try { updateAgent('RCA', finalRcaStatus === 'PASS' ? 'SUCCESS' : 'FAILED'); } catch { /* status file may not exist in isolated tests */ }
+      console.log(`[orchestrator] ${finalRcaStatus === 'PASS' ? '✔' : '✘'} RCA agent (post-healing) — ${finalRcaStatus} | ${rcaResult.summary}`);
+
+      if (finalRcaStatus === 'PASS') {
+        updateWorkflowContext({ currentStep: 'Completed: healed and re-executed successfully' });
+      } else {
+        updateWorkflowContext({ currentStep: 'Completed: re-execution still has failures' });
+      }
+    }
 
   } catch (err) {
     console.error(`[orchestrator] Fatal error: ${String(err)}`);
@@ -570,6 +626,10 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
     const payload = {
       title: 'Agentic QA Platform',
       generatedAt: new Date().toISOString(),
+      requirement: suiteName,
+      generatedTestName: testCases.length === 1
+        ? `[${testCases[0].id}] ${testCases[0].name}`
+        : `${testCases.length} generated tests`,
       kpis: {
         workflowStatus: result.workflowStatus,
         testsPassed: result.testResults.filter(r => r.status === 'PASS').length,
@@ -581,7 +641,7 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
       agents: result.executedAgents.map(a => ({ name: a.name, status: a.status === 'PASS' ? 'SUCCESS' : 'FAILED', durationMs: a.durationMs })),
       rcaSummary: result.rcaResult ? (result.rcaResult.reports ?? []) : [],
       healingAnalytics: result.healingEvents ?? [],
-      workflowTimeline: ['Requirement', 'Planner', 'Designer', 'Generator', 'Execution', 'Healing', 'RCA'],
+      workflowTimeline: ['Requirement', 'Planner', 'Designer', 'Generator', 'Execution', 'RCA', 'Healing', 'Execution Re-run'],
       visualizations: {
         testTrend: result.testResults.map((t, i) => ({ run: t.testId, passed: result.testResults.slice(0, i + 1).filter(x => x.status === 'PASS').length, failed: result.testResults.slice(0, i + 1).filter(x => x.status === 'FAIL').length })),
         eventDistribution: [

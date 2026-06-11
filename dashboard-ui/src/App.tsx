@@ -167,6 +167,11 @@ function App() {
           </div>
         </header>
 
+        {/* Live Workflow Timeline (always show current order during live execution) */}
+        {isTestRunning && workflowStatus?.agents && (
+          <WorkflowTimeline steps={['Requirement', ...workflowStatus.agents.map(a => a.name)]} />
+        )}
+
         {/* ════════════════════════════════════════════════════════════════
             LIVE MODE — npx playwright test is actively running
             ════════════════════════════════════════════════════════════════ */}
@@ -201,13 +206,16 @@ function App() {
                     startedAt:     prog?.startedAt ?? new Date().toISOString(),
                     overallStatus: 'RUNNING',
                     currentAgent:  currentAgent as WorkflowStatusType['currentAgent'],
+                    requirement: data.requirement ?? data.title,
+                    generatedTestName: data.generatedTestName ?? (prog?.currentTest ?? 'Pending generator output'),
+                    currentStep: currentAgent ? `${currentAgent} in progress` : 'Waiting for next action',
                     agents: [
                       { name: 'Planner',   state: 'SUCCESS', durationMs: data.agents.find(a => a.name === 'Planner')?.durationMs ?? 0 },
                       { name: 'Designer',  state: 'SUCCESS', durationMs: data.agents.find(a => a.name === 'Designer')?.durationMs ?? 0 },
                       { name: 'Generator', state: 'SUCCESS', durationMs: data.agents.find(a => a.name === 'Generator')?.durationMs ?? 0 },
                       { name: 'Execution', state: execState, durationMs: prog?.durationMs },
-                      { name: 'Healing',   state: healState, durationMs: healLog.length > 0 ? healLog.length : undefined },
                       { name: 'RCA',       state: rcaState,  durationMs: rcaEntries.length > 0 ? rcaEntries.length : undefined },
+                      { name: 'Healing',   state: healState, durationMs: healLog.length > 0 ? healLog.length : undefined },
                     ],
                   };
 
@@ -243,7 +251,14 @@ function App() {
             <WorkflowSummaryCard data={{ ...data, kpis: liveKpis }} />
 
             {/* Execution Trend + Event Distribution — override with real run data when available */}
-            <WorkflowTimeline steps={data.workflowTimeline} />
+            <WorkflowTimeline steps={
+              // Derive timeline from actual agent order, or use workflow-status if available
+              workflowStatus?.agents
+                ? ['Requirement', ...workflowStatus.agents.map(a => a.name)]
+                : useSuiteForReport && data.agents
+                ? ['Requirement', ...data.agents.map(a => a.name)]
+                : ['Requirement', 'Planner', 'Designer', 'Generator', 'Execution', 'RCA', 'Healing']
+            } />
             <VisualizationPanel data={useSuiteForReport ? {
               ...data.visualizations,
               testTrend: [

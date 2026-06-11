@@ -71,6 +71,8 @@ export interface AgentDuration {
 export interface DashboardData {
   title: string;
   generatedAt: string;
+  requirement?: string;
+  generatedTestName?: string;
   kpis: Kpis;
   agents: AgentRecord[];
   rcaSummary: RcaRecord[];
@@ -104,5 +106,8 @@ export interface WorkflowStatus {
   completedAt?: string;
   overallStatus: WorkflowOverallStatus;
   currentAgent: WorkflowAgentEntry['name'] | null;
+  requirement?: string;
+  generatedTestName?: string;
+  currentStep?: string;
   agents: WorkflowAgentEntry[];
 }

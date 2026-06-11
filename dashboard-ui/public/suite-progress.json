@@ -1,13 +1,13 @@
 {
   "totalTests": 1,
-  "passed": 1,
+  "passed": 0,
   "failed": 0,
   "running": 0,
-  "pending": 0,
+  "pending": 1,
   "currentTest": null,
-  "progressPct": 100,
-  "startedAt": "2026-06-09T14:34:11.560Z",
-  "durationMs": 94799,
-  "suiteStatus": "PASSED",
-  "updatedAt": "2026-06-09T14:35:46.359Z"
+  "progressPct": 0,
+  "startedAt": null,
+  "durationMs": 0,
+  "suiteStatus": "PENDING",
+  "updatedAt": "2026-06-11T06:51:58.546Z"
 }

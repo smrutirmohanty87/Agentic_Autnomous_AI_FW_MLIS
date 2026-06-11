@@ -1,51 +1,54 @@
 {
-  "workflowId": "run-1781018930613",
-  "startedAt": "2026-06-09T15:28:50.614Z",
-  "overallStatus": "FAILED",
+  "workflowId": "run-1781160718577",
+  "startedAt": "2026-06-11T06:51:58.577Z",
+  "overallStatus": "SUCCESS",
   "currentAgent": null,
+  "requirement": "Residential England & Wales 3-Product Fresh Demo",
+  "generatedTestName": "[TC_RES_3P_FRESH_001] Create Residential England & Wales policy with exactly 3 products (Fresh Run)",
+  "currentStep": "Completed: RCA indicates no healing required",
   "agents": [
     {
       "name": "Planner",
       "state": "SUCCESS",
-      "startedAt": "2026-06-09T15:28:50.670Z",
-      "finishedAt": "2026-06-09T15:28:50.687Z",
-      "durationMs": 17
+      "startedAt": "2026-06-11T06:51:58.607Z",
+      "finishedAt": "2026-06-11T06:51:58.612Z",
+      "durationMs": 5
     },
     {
       "name": "Designer",
       "state": "SUCCESS",
-      "startedAt": "2026-06-09T15:28:55.707Z",
-      "finishedAt": "2026-06-09T15:28:55.727Z",
-      "durationMs": 20
+      "startedAt": "2026-06-11T06:52:03.643Z",
+      "finishedAt": "2026-06-11T06:52:03.655Z",
+      "durationMs": 12
     },
     {
       "name": "Generator",
       "state": "SUCCESS",
-      "startedAt": "2026-06-09T15:29:00.760Z",
-      "finishedAt": "2026-06-09T15:29:00.786Z",
-      "durationMs": 26
+      "startedAt": "2026-06-11T06:52:08.685Z",
+      "finishedAt": "2026-06-11T06:52:08.699Z",
+      "durationMs": 14
     },
     {
       "name": "Execution",
-      "state": "FAILED",
-      "startedAt": "2026-06-09T15:31:41.350Z",
-      "finishedAt": "2026-06-09T15:32:33.409Z",
-      "durationMs": 52059
+      "state": "SUCCESS",
+      "startedAt": "2026-06-11T06:52:14.782Z",
+      "finishedAt": "2026-06-11T06:53:35.155Z",
+      "durationMs": 80373
+    },
+    {
+      "name": "RCA",
+      "state": "SUCCESS",
+      "startedAt": "2026-06-11T06:53:35.163Z",
+      "finishedAt": "2026-06-11T06:53:35.168Z",
+      "durationMs": 5
     },
     {
       "name": "Healing",
       "state": "SUCCESS",
-      "startedAt": "2026-06-09T15:31:41.340Z",
-      "finishedAt": "2026-06-09T15:32:33.418Z",
-      "durationMs": 52078
-    },
-    {
-      "name": "RCA",
-      "state": "FAILED",
-      "startedAt": "2026-06-09T15:32:33.428Z",
-      "finishedAt": "2026-06-09T15:32:33.444Z",
-      "durationMs": 16
+      "startedAt": "2026-06-11T06:53:35.171Z",
+      "finishedAt": "2026-06-11T06:53:35.178Z",
+      "durationMs": 7
     }
   ],
-  "completedAt": "2026-06-09T15:32:33.453Z"
+  "completedAt": "2026-06-11T06:53:35.189Z"
 }

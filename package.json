@@ -18,6 +18,10 @@
     "demo:mta-live-003": "npx ts-node orchestrator/live-demo-mta-003.ts",
     "demo:cnr-live": "npx ts-node orchestrator/live-demo-cnr.ts",
     "demo:fresh-3p": "node scripts/run-fresh-commercial-3p-demo.js",
+    "demo:fresh-res-3p": "node scripts/run-fresh-residential-3p-demo.js",
+    "validate:flows": "node scripts/validate-flow-parity.js",
+    "demo:fresh-3p:checked": "npm run validate:flows && npm run demo:fresh-3p",
+    "demo:fresh-res-3p:checked": "npm run validate:flows && npm run demo:fresh-res-3p",
     "dashboard:ui": "npx ts-node dashboard/dashboardUi.ts",
     "dashboard:runtime": "npx ts-node dashboard/exportDashboardArtifacts.ts",
     "dashboard:pim": "npx ts-node dashboard/exportPimDashboard.ts"

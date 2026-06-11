@@ -57,6 +57,22 @@ export function LiveWorkflowPanel({ status }: LiveWorkflowPanelProps) {
         </div>
       )}
 
+      {/* Live tracking fields */}
+      <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="rounded-xl border border-white/10 bg-slate-900/50 px-3 py-2.5">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500">Current Step</p>
+          <p className="mt-1 text-xs font-medium text-slate-200">{status.currentStep ?? 'Waiting for next action'}</p>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-slate-900/50 px-3 py-2.5">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500">Generated Test Name</p>
+          <p className="mt-1 text-xs font-medium text-slate-200">{status.generatedTestName ?? 'Pending generator output'}</p>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-slate-900/50 px-3 py-2.5">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500">Requirement</p>
+          <p className="mt-1 text-xs font-medium text-slate-200">{status.requirement ?? 'Not specified'}</p>
+        </div>
+      </div>
+
       {/* Agent grid */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {status.agents.map(agent => {
