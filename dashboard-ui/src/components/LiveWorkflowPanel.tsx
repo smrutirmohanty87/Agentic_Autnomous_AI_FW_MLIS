@@ -80,7 +80,7 @@ export function LiveWorkflowPanel({ status }: LiveWorkflowPanelProps) {
           return (
             <div
               key={agent.name}
-              className={`rounded-xl border px-3 py-3 transition-all ${
+              className={`rounded-xl border px-3 py-3 transition-all duration-1500 ${
                 isCurrent
                   ? 'border-cyan-400/30 bg-cyan-900/30 ring-1 ring-cyan-400/20'
                   : 'border-white/8 bg-slate-900/50'

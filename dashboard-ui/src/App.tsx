@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { DashboardData, AgentRecord, WorkflowStatus as WorkflowStatusType } from './types/dashboard';
+import type { AgentRecord, WorkflowStatus as WorkflowStatusType } from './types/dashboard';
 import { AgentStatusSection } from './components/AgentStatusSection';
 import { SuiteProgressPanel } from './components/SuiteProgressPanel';
 import { CurrentTestPanel } from './components/CurrentTestPanel';
@@ -99,16 +99,27 @@ function App() {
       ? 'Retry Failed'
       : 'Idle';
 
+  const healingAnalyticsRecords = healLog.length > 0 ? healLog : data.healingAnalytics;
+  const rcaSummaryRecords = rcaEntries.length > 0
+    ? rcaEntries.map(e => ({
+        failureType: e.failureType,
+        rootCause: e.rootCause,
+        recoveryAction: e.recoveryAction,
+        confidence: e.confidence,
+      }))
+    : data.rcaSummary;
+  const successfulHealsCount = healingAnalyticsRecords.filter(h => !h.recoveryStatus || h.recoveryStatus === 'SUCCESS').length;
+
   const liveKpis = isTestRunning
     ? {
         ...data.kpis,
         workflowStatus: 'RUNNING' as const,
         testsPassed: suiteProgress?.passed ?? 0,
         testsFailed: suiteProgress?.failed ?? 0,
-        healEvents: healLog.length,
+        healEvents: healingAnalyticsRecords.length,
         healingActivity,
-        rcaEvents: rcaEntries.length,
-        successfulHeals: healLog.filter(h => !h.recoveryStatus || h.recoveryStatus === 'SUCCESS').length,
+        rcaEvents: rcaSummaryRecords.length,
+        successfulHeals: successfulHealsCount,
         // Use suite startedAt for accurate elapsed time (not yesterday's orchestrator run)
         executionDurationMs: suiteProgress?.startedAt
           ? Date.now() - new Date(suiteProgress.startedAt).getTime()
@@ -121,12 +132,10 @@ function App() {
         testsPassed: suiteProgress!.passed,
         testsFailed: suiteProgress!.failed,
         executionDurationMs: suiteProgress!.durationMs ?? data.kpis.executionDurationMs,
-        rcaEvents: rcaEntries.length,
-        healEvents: healLog.length,
+        rcaEvents: rcaSummaryRecords.length,
+        healEvents: healingAnalyticsRecords.length,
         healingActivity,
-        successfulHeals: healLog.length > 0
-          ? healLog.filter(h => !h.recoveryStatus || h.recoveryStatus === 'SUCCESS').length
-          : 0,
+        successfulHeals: successfulHealsCount,
       }
     : data.kpis;
 
@@ -213,7 +222,7 @@ function App() {
                       { name: 'Planner',   state: 'SUCCESS', durationMs: data.agents.find(a => a.name === 'Planner')?.durationMs ?? 0 },
                       { name: 'Designer',  state: 'SUCCESS', durationMs: data.agents.find(a => a.name === 'Designer')?.durationMs ?? 0 },
                       { name: 'Generator', state: 'SUCCESS', durationMs: data.agents.find(a => a.name === 'Generator')?.durationMs ?? 0 },
-                      { name: 'Execution', state: execState, durationMs: prog?.durationMs },
+                      { name: 'Execution', state: execState, durationMs: prog?.durationMs ?? undefined },
                       { name: 'RCA',       state: rcaState,  durationMs: rcaEntries.length > 0 ? rcaEntries.length : undefined },
                       { name: 'Healing',   state: healState, durationMs: healLog.length > 0 ? healLog.length : undefined },
                     ],
@@ -232,11 +241,16 @@ function App() {
             <KpiCards kpis={liveKpis} />
 
             {/* Live RCA for failed tests (appears as failures accumulate) */}
-            <LiveRcaPanel />
+            {rcaEntries.length > 0 ? <LiveRcaPanel /> : null}
 
             {/* Live healing events (appears when healer fires a fallback) */}
-            {healLog.length > 0 && (
-              <HealingAnalyticsPanel records={healLog} />
+            {healingAnalyticsRecords.length > 0 && (
+              <HealingAnalyticsPanel records={healingAnalyticsRecords} />
+            )}
+
+            {/* RCA summary fallback when live rows are not yet present */}
+            {rcaEntries.length === 0 && rcaSummaryRecords.length > 0 && (
+              <RcaSummaryPanel records={rcaSummaryRecords} />
             )}
           </>
         ) : (
@@ -297,15 +311,11 @@ function App() {
                     ]
                   : data.agents
               } />
-              <HealingAnalyticsPanel records={useSuiteForReport ? healLog : (healLog.length > 0 ? healLog : data.healingAnalytics)} />
+              <HealingAnalyticsPanel records={healingAnalyticsRecords} />
             </section>
 
             {/* RCA Summary — prefer live rca-results.json when available */}
-            <RcaSummaryPanel records={
-              rcaEntries.length > 0
-                ? rcaEntries.map(e => ({ failureType: e.failureType, rootCause: e.rootCause, recoveryAction: e.recoveryAction, confidence: e.confidence }))
-                : (useSuiteForReport ? [] : data.rcaSummary)
-            } />
+            <RcaSummaryPanel records={rcaSummaryRecords} />
           </>
         )}
 

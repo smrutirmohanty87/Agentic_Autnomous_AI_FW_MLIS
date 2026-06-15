@@ -1,50 +1,73 @@
 {
   "title": "Agentic QA Platform",
-  "generatedAt": "2026-06-11T06:53:35.196Z",
-  "requirement": "Residential England & Wales 3-Product Fresh Demo",
-  "generatedTestName": "[TC_RES_3P_FRESH_001] Create Residential England & Wales policy with exactly 3 products (Fresh Run)",
+  "generatedAt": "2026-06-15T10:39:38.069Z",
+  "requirement": "CNR Live Demo Workflow",
+  "generatedTestName": "[TC_CNR_001] Create base policy and initiate CNR flow (live demo)",
   "kpis": {
-    "workflowStatus": "SUCCESS",
-    "testsPassed": 1,
-    "testsFailed": 0,
-    "healEvents": 0,
-    "rcaEvents": 0,
-    "executionDurationMs": 80382
+    "workflowStatus": "FAILED",
+    "testsPassed": 0,
+    "testsFailed": 1,
+    "healEvents": 1,
+    "rcaEvents": 1,
+    "executionDurationMs": 109810
   },
   "agents": [
     {
       "name": "Planner",
       "status": "SUCCESS",
-      "durationMs": 5
+      "durationMs": 3
     },
     {
       "name": "Designer",
       "status": "SUCCESS",
-      "durationMs": 14
+      "durationMs": 18
     },
     {
       "name": "Generator",
       "status": "SUCCESS",
-      "durationMs": 16
+      "durationMs": 4
     },
     {
       "name": "Execution",
-      "status": "SUCCESS",
-      "durationMs": 80382
+      "status": "FAILED",
+      "durationMs": 109810
     },
     {
       "name": "RCA",
-      "status": "SUCCESS",
-      "durationMs": 5
+      "status": "FAILED",
+      "durationMs": 18
     },
     {
       "name": "Healing",
       "status": "SUCCESS",
-      "durationMs": 6
+      "durationMs": 10992
     }
   ],
-  "rcaSummary": [],
-  "healingAnalytics": [],
+  "rcaSummary": [
+    {
+      "testName": "Create base policy and initiate CNR flow (live demo)",
+      "elementKey": "unhealed-failure",
+      "failureType": "Unknown",
+      "affectedElement": "error=\"page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://dualgroup--durqa.san\"",
+      "rootCause": "An unexpected error occurred at \"https://dualgroup--durqa.sandbox.my.site.com/mlisportal/\": page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://dualgroup--durqa.sandbox.my.site.com/mlisportal/\", waiting until \"load\"\u001b[22m\n",
+      "recoveryAction": "Inspect the full error stack and page snapshot for additional context.",
+      "recoveryStatus": "FAILED",
+      "confidence": 40,
+      "recommendation": "Review error details and the page snapshot. Add the element to locatorRegistry.ts with multiple fallback strategies to prevent future unhealed failures.",
+      "timestamp": "2026-06-15T10:39:36.206Z",
+      "pageUrl": "https://dualgroup--durqa.sandbox.my.site.com/mlisportal/"
+    }
+  ],
+  "healingAnalytics": [
+    {
+      "key": "postExecutionSelfHealRetry",
+      "failedLocator": "Execution failures after initial run",
+      "recoveredLocator": "1 test(s) still failing",
+      "recoveryTimeMs": 10992,
+      "recoveryStatus": "FAILED",
+      "timestamp": "2026-06-15T10:39:38.069Z"
+    }
+  ],
   "workflowTimeline": [
     "Requirement",
     "Planner",
@@ -58,49 +81,49 @@
   "visualizations": {
     "testTrend": [
       {
-        "run": "TC_RES_3P_FRESH_001",
-        "passed": 1,
-        "failed": 0
+        "run": "TC_CNR_001",
+        "passed": 0,
+        "failed": 1
       }
     ],
     "eventDistribution": [
       {
         "name": "Heal",
-        "value": 0
+        "value": 1
       },
       {
         "name": "RCA",
-        "value": 0
+        "value": 1
       },
       {
         "name": "Failed",
-        "value": 0
+        "value": 1
       }
     ],
     "agentDurations": [
       {
         "agent": "Planner",
-        "durationMs": 5
+        "durationMs": 3
       },
       {
         "agent": "Designer",
-        "durationMs": 14
+        "durationMs": 18
       },
       {
         "agent": "Generator",
-        "durationMs": 16
+        "durationMs": 4
       },
       {
         "agent": "Execution",
-        "durationMs": 80382
+        "durationMs": 109810
       },
       {
         "agent": "RCA",
-        "durationMs": 5
+        "durationMs": 18
       },
       {
         "agent": "Healing",
-        "durationMs": 6
+        "durationMs": 10992
       }
     ]
   }

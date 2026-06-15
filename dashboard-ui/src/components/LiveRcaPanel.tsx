@@ -1,7 +1,5 @@
 import { useRcaResults } from '../hooks/useRcaResults';
 
-const CONFIDENCE_COLOR: Record<number, string> = {};
-
 function confidenceBadge(pct: number): string {
   if (pct >= 85) return 'border-emerald-400/40 bg-emerald-500/10 text-emerald-300';
   if (pct >= 70) return 'border-amber-400/40 bg-amber-500/10 text-amber-300';

@@ -45,7 +45,7 @@ export function AgentStatusSection({ agents }: AgentStatusSectionProps) {
         {agents.map(agent => (
           <div
             key={agent.name}
-            className={`rounded-xl border bg-slate-900/70 px-4 py-3 transition-all duration-500 ${cardBorder(agent.status)}`}
+            className={`rounded-xl border bg-slate-900/70 px-4 py-3 transition-all duration-1500 ${cardBorder(agent.status)}`}
           >
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-slate-100">{agent.name}</p>

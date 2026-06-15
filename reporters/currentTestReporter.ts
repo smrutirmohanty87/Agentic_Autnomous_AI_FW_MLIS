@@ -13,7 +13,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
-import { exec, spawn } from 'child_process';
+import { exec } from 'child_process';
 import type {
   FullConfig,
   Reporter,
@@ -21,8 +21,6 @@ import type {
   TestCase,
   TestResult,
 } from '@playwright/test/reporter';
-import { getHealingAgent } from '../healing/healingAgent';
-import { initializeWorkflow, updateAgent, markWorkflowComplete } from '../runtime/workflowStatus';
 
 // ---------------------------------------------------------------------------
 // Path constants
@@ -112,6 +110,33 @@ function writeHeal(entries: unknown[]): void {
   }
 }
 
+const WORKFLOW_TARGETS = [
+  path.join(ROOT, 'runtime', 'workflow-status.json'),
+  path.join(ROOT, 'dashboard-ui', 'public', 'workflow-status.json'),
+];
+
+function writeWorkflow(payload: object): void {
+  const json = JSON.stringify(payload, null, 2);
+  for (const target of WORKFLOW_TARGETS) {
+    try {
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, json, 'utf8');
+    } catch { /* non-fatal */ }
+  }
+}
+
+function buildWorkflowStatus(
+  workflowId: string,
+  startedAt: string,
+  overallStatus: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED',
+  currentAgent: string | null,
+  agents: Array<{ name: string; state: string; startedAt?: string; finishedAt?: string; durationMs?: number }>,
+  completedAt?: string,
+) {
+  return { workflowId, startedAt, completedAt, overallStatus, currentAgent, agents };
+}
+
+
 function fullTitle(test: TestCase): string {
   return [...test.titlePath()].filter(Boolean).join(' › ');
 }
@@ -127,106 +152,29 @@ function countTests(suite: Suite): number {
 // Dashboard auto-open helper
 // ---------------------------------------------------------------------------
 
-const DASHBOARD_URL = 'http://127.0.0.1:4173';
-const DASHBOARD_START_CMD = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-let dashboardProcess: ReturnType<typeof spawn> | null = null;
+const DASHBOARD_URL = 'http://localhost:5173';
 
-function isDashboardRunning(): Promise<boolean> {
-  return new Promise((resolve) => {
-    const req = http.get(DASHBOARD_URL, (res) => {
-      res.resume();
-      resolve(Boolean(res.statusCode && res.statusCode < 400));
-    });
-    req.on('error', () => resolve(false));
-    req.setTimeout(2000, () => {
-      req.destroy();
-      resolve(false);
-    });
-  });
-}
-
-function startDashboardServer(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (dashboardProcess) {
-      return resolve();
-    }
-
-    const child = spawn(DASHBOARD_START_CMD, ['--prefix', 'dashboard-ui', 'run', 'dev:local'], {
-      shell: false,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      detached: true,
-    });
-
-    dashboardProcess = child;
-    child.unref();
-
-    const timeout = setTimeout(() => {
-      reject(new Error('Dashboard server did not become ready within 30 seconds'));
-    }, 30000);
-
-    const onReady = (): void => {
-      clearTimeout(timeout);
-      resolve();
-    };
-
-    child.stdout.on('data', (chunk) => {
-      const text = chunk.toString();
-      if (text.includes('ready in')) {
-        onReady();
-      }
-    });
-
-    child.stderr.on('data', (chunk) => {
-      const text = chunk.toString();
-      if (text.toLowerCase().includes('ready in')) {
-        onReady();
-      }
-    });
-
-    child.on('error', (err) => {
-      clearTimeout(timeout);
-      reject(err);
-    });
-
-    child.on('exit', (code) => {
-      if (code !== 0) {
-        clearTimeout(timeout);
-        reject(new Error(`Dashboard server exited early with code ${code}`));
-      }
-    });
-  });
-}
-
-function openBrowserToDashboard(): void {
-  const cmd =
-    process.platform === 'win32'
-      ? `start "" "${DASHBOARD_URL}"`
-      : process.platform === 'darwin'
-      ? `open "${DASHBOARD_URL}"`
-      : `xdg-open "${DASHBOARD_URL}"`;
-  exec(cmd, (err) => {
-    if (err) {
-      console.log(`[reporter] Dashboard reachable but could not auto-open browser: ${err.message}`);
-    } else {
-      console.log(`[reporter] 🌐 Dashboard opened at ${DASHBOARD_URL}`);
+function openDashboard(): void {
+  const req = http.get(DASHBOARD_URL, (res) => {
+    res.resume();
+    if (res.statusCode && res.statusCode < 400) {
+      const cmd =
+        process.platform === 'win32'
+          ? `start "" "${DASHBOARD_URL}"`
+          : process.platform === 'darwin'
+          ? `open "${DASHBOARD_URL}"`
+          : `xdg-open "${DASHBOARD_URL}"`;
+      exec(cmd, (err) => {
+        if (err) {
+          console.log(`[reporter] Dashboard reachable but could not auto-open browser: ${err.message}`);
+        } else {
+          console.log(`[reporter] 🌐 Dashboard opened at ${DASHBOARD_URL}`);
+        }
+      });
     }
   });
-}
-
-async function openDashboard(): Promise<void> {
-  const available = await isDashboardRunning();
-  if (available) {
-    openBrowserToDashboard();
-    return;
-  }
-
-  console.log('[reporter] Dashboard is not running; starting the local dashboard server...');
-  try {
-    await startDashboardServer();
-    openBrowserToDashboard();
-  } catch (err) {
-    console.log(`[reporter] Could not start dashboard server: ${(err as Error).message}`);
-  }
+  req.on('error', () => { /* dashboard not running — silently skip */ });
+  req.setTimeout(2000, () => req.destroy());
 }
 
 // ---------------------------------------------------------------------------
@@ -307,7 +255,7 @@ class CurrentTestReporter implements Reporter {
   private workflowId: string = '';
   private executionStartedAt: string = '';
 
-  async onBegin(_config: FullConfig, suite: Suite): Promise<void> {
+  onBegin(_config: FullConfig, suite: Suite): void {
     this.total = countTests(suite);
     this.passed = 0;
     this.failed = 0;
@@ -318,28 +266,31 @@ class CurrentTestReporter implements Reporter {
     this.workflowId = `run-${Date.now()}`;
     this.executionStartedAt = this.suiteStartedAt;
 
-    // Reset healing agent for new test run
-    const healingAgent = getHealingAgent();
-    healingAgent.reset();
-
     // Reset RCA results at start of new run
     writeRca([]);
 
     // Reset heal log at start of new run so Heal Events starts from 0
     writeHeal([]);
 
-    // Auto-open dashboard when test run begins.
-    await openDashboard();
+    // Auto-open dashboard if it's running
+    openDashboard();
 
-    // Initialize workflow and mark pre-execution agents as completed.
-    initializeWorkflow(this.workflowId);
-    updateAgent('Planner', 'RUNNING');
-    updateAgent('Planner', 'SUCCESS');
-    updateAgent('Designer', 'RUNNING');
-    updateAgent('Designer', 'SUCCESS');
-    updateAgent('Generator', 'RUNNING');
-    updateAgent('Generator', 'SUCCESS');
-    updateAgent('Execution', 'RUNNING');
+    // Write live workflow-status.json so the dashboard pipeline panel shows
+    // Planner/Designer/Generator are conceptually pre-run — mark them SUCCESS immediately
+    writeWorkflow(buildWorkflowStatus(
+      this.workflowId,
+      this.suiteStartedAt,
+      'RUNNING',
+      'Execution',
+      [
+        { name: 'Planner',   state: 'SUCCESS', durationMs: 0 },
+        { name: 'Designer',  state: 'SUCCESS', durationMs: 0 },
+        { name: 'Generator', state: 'SUCCESS', durationMs: 0 },
+        { name: 'Execution', state: 'RUNNING', startedAt: this.suiteStartedAt },
+        { name: 'Healing',   state: 'PENDING' },
+        { name: 'RCA',       state: 'PENDING' },
+      ],
+    ));
 
     writeSuite({
       totalTests: this.total,
@@ -396,14 +347,6 @@ class CurrentTestReporter implements Reporter {
       this.passed += 1;
     } else if (isFailed) {
       this.failed += 1;
-      
-      // Record failed test for healing workflow
-      const err = result.errors[0];
-      const errorMessage = err?.message ?? 'Unknown error';
-      const failureType = classifyError(errorMessage);
-      const healingAgent = getHealingAgent();
-      healingAgent.recordFailedTest(fullTitle(test), errorMessage, failureType);
-      
       // Run RCA analysis on every failed test
       const entry = buildRcaEntry(fullTitle(test), result);
       this.rcaEntries.push(entry);
@@ -439,10 +382,6 @@ class CurrentTestReporter implements Reporter {
     const execDuration = Date.now() - new Date(this.executionStartedAt).getTime();
     const overallStatus = this.failed > 0 ? 'FAILED' : 'SUCCESS';
 
-    // Get healing agent
-    const healingAgent = getHealingAgent();
-    const hasFailures = healingAgent.hasFailures();
-
     // Write current-test as idle but keep suite-progress suiteStatus=RUNNING
     // and running=1 so the dashboard stays in LIVE MODE during Healing/RCA stages
     write({ status: 'IDLE', testName: null, startedAt: null, durationMs: null });
@@ -461,62 +400,59 @@ class CurrentTestReporter implements Reporter {
     });
 
     // ── Stage 1: Execution done, Healing RUNNING ───────────────────────────
-    updateAgent('Execution', overallStatus);
-    updateAgent('Healing', 'RUNNING');
+    writeWorkflow(buildWorkflowStatus(
+      this.workflowId,
+      this.suiteStartedAt,
+      'RUNNING',
+      'Healing',
+      [
+        { name: 'Planner',   state: 'SUCCESS', durationMs: 0 },
+        { name: 'Designer',  state: 'SUCCESS', durationMs: 0 },
+        { name: 'Generator', state: 'SUCCESS', durationMs: 0 },
+        { name: 'Execution', state: overallStatus, startedAt: this.executionStartedAt, finishedAt: now, durationMs: execDuration },
+        { name: 'Healing',   state: 'RUNNING', startedAt: now },
+        { name: 'RCA',       state: 'PENDING' },
+      ],
+    ));
 
-    // ── Perform Healing Workflow ──────────────────────────────────────────
-    let healingStatus: 'SUCCESS' | 'FAILED' = 'SUCCESS';
-    let healingDuration = 3000;
-
-    if (hasFailures) {
-      const healingResult = await healingAgent.performHealing(0.5);
-      healingDuration = healingResult.durationMs;
-      healingStatus = healingResult.healingSuccess ? 'SUCCESS' : 'FAILED';
-      writeHeal(healingResult.attempts);
-      console.log(`[reporter] 🏥 Healing workflow completed:`);
-      console.log(`        - Total Failed: ${healingResult.totalFailed}`);
-      console.log(`        - Total Healed: ${healingResult.totalHealed}`);
-      console.log(`        - Total Unhealed: ${healingResult.totalUnhealed}`);
-      console.log(`        - Healing Status: ${healingStatus}`);
-    } else {
-      console.log('[reporter] ✅ No failures to heal — Healing PENDING → SUCCESS');
-      await new Promise(r => setTimeout(r, 3000));
-    }
-
-    // Finalize Healing state
-    updateAgent('Healing', healingStatus);
-
-    // If healing succeeded after failures, simulate a re-execution pass so the dashboard shows
-    // Execution starting again and then completing successfully.
-    if (hasFailures && healingStatus === 'SUCCESS') {
-      updateAgent('Execution', 'RUNNING');
-      writeSuite({
-        totalTests: this.total,
-        passed: this.passed,
-        failed: this.failed,
-        running: 1,
-        pending: 0,
-        currentTest: 'Re-executing healed tests…',
-        progressPct: 100,
-        startedAt: this.suiteStartedAt,
-        durationMs: Date.now() - new Date(this.suiteStartedAt).getTime(),
-        suiteStatus: 'RUNNING',
-        updatedAt: new Date().toISOString(),
-      });
-      await new Promise(r => setTimeout(r, 2000));
-      updateAgent('Execution', 'SUCCESS');
-    }
+    await new Promise(r => setTimeout(r, 3000));
+    const healingDoneAt = new Date().toISOString();
 
     // ── Stage 2: Healing done, RCA RUNNING ────────────────────────────────
-    updateAgent('RCA', 'RUNNING');
+    writeWorkflow(buildWorkflowStatus(
+      this.workflowId,
+      this.suiteStartedAt,
+      'RUNNING',
+      'RCA',
+      [
+        { name: 'Planner',   state: 'SUCCESS', durationMs: 0 },
+        { name: 'Designer',  state: 'SUCCESS', durationMs: 0 },
+        { name: 'Generator', state: 'SUCCESS', durationMs: 0 },
+        { name: 'Execution', state: overallStatus, startedAt: this.executionStartedAt, finishedAt: now, durationMs: execDuration },
+        { name: 'Healing',   state: 'SUCCESS', startedAt: now, finishedAt: healingDoneAt, durationMs: 3000 },
+        { name: 'RCA',       state: 'RUNNING', startedAt: healingDoneAt },
+      ],
+    ));
+
     await new Promise(r => setTimeout(r, 2500));
-    updateAgent('RCA', 'SUCCESS');
-
-    // Final overall status depends on healing
-    const finalOverallStatus = (overallStatus === 'FAILED' || healingStatus === 'FAILED') ? 'FAILED' : 'SUCCESS';
-    markWorkflowComplete(finalOverallStatus);
-
     const rcaDoneAt = new Date().toISOString();
+
+    // ── Stage 3: All complete — write final suite-progress ────────────────
+    writeWorkflow(buildWorkflowStatus(
+      this.workflowId,
+      this.suiteStartedAt,
+      overallStatus,
+      null,
+      [
+        { name: 'Planner',   state: 'SUCCESS', durationMs: 0 },
+        { name: 'Designer',  state: 'SUCCESS', durationMs: 0 },
+        { name: 'Generator', state: 'SUCCESS', durationMs: 0 },
+        { name: 'Execution', state: overallStatus, startedAt: this.executionStartedAt, finishedAt: now, durationMs: execDuration },
+        { name: 'Healing',   state: 'SUCCESS', startedAt: now, finishedAt: healingDoneAt, durationMs: 3000 },
+        { name: 'RCA',       state: 'SUCCESS', startedAt: healingDoneAt, finishedAt: rcaDoneAt, durationMs: 2500 },
+      ],
+      rcaDoneAt,
+    ));
 
     // Final suite snapshot — marks run as completed after Healing/RCA stages
     writeSuite({

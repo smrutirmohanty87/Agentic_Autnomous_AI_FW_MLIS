@@ -59,7 +59,7 @@ export function SuiteProgressPanel() {
       {/* Progress bar */}
       <div className="overflow-hidden rounded-full bg-slate-800/60 h-3">
         <div
-          className="h-3 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 transition-all duration-500"
+          className="h-3 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 transition-all duration-1500"
           style={{ width: `${pct}%` }}
         />
       </div>

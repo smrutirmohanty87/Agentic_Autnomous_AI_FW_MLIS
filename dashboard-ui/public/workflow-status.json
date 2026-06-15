@@ -1,54 +1,54 @@
 {
-  "workflowId": "run-1781160718577",
-  "startedAt": "2026-06-11T06:51:58.577Z",
-  "overallStatus": "SUCCESS",
+  "workflowId": "run-1781519841073",
+  "startedAt": "2026-06-15T10:37:21.073Z",
+  "overallStatus": "FAILED",
   "currentAgent": null,
-  "requirement": "Residential England & Wales 3-Product Fresh Demo",
-  "generatedTestName": "[TC_RES_3P_FRESH_001] Create Residential England & Wales policy with exactly 3 products (Fresh Run)",
-  "currentStep": "Completed: RCA indicates no healing required",
+  "requirement": "CNR Live Demo Workflow",
+  "generatedTestName": "[TC_CNR_001] Create base policy and initiate CNR flow (live demo)",
+  "currentStep": "Completed: re-execution still has failures",
   "agents": [
     {
       "name": "Planner",
       "state": "SUCCESS",
-      "startedAt": "2026-06-11T06:51:58.607Z",
-      "finishedAt": "2026-06-11T06:51:58.612Z",
-      "durationMs": 5
+      "startedAt": "2026-06-15T10:37:21.093Z",
+      "finishedAt": "2026-06-15T10:37:21.096Z",
+      "durationMs": 3
     },
     {
       "name": "Designer",
       "state": "SUCCESS",
-      "startedAt": "2026-06-11T06:52:03.643Z",
-      "finishedAt": "2026-06-11T06:52:03.655Z",
-      "durationMs": 12
+      "startedAt": "2026-06-15T10:37:26.113Z",
+      "finishedAt": "2026-06-15T10:37:26.131Z",
+      "durationMs": 18
     },
     {
       "name": "Generator",
       "state": "SUCCESS",
-      "startedAt": "2026-06-11T06:52:08.685Z",
-      "finishedAt": "2026-06-11T06:52:08.699Z",
-      "durationMs": 14
+      "startedAt": "2026-06-15T10:37:31.156Z",
+      "finishedAt": "2026-06-15T10:37:31.160Z",
+      "durationMs": 4
     },
     {
       "name": "Execution",
-      "state": "SUCCESS",
-      "startedAt": "2026-06-11T06:52:14.782Z",
-      "finishedAt": "2026-06-11T06:53:35.155Z",
-      "durationMs": 80373
+      "state": "FAILED",
+      "startedAt": "2026-06-15T10:39:27.049Z",
+      "finishedAt": "2026-06-15T10:39:38.028Z",
+      "durationMs": 10979
     },
     {
       "name": "RCA",
-      "state": "SUCCESS",
-      "startedAt": "2026-06-11T06:53:35.163Z",
-      "finishedAt": "2026-06-11T06:53:35.168Z",
-      "durationMs": 5
+      "state": "FAILED",
+      "startedAt": "2026-06-15T10:39:27.017Z",
+      "finishedAt": "2026-06-15T10:39:38.047Z",
+      "durationMs": 11030
     },
     {
       "name": "Healing",
       "state": "SUCCESS",
-      "startedAt": "2026-06-11T06:53:35.171Z",
-      "finishedAt": "2026-06-11T06:53:35.178Z",
-      "durationMs": 7
+      "startedAt": "2026-06-15T10:39:27.040Z",
+      "finishedAt": "2026-06-15T10:39:38.032Z",
+      "durationMs": 10992
     }
   ],
-  "completedAt": "2026-06-11T06:53:35.189Z"
+  "completedAt": "2026-06-15T10:39:38.063Z"
 }

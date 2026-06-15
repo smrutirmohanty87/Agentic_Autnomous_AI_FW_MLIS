@@ -28,6 +28,14 @@ import type { AgentName as StatusAgentName } from '../runtime/workflowStatus';
 
 // ---------------------------------------------------------------------------
 // Types
+import { getCache, CacheStatus } from '../src/ai/cache/RequirementCache';
+import { getTemplateLibrary, TemplateStatus } from '../src/ai/templates/TemplateLibrary';
+import { PromptCompressor } from '../src/ai/compression/PromptCompressor';
+import type { CompressedRequirement } from '../src/ai/compression/CompressionTypes';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
 export type AgentStatus = 'PENDING' | 'RUNNING' | 'PASS' | 'FAIL' | 'SKIPPED';
@@ -76,6 +84,9 @@ export interface TestRunResult {
 // ---------------------------------------------------------------------------
 
 const AGENTS = [
+  'Compression',
+  'Cache',
+  'TemplateLibrary',
   'Planner',
   'Designer',
   'Generator',
@@ -146,6 +157,118 @@ function runDesigner(
 
 // ---------------------------------------------------------------------------
 // Built-in Generator phase
+// ---------------------------------------------------------------------------
+// Built-in Cache Check phase
+// ---------------------------------------------------------------------------
+
+interface CacheCheckOutput {
+  cacheStatus: CacheStatus;
+  skippedPlanner: boolean;
+  skippedDesigner: boolean;
+}
+
+function runCacheCheck(
+  requirement: string,
+  agents: Record<AgentName, AgentRecord>
+): CacheCheckOutput {
+  startAgent(agents.Cache);
+  const cache = getCache();
+  const result = cache.check(requirement);
+
+  if (result.status === 'HIT' && result.entry) {
+    console.log(`[orchestrator]   Cache HIT — skipping Planner and Designer`);
+    console.log(`    Planner output: ${result.entry.plannerOutput.testCases} test case(s)`);
+    console.log(`    Designer output: ${result.entry.designerOutput.locatorCount} locator(s)`);
+    agents.Planner.status = 'SKIPPED';
+    agents.Planner.detail = 'Requirement cache hit — skipped';
+    agents.Designer.status = 'SKIPPED';
+    agents.Designer.detail = 'Requirement cache hit — skipped';
+
+    finishAgent(agents.Cache, 'PASS', `Cache HIT — Planner and Designer skipped`);
+    return { cacheStatus: 'HIT', skippedPlanner: true, skippedDesigner: true };
+  } else {
+    console.log(`[orchestrator]   Cache MISS — will execute Planner and Designer`);
+    finishAgent(agents.Cache, 'PASS', `Cache MISS — proceeding with full workflow`);
+    return { cacheStatus: 'MISS', skippedPlanner: false, skippedDesigner: false };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Built-in Template Library phase
+// ---------------------------------------------------------------------------
+
+interface TemplateCheckOutput {
+  templateStatus: TemplateStatus;
+  templateName?: string;
+  matchScore?: number;
+}
+
+function runTemplateLibraryCheck(
+  requirement: string,
+  agents: Record<AgentName, AgentRecord>
+): TemplateCheckOutput {
+  startAgent(agents.TemplateLibrary);
+  const templateLibrary = getTemplateLibrary();
+  const result = templateLibrary.match(requirement);
+
+  if (result.status === 'HIT' && result.template) {
+    console.log(`[orchestrator]   Template HIT — matched "${result.template.name}"`);
+    console.log(`    Workflow steps: ${result.template.workflowSteps.length}`);
+    console.log(`    Common locators: ${result.template.commonLocators.length}`);
+    console.log(`    Match score: ${((result.matchScore ?? 0) * 100).toFixed(1)}%`);
+    console.log(`    Matched keywords: ${(result.matchedKeywords ?? []).join(', ')}`);
+    finishAgent(
+      agents.TemplateLibrary,
+      'PASS',
+      `Template HIT — "${result.template.name}" (${((result.matchScore ?? 0) * 100).toFixed(1)}% match)`
+    );
+    return { templateStatus: 'HIT', templateName: result.template.name, matchScore: result.matchScore };
+  } else {
+    console.log(`[orchestrator]   Template MISS — no matching template found`);
+    finishAgent(agents.TemplateLibrary, 'PASS', `Template MISS — proceeding with standard workflow`);
+    return { templateStatus: 'MISS' };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Built-in Prompt Compression phase
+// ---------------------------------------------------------------------------
+
+interface CompressionCheckOutput {
+  originalTokens: number;
+  compressedTokens: number;
+  compressionRatio: number;
+  compressed: CompressedRequirement;
+}
+
+function runCompressionCheck(
+  requirement: string,
+  agents: Record<AgentName, AgentRecord>
+): CompressionCheckOutput {
+  startAgent(agents.Compression);
+  const compressed = PromptCompressor.compress(requirement);
+  console.log(`[orchestrator]   Compression complete`);
+  console.log(`    Original tokens: ${compressed.originalTokens}`);
+  console.log(`    Compressed tokens: ${compressed.compressedTokens}`);
+  console.log(`    Reduction: ${compressed.compressionRatio}%`);
+  console.log(`    Workflow: ${compressed.workflow}`);
+  console.log(`    Steps: ${compressed.steps.length} | Entities: ${compressed.entities.length} | Validations: ${compressed.validations.length}`);
+  finishAgent(
+    agents.Compression,
+    'PASS',
+    `Compressed ${compressed.originalTokens} → ${compressed.compressedTokens} tokens (${compressed.compressionRatio}% reduction)`
+  );
+  return {
+    originalTokens: compressed.originalTokens,
+    compressedTokens: compressed.compressedTokens,
+    compressionRatio: compressed.compressionRatio,
+    compressed,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Built-in Generator phase
+// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
 function runGenerator(testCases: TestCase[], agents: Record<AgentName, AgentRecord>): void {
@@ -414,17 +537,63 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
   let unhealedFailures: UnhealedFailure[] = [];
   let rcaResult: AnalyzerResult | undefined;
   let healingEvents: HealEvent[] = [];
+  let compressionStatus: 'ENABLED' | 'DISABLED' = 'ENABLED';
+  let originalTokens = 0;
+  let compressedTokens = 0;
+  let compressionRatio = 0;
+  let compressedRequirement: CompressedRequirement | undefined;
+  let cacheStatus: CacheStatus = 'MISS';
+  let templateStatus: TemplateStatus = 'MISS';
+  let matchedTemplateName: string | undefined;
 
   try {
-    // 1. Planner
-    updateWorkflowContext({ currentStep: 'Planner: planning test cases' });
-    runPlanner(testCases, agentRecords);
+    // -1. Prompt Compression (FIRST in pipeline)
+    updateWorkflowContext({ currentStep: 'Compression: compressing requirement for reduced token consumption' });
+    const compressionResult = runCompressionCheck(suiteName, agentRecords);
+    originalTokens = compressionResult.originalTokens;
+    compressedTokens = compressionResult.compressedTokens;
+    compressionRatio = compressionResult.compressionRatio;
+    compressedRequirement = compressionResult.compressed;
+    const compressedPrompt = PromptCompressor.toPromptString(compressedRequirement);
+    updateWorkflowContext({ requirement: compressedPrompt });
+    if (delay.planner) await sleep(delay.planner);
+
+    // 0. Cache Check
+    updateWorkflowContext({ currentStep: 'Cache: checking for requirement cache' });
+    const cacheCheckResult = runCacheCheck(compressedPrompt, agentRecords);
+    cacheStatus = cacheCheckResult.cacheStatus;
+    if (delay.planner) await sleep(delay.planner);
+
+    // 0.5. Template Library Check
+    updateWorkflowContext({ currentStep: 'TemplateLibrary: matching business patterns' });
+    const templateCheckResult = runTemplateLibraryCheck(compressedPrompt, agentRecords);
+    templateStatus = templateCheckResult.templateStatus;
+    matchedTemplateName = templateCheckResult.templateName;
+    if (delay.planner) await sleep(delay.planner);
+
+    // 1. Planner (conditional — skipped if cache HIT)
+    if (!cacheCheckResult.skippedPlanner) {
+      updateWorkflowContext({ currentStep: 'Planner: planning test cases' });
+      runPlanner(testCases, agentRecords);
+    }
     if (delay.planner) await sleep(delay.planner);
 
     // 2. Designer
+   // 2. Designer (conditional — skipped if cache HIT)
+   if (!cacheCheckResult.skippedDesigner) {
     updateWorkflowContext({ currentStep: 'Designer: registering locators' });
     runDesigner(testCases, locatorMap, agentRecords);
     if (delay.designer) await sleep(delay.designer);
+
+     // Save to cache after Designer completes (only on cache MISS)
+     const cache = getCache();
+     const cacheEntry = cache.createEntry(
+        compressedPrompt,
+       { testCases: testCases.length, description: `Planned ${testCases.length} test case(s)` },
+       { locatorCount: listRegisteredKeys().length, description: `Registered ${listRegisteredKeys().length} locator(s)` }
+     );
+     cache.save(cacheEntry);
+   }
 
     // 3. Generator
     updateWorkflowContext({ currentStep: 'Generator: creating executable test plan' });
@@ -632,18 +801,33 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
         : `${testCases.length} generated tests`,
       kpis: {
         workflowStatus: result.workflowStatus,
+        compressionStatus,
+        originalTokens,
+        compressedTokens,
+        compressionRatio,
+        cacheStatus,
+        templateStatus,
+        matchedTemplate: matchedTemplateName,
         testsPassed: result.testResults.filter(r => r.status === 'PASS').length,
         testsFailed: result.testResults.filter(r => r.status === 'FAIL').length,
         healEvents: result.healingEvents ? result.healingEvents.length : 0,
         rcaEvents: rcaEventsCount,
         executionDurationMs,
       },
-      agents: result.executedAgents.map(a => ({ name: a.name, status: a.status === 'PASS' ? 'SUCCESS' : 'FAILED', durationMs: a.durationMs })),
+      agents: result.executedAgents.map(a => ({
+        name: a.name,
+        status: a.status === 'PASS' ? 'SUCCESS' : a.status === 'SKIPPED' ? 'SKIPPED' : 'FAILED',
+        durationMs: a.durationMs,
+      })),
       rcaSummary: result.rcaResult ? (result.rcaResult.reports ?? []) : [],
       healingAnalytics: result.healingEvents ?? [],
-      workflowTimeline: ['Requirement', 'Planner', 'Designer', 'Generator', 'Execution', 'RCA', 'Healing', 'Execution Re-run'],
+      workflowTimeline: ['Requirement', 'Compression', 'Cache', 'TemplateLibrary', 'Planner', 'Designer', 'Generator', 'Execution', 'RCA', 'Healing', 'Execution Re-run'],
       visualizations: {
-        testTrend: result.testResults.map((t, i) => ({ run: t.testId, passed: result.testResults.slice(0, i + 1).filter(x => x.status === 'PASS').length, failed: result.testResults.slice(0, i + 1).filter(x => x.status === 'FAIL').length })),
+        testTrend: result.testResults.map((t, i) => ({
+          run: t.testId,
+          passed: result.testResults.slice(0, i + 1).filter(x => x.status === 'PASS').length,
+          failed: result.testResults.slice(0, i + 1).filter(x => x.status === 'FAIL').length,
+        })),
         eventDistribution: [
           { name: 'Heal', value: result.healingEvents ? result.healingEvents.length : 0 },
           { name: 'RCA', value: rcaEventsCount },

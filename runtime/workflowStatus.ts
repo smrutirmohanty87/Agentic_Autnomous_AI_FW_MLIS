@@ -22,6 +22,9 @@ import * as path from 'path';
 export type AgentState = 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
 
 export type AgentName =
+  | 'Compression'
+  | 'Cache'
+  | 'TemplateLibrary'
   | 'Planner'
   | 'Designer'
   | 'Generator'
@@ -30,6 +33,9 @@ export type AgentName =
   | 'Healing';
 
 export const AGENT_NAMES: AgentName[] = [
+  'Compression',
+  'Cache',
+  'TemplateLibrary',
   'Planner',
   'Designer',
   'Generator',
