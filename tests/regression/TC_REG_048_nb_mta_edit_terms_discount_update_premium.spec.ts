@@ -1,4 +1,4 @@
-import { expect, Page, test } from '@playwright/test';
+import { test } from '@playwright/test';
 import {
   FinalPolicyDetailsPage,
   LoginPage,
@@ -12,43 +12,9 @@ import {
 } from '../../src/pages/mlis-portal';
 import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
+import { TCReg048EditTermsPage } from '../../src/pages/tc-reg-048-edit-terms';
+import { TCRegSharedUtilsPage } from '../../src/pages/tc-reg-shared-utils';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
-
-async function verifyEditTermsDiscountAndUpdatePremiumOrClose(page: Page) {
-  const editTermsButton = page
-    .getByRole('button', { name: /Edit Terms/i })
-    .or(page.getByRole('link', { name: /Edit Terms/i }))
-    .first();
-
-  await expect(editTermsButton).toBeVisible({ timeout: 60000 });
-  await editTermsButton.click();
-
-  const discountField = page
-    .getByRole('spinbutton', { name: /Discount/i })
-    .or(page.getByRole('textbox', { name: /Discount/i }))
-    .or(page.locator('input[aria-label*="Discount" i]:visible').first())
-    .first();
-
-  const updatePremiumButton = page.getByRole('button', { name: /Update Premium/i }).first();
-
-  const hasDiscount = await discountField.isVisible({ timeout: 7000 }).catch(() => false);
-  const hasUpdatePremium = await updatePremiumButton.isVisible({ timeout: 7000 }).catch(() => false);
-
-  if (hasDiscount && hasUpdatePremium) {
-    await expect(discountField).toBeVisible({ timeout: 10000 });
-    await expect(updatePremiumButton).toBeVisible({ timeout: 10000 });
-  }
-
-  const closeButton = page
-    .locator('[role="dialog"] button:has-text("Close"), [role="dialog"] button[title*="Close" i], button:has-text("Close")')
-    .first();
-
-  if (await closeButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await closeButton.click();
-  } else {
-    await page.keyboard.press('Escape').catch(() => undefined);
-  }
-}
 
 test.describe('@regression | E2E | NB-MTA | Edit Terms', () => {
   test('TC_REG_048 | NB-MTA validate Edit Terms Discount + Update Premium fallback and complete bind', async ({ page }) => {
@@ -69,6 +35,8 @@ test.describe('@regression | E2E | NB-MTA | Edit Terms', () => {
 
     const brokerPortal = new BrokerPortalPage(page);
     const salesforce = new SalesforcePortalPage(page);
+    const reg048 = new TCReg048EditTermsPage(page);
+    const regUtils = new TCRegSharedUtilsPage(page);
 
     // Create NB policy in Broker Portal.
     await brokerLogin.goto();
@@ -126,43 +94,13 @@ test.describe('@regression | E2E | NB-MTA | Edit Terms', () => {
     // Condition: open Quotes tab -> click Edit Terms -> assert Discount and Update Premium if present;
     // otherwise close dialog and continue the MTA flow.
     await salesforce.openQuotesTab1();
-    await verifyEditTermsDiscountAndUpdatePremiumOrClose(page);
+    await reg048.verifyEditTermsDiscountAndUpdatePremiumOrClose();
     await page.getByRole('tab', { name: /^Details$/i }).first().click();
 
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
     await salesforce.editMTAPremium('100');
     await salesforce.bindMTA();
 
-    // Wait for policy update and assert top-left Risk ID is shown in expected Salesforce format.
-    const riskIdPattern = /\bDAU\/\d{8}\/[A-Z]{4}\/\d{2}\/\d{2}\b/;
-    const highlightsTopLeft = page.locator(
-      '.slds-page-header, .forceHighlightsPanel, [data-aura-class*="forceHighlightsPanel"]',
-    ).first();
-
-    await expect
-      .poll(async () => {
-        await page.waitForLoadState('domcontentloaded');
-
-        const topLeftText = await highlightsTopLeft.innerText().catch(() => '');
-        if (riskIdPattern.test(topLeftText)) {
-          return topLeftText.match(riskIdPattern)?.[0] ?? '';
-        }
-
-        const bodyText = await page.locator('body').innerText();
-        return bodyText.match(riskIdPattern)?.[0] ?? '';
-      }, { timeout: 180000, intervals: [2000, 5000] })
-      .toMatch(riskIdPattern);
-
-    const finalTopLeftText = await highlightsTopLeft.innerText().catch(() => '');
-    const finalBodyText = await page.locator('body').innerText();
-    const generatedRiskId =
-      finalTopLeftText.match(riskIdPattern)?.[0]
-      ?? finalBodyText.match(riskIdPattern)?.[0]
-      ?? '';
-
-    expect(
-      generatedRiskId,
-      'Expected Risk ID in format DAU/########/AAAA/##/## after Bind MTA (top-left highlights).',
-    ).toMatch(riskIdPattern);
+    await regUtils.assertRiskIdVisible();
   });
 });

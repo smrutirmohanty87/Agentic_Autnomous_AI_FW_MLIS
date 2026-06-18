@@ -1,4 +1,4 @@
-import { expect, Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   NiCommercialFinalPolicyDetailsPage,
   NiCommercialLoginPage,
@@ -12,79 +12,8 @@ import {
 } from '../../src/pages/mlis-portal-ni-commercial';
 import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
+import { TCRegNiCommercialIntermediaryPage, updatedIntermediaryLegalEntity } from '../../src/pages/tc-reg-ni-commercial-intermediary';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
-
-const updatedIntermediaryLegalEntity = 'Portal MLIS | Partner a/c (automated) | Bde-Comm';
-
-async function setLookupField(page: Page, fieldLabel: string, searchText: string, skipEdit = false) {
-  // Salesforce Lightning inline-edit lookup — 4 steps.
-
-  // Step 1: Click Edit (pencil) to activate inline-edit for this field.
-  // When skipEdit is true the field is already in edit mode (sibling triggered inline-edit).
-  if (!skipEdit) {
-    const editButton = page
-      .getByRole('button', { name: new RegExp(`Edit ${fieldLabel}\\s*$`, 'i') })
-      .first();
-    await expect(editButton).toBeVisible({ timeout: 60_000 });
-    await editButton.click();
-    await page.waitForTimeout(600);
-  }
-
-  // Step 2: Wait for any Salesforce spinner overlay to disappear, then clear existing pill.
-  // Use exact field name patterns to avoid matching similarly-named sibling fields.
-  await page.locator('.forceModalSpinner .modal-glass.visible').waitFor({ state: 'hidden', timeout: 30_000 }).catch(() => {});
-  const escapedLabel = fieldLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const xButton = page
-    .getByRole('button', { name: new RegExp(`Remove ${escapedLabel}\\s*$`, 'i') })
-    .or(page.getByRole('button', { name: new RegExp(`Clear ${escapedLabel} Selection\\s*$`, 'i') }))
-    .or(page.locator('button.slds-pill__remove').first())
-    .first();
-  if (await xButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
-    await xButton.click();
-    await page.waitForTimeout(400);
-  }
-
-  // Step 3: Locate the input by exact field name to avoid matching sibling fields.
-  const fieldInput = page
-    .getByRole('combobox', { name: new RegExp(`^${escapedLabel}$`, 'i') })
-    .or(page.locator(`input[aria-label="${fieldLabel}" i]`))
-    .first();
-  await expect(fieldInput).toBeVisible({ timeout: 15_000 });
-  await fieldInput.click();
-  await fieldInput.pressSequentially(searchText, { delay: 80 });
-  await page.waitForTimeout(1_000);
-
-  // Step 4: Select from the Search Results dropdown section only.
-  const searchResultsList = page
-    .locator('[role="listbox"]')
-    .filter({ hasText: /search results/i })
-    .first();
-
-  const dropdownOption = searchResultsList
-    .locator('[role="option"]:visible')
-    .filter({ hasNotText: /advanced search|show more results|show all results|search for/i })
-    .first();
-  await expect(dropdownOption).toBeVisible({ timeout: 25_000 });
-  await dropdownOption.click();
-  await page.waitForTimeout(600);
-}
-
-async function updateSubmissionSourceIntermediaryFields(page: Page) {
-  await page.mouse.wheel(0, 1200);
-  await page.waitForTimeout(800);
-
-  await setLookupField(page, 'Intermediary Legal Entity', updatedIntermediaryLegalEntity);
-
-  await page.mouse.wheel(0, 600);
-  await page.waitForTimeout(500);
-
-  await setLookupField(page, 'Intermediary Contact', 'T-013', true);
-
-  const saveButton = page.getByRole('button', { name: /^Save$/i }).first();
-  await expect(saveButton).toBeVisible({ timeout: 30000 });
-  await saveButton.click();
-  await page.waitForTimeout(10000);
-}
 
 test.describe('@regression | E2E | NI Commercial | NB | MTA | Negative Premium Bind Validation', () => {
   test(
@@ -107,6 +36,7 @@ test.describe('@regression | E2E | NI Commercial | NB | MTA | Negative Premium B
 
       const brokerPortal = new BrokerPortalPage(page);
       const salesforce = new SalesforcePortalPage(page);
+      const regNiIntermediary = new TCRegNiCommercialIntermediaryPage(page);
 
       // NB: Create a fresh NI Commercial policy in Broker Portal.
       await brokerLogin.goto();
@@ -163,7 +93,7 @@ test.describe('@regression | E2E | NI Commercial | NB | MTA | Negative Premium B
         `MTA Description - negative premium bind validation for ${policyNumber}`,
       );
       await salesforce.fillIntermediaryReference(`MTA-NEG-REF-${Date.now()}`);
-      await updateSubmissionSourceIntermediaryFields(page);
+      await regNiIntermediary.updateSubmissionSourceIntermediaryFields(updatedIntermediaryLegalEntity);
 
       // Enter negative MTA premium and assert Save is not enabled.
       const editPremiumButton = page.getByRole('button', { name: /Edit MTA Premium/i }).first();

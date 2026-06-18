@@ -1,4 +1,4 @@
-import { expect, Locator, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   CommercialFinalPolicyDetailsPage,
   CommercialLoginPage,
@@ -14,57 +14,12 @@ import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
 
-async function pickFirstVisible(candidates: Locator[], timeoutMs = 30000) {
-  const started = Date.now();
-  while (Date.now() - started < timeoutMs) {
-    for (const candidate of candidates) {
-      const target = candidate.first();
-      if (await target.isVisible().catch(() => false)) {
-        return target;
-      }
-    }
-    await candidates[0].page().waitForTimeout(300);
-  }
-  throw new Error('Unable to find a visible locator from provided candidates.');
-}
-
-function parseMoney(value: string): number {
-  const normalized = value.replace(/[^\d.-]/g, '');
-  const parsed = Number.parseFloat(normalized);
-  if (Number.isNaN(parsed)) {
-    throw new Error(`Unable to parse money value: ${value}`);
-  }
-  return parsed;
-}
-
-function extractMtaPremiumForRow(sourceText: string, rowRegex: RegExp): number {
-  const text = sourceText.replace(/\r/g, '');
-  const rowIndex = text.search(rowRegex);
-  if (rowIndex === -1) {
-    throw new Error(`Unable to find quotes row matching ${rowRegex}`);
-  }
-
-  // Each row renders as: RowId, Original Premium, MTA Premium, Total Premium.
-  const windowText = text.slice(rowIndex, rowIndex + 500);
-  const moneyMatches = windowText.match(/£\s*\d[\d,]*(?:\.\d{1,2})?/g) ?? [];
-  if (moneyMatches.length < 3) {
-    throw new Error(`Unable to extract premium columns for ${rowRegex}. Found: ${moneyMatches.join(', ')}`);
-  }
-
-  // MTA Premium is the second currency value in the row.
-  return parseMoney(moneyMatches[1]);
-}
-
 function pad2(value: number): string {
   return String(value).padStart(2, '0');
 }
 
 function toGbDate(date: Date): string {
   return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
-}
-
-function toIsoDate(date: Date): string {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
 test.describe('@regression | E2E | MTA | Commercial', () => {

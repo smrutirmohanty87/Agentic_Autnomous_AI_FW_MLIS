@@ -1,4 +1,4 @@
-import { expect, Locator, Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   FinalPolicyDetailsPage,
   LoginPage,
@@ -12,70 +12,9 @@ import {
 } from '../../src/pages/mlis-portal';
 import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
+import { TCReg041DebitNotePage } from '../../src/pages/tc-reg-041-debit-note';
+import { TCRegSharedUtilsPage } from '../../src/pages/tc-reg-shared-utils';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
-
-async function pickFirstVisible(candidates: Locator[], timeoutMs = 30000) {
-  const started = Date.now();
-  while (Date.now() - started < timeoutMs) {
-    for (const candidate of candidates) {
-      const target = candidate.first();
-      if (await target.isVisible().catch(() => false)) {
-        return target;
-      }
-    }
-    await candidates[0].page().waitForTimeout(300);
-  }
-  throw new Error('Unable to find a visible locator from provided candidates.');
-}
-
-function parseMoney(value: string): number {
-  const normalized = value.replace(/[^\d.-]/g, '');
-  const parsed = Number.parseFloat(normalized);
-  if (Number.isNaN(parsed)) {
-    throw new Error(`Unable to parse money value: ${value}`);
-  }
-  return parsed;
-}
-
-async function openAndCloseDebitNote(page: Page): Promise<void> {
-  const previewWaitMs = 2500;
-  const debitNoteRow = page.locator('table tbody tr:visible').filter({ hasText: /Debit\s*Note/i }).first();
-  await expect(debitNoteRow).toBeVisible({ timeout: 120000 });
-
-  const debitNoteLink = debitNoteRow
-    .locator('th[scope="row"] a:visible, td[data-label] a:visible, td a:visible')
-    .first();
-  await expect(debitNoteLink).toBeVisible({ timeout: 30000 });
-
-  const popupPromise = page.waitForEvent('popup', { timeout: 10000 }).catch(() => null);
-  const previousUrl = page.url();
-  await debitNoteLink.click();
-
-  const popup = await popupPromise;
-  if (popup) {
-    await popup.waitForLoadState('domcontentloaded');
-    await popup.waitForTimeout(previewWaitMs);
-    await popup.close();
-    return;
-  }
-
-  await page.waitForTimeout(1500);
-
-  const closeButton = page
-    .locator('[role="dialog"] button:has-text("Close"), [role="dialog"] button[title*="Close"], [role="dialog"] button.slds-button_icon')
-    .first();
-
-  if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await page.waitForTimeout(previewWaitMs);
-    await closeButton.click();
-  } else if (page.url() !== previousUrl) {
-    await page.waitForTimeout(previewWaitMs);
-    await page.goBack().catch(() => undefined);
-  } else {
-    await page.waitForTimeout(previewWaitMs);
-    await page.keyboard.press('Escape').catch(() => undefined);
-  }
-}
 
 test.describe('@regression | E2E | Notes & Attachments | MTA | Source Submission', () => {
   test('TC_REG_041 | Assert Debit Note premium before and after MTA from Source Submission', async ({ page }) => {
@@ -97,6 +36,8 @@ test.describe('@regression | E2E | Notes & Attachments | MTA | Source Submission
 
     const brokerPortal = new BrokerPortalPage(page);
     const salesforce = new SalesforcePortalPage(page);
+    const reg041 = new TCReg041DebitNotePage(page);
+    const regUtils = new TCRegSharedUtilsPage(page);
 
     // Create new policy in Broker Portal.
     await brokerLogin.goto();
@@ -146,7 +87,7 @@ test.describe('@regression | E2E | Notes & Attachments | MTA | Source Submission
 
     // Notes & Attachments -> open and close Debit Note.
     await salesforce.openNotesAndAttachmentsFromRelatedTab();
-    await openAndCloseDebitNote(page);
+    await reg041.openAndCloseDebitNote();
 
     // Open Insurance Policy and perform MTA.
     await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
@@ -165,7 +106,7 @@ test.describe('@regression | E2E | Notes & Attachments | MTA | Source Submission
     await detailsTab.click();
     await page.evaluate(() => window.scrollBy(0, 1200));
 
-    const sourceSubmissionLink = await pickFirstVisible([
+    const sourceSubmissionLink = await regUtils.pickFirstVisible([
       page
         .locator('records-record-layout-item:has-text("Source Submission Name") a:visible')
         .filter({ hasText: /DA-MLI-|CP-MLI-|Sub-/i }),
@@ -182,6 +123,6 @@ test.describe('@regression | E2E | Notes & Attachments | MTA | Source Submission
     // From Source Submission -> Related -> Notes & Attachments -> open and close Debit Note again.
     await salesforce.openRelatedTab();
     await salesforce.openNotesAndAttachmentsFromRelatedTab();
-    await openAndCloseDebitNote(page);
+    await reg041.openAndCloseDebitNote();
   });
 });

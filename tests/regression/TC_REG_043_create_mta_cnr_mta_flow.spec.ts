@@ -1,4 +1,4 @@
-import { expect, Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   FinalPolicyDetailsPage,
   LoginPage,
@@ -12,67 +12,13 @@ import {
 } from '../../src/pages/mlis-portal';
 import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
+import { TCReg043MtaCnrMtaPage } from '../../src/pages/tc-reg-043-mta-cnr-mta';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
-
-function logStep(step: string, details: string) {
-  // Consistent test logs to identify where a flow issue occurs.
-  console.log(`[TC_REG_043][${step}] ${details}`);
-}
-
-async function setStatusReasonInternalReferral(page: Page) {
-  logStep('STATUS-REASON', 'Open Status Reason edit and select Internal referral');
-
-  const editStatusReasonButton = page
-    .getByRole('button', { name: /Edit Status Reason/i })
-    .or(page.getByRole('button', { name: /Edit.*Status Reason/i }))
-    .first();
-
-  await expect(editStatusReasonButton).toBeVisible({ timeout: 60000 });
-  await editStatusReasonButton.click();
-
-  const statusReasonCombobox = page.getByRole('combobox', { name: /Status Reason/i }).first();
-  await expect(statusReasonCombobox).toBeVisible({ timeout: 30000 });
-  await statusReasonCombobox.click();
-
-  const internalReferralOption = page.getByRole('option', { name: /Internal referral/i }).first();
-  await expect(internalReferralOption).toBeVisible({ timeout: 15000 });
-  await internalReferralOption.click();
-
-  const saveButton = page.getByRole('button', { name: /^Save$/i }).first();
-  await expect(saveButton).toBeVisible({ timeout: 15000 });
-  await saveButton.click();
-  await page.waitForTimeout(1500);
-
-  logStep('STATUS-REASON', 'Status Reason updated to Internal referral');
-}
-
-async function verifyNoDocumentsInNotesAndAttachments(salesforce: SalesforcePortalPage, page: Page, context: string) {
-  logStep('NOTES-CHECK', `${context}: open Notes & Attachments and verify no documents`);
-
-  await salesforce.openRelatedTab();
-  await salesforce.openNotesAndAttachmentsFromRelatedTab();
-
-  const rows = page.locator('table tbody tr');
-  const noRecordsMessage = page.getByText(/No records to display|No records found|No data available/i).first();
-
-  await expect
-    .poll(
-      async () => {
-        if (await noRecordsMessage.isVisible({ timeout: 500 }).catch(() => false)) return 0;
-        return rows.count();
-      },
-      { timeout: 60000 },
-    )
-    .toBe(0);
-
-  logStep('NOTES-CHECK', `${context}: verified Notes & Attachments contains no documents`);
-}
 
 test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
   test('TC_REG_043 | Create MTA then Cancel and Reissue then Create MTA', async ({ page }) => {
     test.setTimeout(900000);
     test.slow();
-    logStep('START', 'Begin MTA -> CNR (new flow) -> MTA scenario');
 
     const caseRef = `E2E-MTA-CNR-MTA-${Date.now()}`;
 
@@ -88,9 +34,12 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
 
     const brokerPortal = new BrokerPortalPage(page);
     const salesforce = new SalesforcePortalPage(page);
+    const reg043 = new TCReg043MtaCnrMtaPage(page);
+
+    reg043.logStep('START', 'Begin MTA -> CNR (new flow) -> MTA scenario');
 
     // Create a fresh policy in Broker Portal.
-    logStep('NB-01', 'Login to Broker Portal and start new quote');
+    reg043.logStep('NB-01', 'Login to Broker Portal and start new quote');
     await brokerLogin.goto();
     const brokerCreds = getBrokerCredentials();
     await brokerLogin.login(brokerCreds.username, brokerCreds.password);
@@ -118,21 +67,21 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
     await summary.expectSummaryData(caseRef);
     await summary.proceedToOrder();
     await orderDialog.selectTodayAndOrder();
-    logStep('NB-02', 'Order completed for newly created policy');
+    reg043.logStep('NB-02', 'Order completed for newly created policy');
 
     await policyIssued.expectPolicyIssued();
     const policyNumber = await policyIssued.getIssuedPolicyNumber();
-    logStep('NB-03', `Policy created: ${policyNumber}`);
+    reg043.logStep('NB-03', `Policy created: ${policyNumber}`);
     await policyIssued.backToQuoteManager();
 
     // Verify policy is live.
     await brokerPortal.expectQuoteManagerLoaded();
     await brokerPortal.searchPolicy(policyNumber);
     await brokerPortal.expectPolicyStatus(policyNumber, 'Live');
-    logStep('NB-04', 'Policy status verified as Live in Broker Portal');
+    reg043.logStep('NB-04', 'Policy status verified as Live in Broker Portal');
 
     // Login to Salesforce.
-    logStep('SF-01', 'Login to Salesforce and open policy');
+    reg043.logStep('SF-01', 'Login to Salesforce and open policy');
     await salesforce.goto();
     const sfCreds = getSalesforceCredentials();
     await salesforce.login(sfCreds.username, sfCreds.password);
@@ -154,31 +103,27 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
 
     await salesforce.openRelatedTab();
     await salesforce.openInsurancePolicyFromRelated(policyNumber);
-    logStep('SF-02', 'Insurance Policy record opened from Related tab');
+    reg043.logStep('SF-02', 'Insurance Policy record opened from Related tab');
 
     // MTA #1
-    logStep('MTA1-01', 'Open Create MTA dialog');
+    reg043.logStep('MTA1-01', 'Open Create MTA dialog');
     await salesforce.openCreateMTADialog();
     await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
 
-    logStep('MTA1-02', 'Set Status Reason to Internal referral before intermediary reference');
-    await setStatusReasonInternalReferral(page);
+    reg043.logStep('MTA1-02', 'Set Status Reason to Internal referral before intermediary reference');
+    await reg043.setStatusReasonInternalReferral();
 
-    logStep('MTA1-03', 'Fill intermediary reference, edit premium, bind MTA #1');
+    reg043.logStep('MTA1-03', 'Fill intermediary reference, edit premium, bind MTA #1');
     await salesforce.fillIntermediaryReference(`MTA1-REF-${Date.now()}`);
     await salesforce.editMTAPremium('100');
     await salesforce.bindMTA();
-    logStep('MTA1-04', 'MTA #1 bind completed');
+    reg043.logStep('MTA1-04', 'MTA #1 bind completed');
 
-    //await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
     await salesforce.openRelatedTab();
-    await verifyNoDocumentsInNotesAndAttachments(salesforce, page, 'After MTA #1 completion');
+    await reg043.verifyNoDocumentsInNotesAndAttachments(salesforce, 'After MTA #1 completion');
 
     // Start Cancel and Reissue.
-    logStep('CNR-01', 'Open Cancel and Reissue dialog and submit details');
-    //await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
-    // await salesforce.openRelatedTab();
-    // await salesforce.openInsurancePolicyFromRelatedStable(policyNumber);
+    reg043.logStep('CNR-01', 'Open Cancel and Reissue dialog and submit details');
     await salesforce.openCancelAndReissueDialog();
     await salesforce.completeCancelAndReissueDialog({
       reasonForCR: 'User Error Correction',
@@ -199,28 +144,24 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue', () => {
     await returnToSubmission.click();
     await page.waitForTimeout(5000);
 
-    logStep('CNR-02', 'Bind from returned submission (new flow)');
+    reg043.logStep('CNR-02', 'Bind from returned submission (new flow)');
     await salesforce.bindMTA();
-    logStep('CNR-03', 'CNR bind completed');
+    reg043.logStep('CNR-03', 'CNR bind completed');
 
     // Open policy again after CnR, then run MTA #2.
-    logStep('MTA2-01', 'Re-open policy and start MTA #2 (same flow as MTA #1)');
-    // await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
-    // await salesforce.openRelatedTab();
-    // await salesforce.openInsurancePolicyFromRelatedStable(policyNumber);
-
+    reg043.logStep('MTA2-01', 'Re-open policy and start MTA #2 (same flow as MTA #1)');
     await salesforce.openCreateMTADialog();
     await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
 
-    logStep('MTA2-02', 'Set Status Reason to Internal referral before intermediary reference');
-    await setStatusReasonInternalReferral(page);
+    reg043.logStep('MTA2-02', 'Set Status Reason to Internal referral before intermediary reference');
+    await reg043.setStatusReasonInternalReferral();
 
-    logStep('MTA2-03', 'Fill intermediary reference, edit premium, bind MTA #2');
+    reg043.logStep('MTA2-03', 'Fill intermediary reference, edit premium, bind MTA #2');
     await salesforce.fillIntermediaryReference(`MTA2-REF-${Date.now()}`);
     await salesforce.editMTAPremium('100');
     await salesforce.bindMTA();
-    logStep('MTA2-04', 'MTA #2 bind completed');
+    reg043.logStep('MTA2-04', 'MTA #2 bind completed');
 
-    logStep('END', 'Flow completed: MTA #1 -> Notes check -> CNR -> MTA #2 (same as MTA #1)');
+    reg043.logStep('END', 'Flow completed: MTA #1 -> Notes check -> CNR -> MTA #2 (same as MTA #1)');
   });
 });

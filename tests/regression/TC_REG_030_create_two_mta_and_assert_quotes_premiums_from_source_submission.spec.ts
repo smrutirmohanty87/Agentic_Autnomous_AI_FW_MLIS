@@ -1,4 +1,4 @@
-import { expect, Locator, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   FinalPolicyDetailsPage,
   LoginPage,
@@ -12,48 +12,8 @@ import {
 } from '../../src/pages/mlis-portal';
 import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
+import { TCRegSharedUtilsPage } from '../../src/pages/tc-reg-shared-utils';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
-
-async function pickFirstVisible(candidates: Locator[], timeoutMs = 30000) {
-  const started = Date.now();
-  while (Date.now() - started < timeoutMs) {
-    for (const candidate of candidates) {
-      const target = candidate.first();
-      if (await target.isVisible().catch(() => false)) {
-        return target;
-      }
-    }
-    await candidates[0].page().waitForTimeout(300);
-  }
-  throw new Error('Unable to find a visible locator from provided candidates.');
-}
-
-function parseMoney(value: string): number {
-  const normalized = value.replace(/[^\d.-]/g, '');
-  const parsed = Number.parseFloat(normalized);
-  if (Number.isNaN(parsed)) {
-    throw new Error(`Unable to parse money value: ${value}`);
-  }
-  return parsed;
-}
-
-function extractMtaPremiumForRow(sourceText: string, rowRegex: RegExp): number {
-  const text = sourceText.replace(/\r/g, '');
-  const rowIndex = text.search(rowRegex);
-  if (rowIndex === -1) {
-    throw new Error(`Unable to find quotes row matching ${rowRegex}`);
-  }
-
-  // Each row renders as: RowId, Original Premium, MTA Premium, Total Premium.
-  const windowText = text.slice(rowIndex, rowIndex + 500);
-  const moneyMatches = windowText.match(/£\s*\d[\d,]*(?:\.\d{1,2})?/g) ?? [];
-  if (moneyMatches.length < 3) {
-    throw new Error(`Unable to extract premium columns for ${rowRegex}. Found: ${moneyMatches.join(', ')}`);
-  }
-
-  // MTA Premium is the second currency value in the row.
-  return parseMoney(moneyMatches[1]);
-}
 
 test.describe('@regression | E2E | MTA', () => {
   test('TC_REG_030 | Create 2 MTA and assert premiums from Source Submission Quotes tab', async ({ page }) => {
@@ -76,6 +36,7 @@ test.describe('@regression | E2E | MTA', () => {
 
     const brokerPortal = new BrokerPortalPage(page);
     const salesforce = new SalesforcePortalPage(page);
+    const regUtils = new TCRegSharedUtilsPage(page);
 
     // Create a fresh policy in Broker Portal
     await brokerLogin.goto();
@@ -153,7 +114,7 @@ test.describe('@regression | E2E | MTA', () => {
 
     await page.evaluate(() => window.scrollBy(0, 1200));
 
-    const sourceSubmissionLink = await pickFirstVisible([
+    const sourceSubmissionLink = await regUtils.pickFirstVisible([
       page
         .locator('records-record-layout-item:has-text("Source Submission Name") a:visible')
         .filter({ hasText: /DA-MLI-|Sub-/i }),
@@ -177,10 +138,10 @@ test.describe('@regression | E2E | MTA', () => {
     const quotesText = await page.locator('main').innerText();
     expect(quotesText).toMatch(/MTA Premium\s*\(inc\.\s*IPT\)/i);
 
-    const mtaPremiumValue1 = extractMtaPremiumForRow(quotesText, /MTA01\/00/i);
-    const mtaPremiumValue2 = extractMtaPremiumForRow(quotesText, /MTA02\/00/i);
+    const mtaPremiumValue1 = regUtils.extractMtaPremiumForRow(quotesText, /MTA01\/00/i);
+    const mtaPremiumValue2 = regUtils.extractMtaPremiumForRow(quotesText, /MTA02\/00/i);
 
-    expect(mtaPremiumValue1).toBe(parseMoney(mtaPremium1));
-    expect(mtaPremiumValue2).toBe(parseMoney(mtaPremium2));
+    expect(mtaPremiumValue1).toBe(regUtils.parseMoney(mtaPremium1));
+    expect(mtaPremiumValue2).toBe(regUtils.parseMoney(mtaPremium2));
   });
 });
