@@ -24,6 +24,12 @@ import {
   markWorkflowComplete,
   updateWorkflowContext,
 } from '../runtime/workflowStatus';
+import {
+  resetRecoveryEvents,
+  startRecoveryEvent,
+  patchRecoveryEvent,
+  finalizeRecoveryEvent,
+} from '../runtime/recoveryEvents';
 import type { AgentName as StatusAgentName } from '../runtime/workflowStatus';
 
 // ---------------------------------------------------------------------------
@@ -32,6 +38,7 @@ import { getCache, CacheStatus } from '../src/ai/cache/RequirementCache';
 import { getTemplateLibrary, TemplateStatus } from '../src/ai/templates/TemplateLibrary';
 import { PromptCompressor } from '../src/ai/compression/PromptCompressor';
 import type { CompressedRequirement } from '../src/ai/compression/CompressionTypes';
+import { writeOptimizationCenterSnapshot, writeOptimizationTrackerSnapshot } from '../dashboard/optimizationTracker';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -183,6 +190,9 @@ function runCacheCheck(
     agents.Planner.detail = 'Requirement cache hit — skipped';
     agents.Designer.status = 'SKIPPED';
     agents.Designer.detail = 'Requirement cache hit — skipped';
+    // Keep live workflow panel accurate: skipped due to cache is effectively complete.
+    try { updateAgent('Planner', 'SUCCESS'); } catch { /* status file may not exist in isolated tests */ }
+    try { updateAgent('Designer', 'SUCCESS'); } catch { /* status file may not exist in isolated tests */ }
 
     finishAgent(agents.Cache, 'PASS', `Cache HIT — Planner and Designer skipped`);
     return { cacheStatus: 'HIT', skippedPlanner: true, skippedDesigner: true };
@@ -505,21 +515,25 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
   };
 
   // Demo-mode delays (ms) — keep 0 in production
-  // Increased delays to 5s/5s/6s for better visibility of each agent transition
+  // Increased delays to make each live transition easier to follow on screen
   const delay = {
-    planner:  demoMode ? 5000 : 0,
-    designer: demoMode ? 5000 : 0,
-    generator: demoMode ? 6000 : 0,
+    planner:  demoMode ? 8000 : 0,
+    designer: demoMode ? 8000 : 0,
+    generator: demoMode ? 10000 : 0,
   };
 
   clearHealLog();
 
   // Initialize live workflow status tracking
-  initializeWorkflow(`run-${Date.now()}`, {
+  const workflowId = `run-${Date.now()}`;
+  initializeWorkflow(workflowId, {
     requirement: suiteName,
     generatedTestName: testCases.length === 1 ? testCases[0].name : `${testCases.length} generated tests`,
     currentStep: 'Planner started',
   });
+
+  // Reset autonomous recovery telemetry for this run.
+  resetRecoveryEvents();
 
   // Auto-launch dashboard in default browser (once per run, non-blocking)
   openDashboard();
@@ -545,6 +559,8 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
   let cacheStatus: CacheStatus = 'MISS';
   let templateStatus: TemplateStatus = 'MISS';
   let matchedTemplateName: string | undefined;
+  let retryAttemptsUsed = 0;
+  let recoveredCount = 0;
 
   try {
     // -1. Prompt Compression (FIRST in pipeline)
@@ -554,6 +570,15 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
     compressedTokens = compressionResult.compressedTokens;
     compressionRatio = compressionResult.compressionRatio;
     compressedRequirement = compressionResult.compressed;
+    writeOptimizationTrackerSnapshot({
+      currentOptimizationPhase: 'Compression',
+      originalTokens,
+      compressedTokens,
+      cacheResult: 'PENDING',
+      templateMatch: 'PENDING',
+      runningTotalTokensSaved: Math.max(0, originalTokens - compressedTokens),
+      frozen: false,
+    });
     const compressedPrompt = PromptCompressor.toPromptString(compressedRequirement);
     updateWorkflowContext({ requirement: compressedPrompt });
     if (delay.planner) await sleep(delay.planner);
@@ -562,6 +587,15 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
     updateWorkflowContext({ currentStep: 'Cache: checking for requirement cache' });
     const cacheCheckResult = runCacheCheck(compressedPrompt, agentRecords);
     cacheStatus = cacheCheckResult.cacheStatus;
+    writeOptimizationTrackerSnapshot({
+      currentOptimizationPhase: 'Cache',
+      originalTokens,
+      compressedTokens,
+      cacheResult: cacheStatus,
+      templateMatch: templateStatus,
+      runningTotalTokensSaved: Math.max(0, originalTokens - compressedTokens),
+      frozen: false,
+    });
     if (delay.planner) await sleep(delay.planner);
 
     // 0.5. Template Library Check
@@ -569,6 +603,15 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
     const templateCheckResult = runTemplateLibraryCheck(compressedPrompt, agentRecords);
     templateStatus = templateCheckResult.templateStatus;
     matchedTemplateName = templateCheckResult.templateName;
+    writeOptimizationTrackerSnapshot({
+      currentOptimizationPhase: 'Template Library',
+      originalTokens,
+      compressedTokens,
+      cacheResult: cacheStatus,
+      templateMatch: templateStatus,
+      runningTotalTokensSaved: Math.max(0, originalTokens - compressedTokens),
+      frozen: false,
+    });
     if (delay.planner) await sleep(delay.planner);
 
     // 1. Planner (conditional — skipped if cache HIT)
@@ -632,9 +675,8 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
     } else {
       updateWorkflowContext({ currentStep: 'Healing: triggered by RCA recommendation' });
       startAgent(agentRecords.Healing);
-
-      let retryAttemptsUsed = 0;
-      let recoveredCount = 0;
+      // RCA has produced an initial verdict; while healing/retry is active we consider RCA in-progress.
+      try { updateAgent('RCA', 'RUNNING'); } catch { /* status file may not exist in isolated tests */ }
 
       if (retryEnabled) {
         let remainingFailedIds = new Set(testResults.filter(r => r.status === 'FAIL').map(r => r.testId));
@@ -643,6 +685,25 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
           retryAttemptsUsed += 1;
           const failedCases = testCases.filter(tc => remainingFailedIds.has(tc.id));
           if (failedCases.length === 0) break;
+
+          const retryRecoveryIds = failedCases.map(tc => {
+            const recoveryId = `${workflowId}:${tc.id}:retry-${retryAttemptsUsed}`;
+            startRecoveryEvent({
+              recoveryId,
+              workflowId,
+              testName: tc.name,
+              failureType: 'ExecutionFailure',
+              failedLocator: 'Execution failures after initial run',
+            });
+            patchRecoveryEvent(recoveryId, {
+              memoryHit: 'MISS',
+              confidenceScore: 80,
+              recoveryStrategy: 'Healing retry with aggressive locator recovery',
+              retestResult: 'RUNNING',
+              finalStatus: 'RUNNING',
+            });
+            return recoveryId;
+          });
 
           if (retryAttemptsUsed === 1 && postExecutionSelfHealRetry?.onBeforeRetry) {
             await postExecutionSelfHealRetry.onBeforeRetry();
@@ -668,6 +729,18 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
               },
             }
           );
+
+          for (let i = 0; i < retryOut.results.length; i += 1) {
+            const rr = retryOut.results[i];
+            const recoveryId = retryRecoveryIds[i] ?? `${workflowId}:${rr.testId}:retry-${retryAttemptsUsed}`;
+            const recovered = rr.status === 'PASS';
+            finalizeRecoveryEvent({
+              recoveryId,
+              retestResult: recovered ? 'PASSED' : 'FAILED',
+              finalStatus: recovered ? 'RECOVERED' : 'FAILED',
+              failureReason: recovered ? undefined : rr.error,
+            });
+          }
 
           // Merge retry results back into the main test result set
           for (const rr of retryOut.results) {
@@ -791,6 +864,59 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
     }
 
     const rcaEventsCount = result.rcaResult ? (result.rcaResult.reports ? result.rcaResult.reports.length : 0) : 0;
+    const hadHealingRetry = retryEnabled && retryAttemptsUsed > 0;
+    const recoverySucceeded = hadHealingRetry && failed === 0;
+
+    const healingAnalyticsForDashboard = healingEvents.length > 0
+      ? healingEvents
+      : hadHealingRetry
+      ? [{
+          key: 'postExecutionSelfHealRetry',
+          failedLocator: 'Execution failures after initial run',
+          recoveredLocator: `${recoveredCount} test(s) recovered`,
+          recoveryTimeMs: agentRecords.Healing.durationMs ?? undefined,
+          recoveryStatus: recoverySucceeded ? 'SUCCESS' : 'FAILED',
+          timestamp: new Date().toISOString(),
+          pageUrl: testCases[0]?.url,
+        }]
+      : [];
+
+    const rcaSummaryForDashboard = result.rcaResult?.reports?.length
+      ? result.rcaResult.reports
+      : hadHealingRetry
+      ? [{
+          testName: suiteName,
+          elementKey: 'postExecutionSelfHealRetry',
+          failureType: recoverySucceeded ? 'Recovered Failure' : 'Unresolved Failure',
+          affectedElement: recoverySucceeded ? 'No unresolved failing locator after retry' : 'One or more failures remained after retry',
+          rootCause: recoverySucceeded
+            ? `Initial execution failure was recovered after ${retryAttemptsUsed} healing retry attempt(s).`
+            : `Healing retry exhausted after ${retryAttemptsUsed} attempt(s).`,
+          recoveryAction: recoverySucceeded
+            ? 'No additional action required.'
+            : 'Inspect the remaining failure details and retry with stronger locator strategies.',
+          recoveryStatus: recoverySucceeded ? 'SUCCESS' : 'FAILED',
+          confidence: recoverySucceeded ? 100 : 80,
+          recommendation: recoverySucceeded
+            ? 'Workflow completed successfully after self-heal retry.'
+            : 'Review the execution and locator recovery paths before the next run.',
+          timestamp: new Date().toISOString(),
+          pageUrl: testCases[0]?.url,
+          errorMessage: recoverySucceeded ? 'Recovered after retry' : 'Retry did not fully resolve failures',
+        }]
+      : [];
+
+    const successfulHealsCount = healingAnalyticsForDashboard.filter(h => {
+      if ('recoveryStatus' in h) {
+        return !h.recoveryStatus || h.recoveryStatus === 'SUCCESS';
+      }
+      return true;
+    }).length;
+
+    const healLogPath = resolve(__dirname, '../dashboard-ui/public/heal-log.json');
+    const rcaResultsPath = resolve(__dirname, '../dashboard-ui/public/rca-results.json');
+    writeFileSync(healLogPath, JSON.stringify(healingAnalyticsForDashboard, null, 2), 'utf-8');
+    writeFileSync(rcaResultsPath, JSON.stringify(rcaSummaryForDashboard, null, 2), 'utf-8');
 
     const payload = {
       title: 'Agentic QA Platform',
@@ -810,8 +936,14 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
         matchedTemplate: matchedTemplateName,
         testsPassed: result.testResults.filter(r => r.status === 'PASS').length,
         testsFailed: result.testResults.filter(r => r.status === 'FAIL').length,
-        healEvents: result.healingEvents ? result.healingEvents.length : 0,
-        rcaEvents: rcaEventsCount,
+        healEvents: healingAnalyticsForDashboard.length,
+        successfulHeals: successfulHealsCount,
+        healingActivity: hadHealingRetry
+          ? recoverySucceeded
+            ? `Recovered after healing retry (${retryAttemptsUsed} attempt${retryAttemptsUsed === 1 ? '' : 's'})`
+            : `Healing retry exhausted (${retryAttemptsUsed} attempt${retryAttemptsUsed === 1 ? '' : 's'})`
+          : undefined,
+        rcaEvents: rcaSummaryForDashboard.length,
         executionDurationMs,
       },
       agents: result.executedAgents.map(a => ({
@@ -819,8 +951,8 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
         status: a.status === 'PASS' ? 'SUCCESS' : a.status === 'SKIPPED' ? 'SKIPPED' : 'FAILED',
         durationMs: a.durationMs,
       })),
-      rcaSummary: result.rcaResult ? (result.rcaResult.reports ?? []) : [],
-      healingAnalytics: result.healingEvents ?? [],
+      rcaSummary: rcaSummaryForDashboard,
+      healingAnalytics: healingAnalyticsForDashboard,
       workflowTimeline: ['Requirement', 'Compression', 'Cache', 'TemplateLibrary', 'Planner', 'Designer', 'Generator', 'Execution', 'RCA', 'Healing', 'Execution Re-run'],
       visualizations: {
         testTrend: result.testResults.map((t, i) => ({
@@ -839,6 +971,24 @@ export async function orchestrate(options: OrchestratorOptions): Promise<Orchest
 
     const outPath = resolve(__dirname, '../dashboard-ui/public/agentic-qa-runtime.json');
     writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf-8');
+    writeOptimizationTrackerSnapshot({
+      currentOptimizationPhase: 'Completed',
+      originalTokens,
+      compressedTokens,
+      cacheResult: cacheStatus,
+      templateMatch: templateStatus,
+      runningTotalTokensSaved: Math.max(0, originalTokens - compressedTokens),
+      frozen: true,
+    });
+    writeOptimizationCenterSnapshot({
+      currentOptimizationPhase: 'Completed',
+      originalTokens,
+      compressedTokens,
+      cacheResult: cacheStatus,
+      templateMatch: templateStatus,
+      runningTotalTokensSaved: Math.max(0, originalTokens - compressedTokens),
+      frozen: true,
+    });
     console.log(`[orchestrator] Dashboard runtime artifact written: ${outPath}`);
   } catch (e) {
     console.warn('[orchestrator] Could not write dashboard runtime artifact:', e);

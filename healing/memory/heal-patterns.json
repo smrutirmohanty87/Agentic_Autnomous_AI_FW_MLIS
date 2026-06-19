@@ -1,0 +1,16 @@
+{
+  "updatedAt": "2026-06-19T00:00:00.000Z",
+  "knowledgeBase": [],
+  "autoReusedPatterns": [],
+  "stats": {
+    "knownHealPatterns": 0,
+    "autoReusedPatterns": 0,
+    "learningSuccessRate": 0,
+    "averageRecoveryTimeMs": 0,
+    "knowledgeBaseSize": 0,
+    "memorySearches": 0,
+    "memoryHits": 0,
+    "memoryMisses": 0
+  },
+  "currentSession": null
+}

@@ -48,6 +48,11 @@ const HEAL_TARGETS = [
   path.join(ROOT, 'dashboard-ui', 'public', 'heal-log.json'),
 ];
 
+const RECOVERY_TARGETS = [
+  path.join(ROOT, 'runtime', 'recovery-events.json'),
+  path.join(ROOT, 'dashboard-ui', 'public', 'recovery-events.json'),
+];
+
 // ---------------------------------------------------------------------------
 // RCA types (inline to avoid circular imports with test framework)
 // ---------------------------------------------------------------------------
@@ -103,6 +108,16 @@ function writeRca(entries: RCAEntry[]): void {
 function writeHeal(entries: unknown[]): void {
   const json = JSON.stringify(entries, null, 2);
   for (const target of HEAL_TARGETS) {
+    try {
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, json, 'utf8');
+    } catch { /* non-fatal */ }
+  }
+}
+
+function writeRecovery(entries: unknown[]): void {
+  const json = JSON.stringify(entries, null, 2);
+  for (const target of RECOVERY_TARGETS) {
     try {
       fs.mkdirSync(path.dirname(target), { recursive: true });
       fs.writeFileSync(target, json, 'utf8');
@@ -271,6 +286,9 @@ class CurrentTestReporter implements Reporter {
 
     // Reset heal log at start of new run so Heal Events starts from 0
     writeHeal([]);
+
+    // Reset autonomous recovery events for a fresh run timeline
+    writeRecovery([]);
 
     // Auto-open dashboard if it's running
     openDashboard();

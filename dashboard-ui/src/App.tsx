@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AgentRecord, WorkflowStatus as WorkflowStatusType } from './types/dashboard';
 import { AgentStatusSection } from './components/AgentStatusSection';
 import { SuiteProgressPanel } from './components/SuiteProgressPanel';
@@ -11,11 +11,25 @@ import { RcaSummaryPanel } from './components/RcaSummaryPanel';
 import { VisualizationPanel } from './components/VisualizationPanel';
 import { WorkflowSummaryCard } from './components/WorkflowSummaryCard';
 import { WorkflowTimeline } from './components/WorkflowTimeline';
+import { MetricDetailsDrawer } from './components/MetricDetailsDrawer';
+import type { MetricType } from './components/MetricDetailsDrawer';
+import { LiveOptimizationTracker } from './components/LiveOptimizationTracker';
+import { LiveHealingMemoryView } from './components/LiveHealingMemoryView';
+import { TokenOptimizationCenter } from './components/TokenOptimizationCenter';
+import { SelfHealingMemoryCenter } from './components/SelfHealingMemoryCenter';
+import { AutonomousRecoveryCenter } from './components/AutonomousRecoveryCenter';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useWorkflowStatus } from './hooks/useWorkflowStatus';
 import { useSuiteProgress } from './hooks/useSuiteProgress';
 import { useRcaResults } from './hooks/useRcaResults';
 import { useHealLog } from './hooks/useHealLog';
+import { useTokenOptimization } from './hooks/useTokenOptimization';
+import { useOptimizationTracker } from './hooks/useOptimizationTracker';
+import type { TokenMetricType } from './types/tokenOptimization';
+import { useHealingMemory } from './hooks/useHealingMemory';
+import type { SelfHealingMemoryMetricType } from './types/selfHealingMemory';
+import { useRecoveryEvents } from './hooks/useRecoveryEvents';
+import type { RecoveryMetricType } from './types/recoveryEvents';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LIVE MODE  — suite-progress.json has running > 0 (npx playwright test active)
@@ -28,11 +42,66 @@ function App() {
   const suiteProgress = useSuiteProgress();
   const rcaEntries = useRcaResults();
   const healLog = useHealLog();
+  const tokenOptimization = useTokenOptimization();
+  const optimizationTracker = useOptimizationTracker();
+  const healingMemory = useHealingMemory();
+  const recoveryEvents = useRecoveryEvents();
+
+  // Metric details drawer state
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState<MetricType | null>(null);
+
+  const handleMetricClick = (metric: MetricType | TokenMetricType | SelfHealingMemoryMetricType | RecoveryMetricType) => {
+    setSelectedMetric(metric as MetricType);
+    setDrawerOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+    // Keep metric selected briefly to show closing animation
+    setTimeout(() => setSelectedMetric(null), 300);
+  };
 
   // Primary LIVE MODE signal: tests running OR Healing/RCA pipeline still transitioning
   const isTestRunning =
     (suiteProgress !== null && suiteProgress.totalTests > 0 && suiteProgress.running > 0) ||
     workflowStatus?.overallStatus === 'RUNNING';
+
+  const workflowStartMs = workflowStatus?.startedAt
+    ? new Date(workflowStatus.startedAt).getTime()
+    : null;
+
+  const belongsToActiveWorkflow = (timestamp?: string): boolean => {
+    if (!isTestRunning || workflowStartMs === null || Number.isNaN(workflowStartMs)) {
+      return true;
+    }
+    if (!timestamp) return false;
+    const recordMs = new Date(timestamp).getTime();
+    if (Number.isNaN(recordMs)) return false;
+    return recordMs >= workflowStartMs - 60000;
+  };
+
+  const liveHealLog = isTestRunning
+    ? healLog.filter(item => belongsToActiveWorkflow(item.timestamp))
+    : healLog;
+
+  const liveRcaEntries = isTestRunning
+    ? rcaEntries.filter(item => belongsToActiveWorkflow(item.timestamp))
+    : rcaEntries;
+
+  const scopedRecoveryEvents = workflowStatus?.workflowId
+    ? recoveryEvents.filter(event => event.workflowId === workflowStatus.workflowId)
+    : recoveryEvents;
+
+  const suiteAlignedWithLiveWorkflow = (() => {
+    if (!suiteProgress?.startedAt || !workflowStatus?.startedAt || workflowStatus.overallStatus !== 'RUNNING') {
+      return false;
+    }
+    const wfStart = new Date(workflowStatus.startedAt).getTime();
+    const suiteStart = new Date(suiteProgress.startedAt).getTime();
+    if (Number.isNaN(wfStart) || Number.isNaN(suiteStart)) return false;
+    return Math.abs(wfStart - suiteStart) <= 120000;
+  })();
 
   // Detect live → report transition and refetch fresh dashboard data
   const wasLiveRef = useRef(false);
@@ -90,17 +159,29 @@ function App() {
   const useSuiteForReport = hasCompletedRun && (!workflowCompleted || suiteAlignedWithWorkflow);
 
   const healingAgentState = workflowStatus?.agents.find(a => a.name === 'Healing')?.state;
+  const isHealingRunning = healingAgentState === 'RUNNING';
   const healingActivity =
     healingAgentState === 'RUNNING'
       ? 'Retry Running'
       : healingAgentState === 'SUCCESS'
-      ? (healLog.length > 0 ? `Fallback Heals: ${healLog.length}` : 'Retry Complete (No Fallback Heal)')
+      ? (liveHealLog.length > 0 ? `Fallback Heals: ${liveHealLog.length}` : 'Retry Complete (No Fallback Heal)')
       : healingAgentState === 'FAILED'
       ? 'Retry Failed'
       : 'Idle';
 
-  const healingAnalyticsRecords = healLog.length > 0 ? healLog : data.healingAnalytics;
-  const rcaSummaryRecords = rcaEntries.length > 0
+  const healingAnalyticsRecords = isTestRunning
+    ? liveHealLog
+    : healLog.length > 0
+    ? healLog
+    : data.healingAnalytics;
+  const rcaSummaryRecords = isTestRunning
+    ? liveRcaEntries.map(e => ({
+        failureType: e.failureType,
+        rootCause: e.rootCause,
+        recoveryAction: e.recoveryAction,
+        confidence: e.confidence,
+      }))
+    : rcaEntries.length > 0
     ? rcaEntries.map(e => ({
         failureType: e.failureType,
         rootCause: e.rootCause,
@@ -114,14 +195,16 @@ function App() {
     ? {
         ...data.kpis,
         workflowStatus: 'RUNNING' as const,
-        testsPassed: suiteProgress?.passed ?? 0,
-        testsFailed: suiteProgress?.failed ?? 0,
+        testsPassed: suiteAlignedWithLiveWorkflow ? (suiteProgress?.passed ?? 0) : 0,
+        testsFailed: suiteAlignedWithLiveWorkflow ? (suiteProgress?.failed ?? 0) : 0,
         healEvents: healingAnalyticsRecords.length,
         healingActivity,
         rcaEvents: rcaSummaryRecords.length,
         successfulHeals: successfulHealsCount,
-        // Use suite startedAt for accurate elapsed time (not yesterday's orchestrator run)
-        executionDurationMs: suiteProgress?.startedAt
+        // Prefer active workflow start time, fallback to aligned suite start time.
+        executionDurationMs: workflowStatus?.overallStatus === 'RUNNING' && workflowStatus?.startedAt
+          ? Date.now() - new Date(workflowStatus.startedAt).getTime()
+          : suiteAlignedWithLiveWorkflow && suiteProgress?.startedAt
           ? Date.now() - new Date(suiteProgress.startedAt).getTime()
           : undefined,
       }
@@ -155,7 +238,9 @@ function App() {
                   : 'Production-ready observability view for the autonomous QA pipeline.'}
               </p>
               <p className="mt-4 text-xs text-slate-400">
-                {isTestRunning && suiteProgress?.startedAt
+                {isTestRunning && workflowStatus?.overallStatus === 'RUNNING' && workflowStatus?.startedAt
+                  ? `Started: ${new Date(workflowStatus.startedAt).toLocaleString()}`
+                  : isTestRunning && suiteAlignedWithLiveWorkflow && suiteProgress?.startedAt
                   ? `Started: ${new Date(suiteProgress.startedAt).toLocaleString()}`
                   : useSuiteForReport && suiteProgress?.updatedAt
                   ? `Completed: ${new Date(suiteProgress.updatedAt).toLocaleString()}`
@@ -186,6 +271,8 @@ function App() {
             ════════════════════════════════════════════════════════════════ */}
         {isTestRunning ? (
           <>
+            <LiveOptimizationTracker data={optimizationTracker} />
+
             {/* ── Live Agent Pipeline ─────────────────────────────────────
                 MOVED TO TOP — If the orchestrator is running, use its live workflow-status.json.
                 Otherwise, synthesise a WorkflowStatus from suite-progress data
@@ -197,8 +284,8 @@ function App() {
               const execState = executionDone
                 ? (prog!.failed > 0 ? 'FAILED' : 'SUCCESS')
                 : 'RUNNING';
-              const healState = healLog.length > 0 ? 'SUCCESS' : 'PENDING';
-              const rcaState  = rcaEntries.length > 0
+              const healState = liveHealLog.length > 0 ? 'SUCCESS' : 'PENDING';
+              const rcaState  = liveRcaEntries.length > 0
                 ? 'SUCCESS'
                 : (prog?.failed ?? 0) > 0 ? 'RUNNING' : 'PENDING';
 
@@ -209,7 +296,19 @@ function App() {
 
               // Use real orchestrator data when available, else build synthetic status
               const liveStatus: WorkflowStatusType = workflowStatus?.overallStatus === 'RUNNING'
-                ? workflowStatus
+                ? {
+                    ...workflowStatus,
+                    agents: workflowStatus.agents.map(agent => {
+                      if (
+                        agent.name === 'RCA' &&
+                        agent.state === 'FAILED' &&
+                        workflowStatus.agents.some(a => a.name === 'Healing' && a.state === 'RUNNING')
+                      ) {
+                        return { ...agent, state: 'RUNNING' as const };
+                      }
+                      return agent;
+                    }),
+                  }
                 : {
                     workflowId:    `run-${prog?.startedAt ? new Date(prog.startedAt).getTime() : Date.now()}`,
                     startedAt:     prog?.startedAt ?? new Date().toISOString(),
@@ -223,8 +322,8 @@ function App() {
                       { name: 'Designer',  state: 'SUCCESS', durationMs: data.agents.find(a => a.name === 'Designer')?.durationMs ?? 0 },
                       { name: 'Generator', state: 'SUCCESS', durationMs: data.agents.find(a => a.name === 'Generator')?.durationMs ?? 0 },
                       { name: 'Execution', state: execState, durationMs: prog?.durationMs ?? undefined },
-                      { name: 'RCA',       state: rcaState,  durationMs: rcaEntries.length > 0 ? rcaEntries.length : undefined },
-                      { name: 'Healing',   state: healState, durationMs: healLog.length > 0 ? healLog.length : undefined },
+                      { name: 'RCA',       state: rcaState,  durationMs: liveRcaEntries.length > 0 ? liveRcaEntries.length : undefined },
+                      { name: 'Healing',   state: healState, durationMs: liveHealLog.length > 0 ? liveHealLog.length : undefined },
                     ],
                   };
 
@@ -237,11 +336,15 @@ function App() {
             {/* Currently executing test */}
             <CurrentTestPanel />
 
+            {isHealingRunning && healingMemory?.currentSession ? (
+              <LiveHealingMemoryView session={healingMemory.currentSession} />
+            ) : null}
+
             {/* Live KPI counters — built from zero as tests complete */}
-            <KpiCards kpis={liveKpis} />
+            <KpiCards kpis={liveKpis} onMetricClick={handleMetricClick} />
 
             {/* Live RCA for failed tests (appears as failures accumulate) */}
-            {rcaEntries.length > 0 ? <LiveRcaPanel /> : null}
+            {liveRcaEntries.length > 0 ? <LiveRcaPanel /> : null}
 
             {/* Live healing events (appears when healer fires a fallback) */}
             {healingAnalyticsRecords.length > 0 && (
@@ -249,7 +352,7 @@ function App() {
             )}
 
             {/* RCA summary fallback when live rows are not yet present */}
-            {rcaEntries.length === 0 && rcaSummaryRecords.length > 0 && (
+            {liveRcaEntries.length === 0 && rcaSummaryRecords.length > 0 && (
               <RcaSummaryPanel records={rcaSummaryRecords} />
             )}
           </>
@@ -259,7 +362,7 @@ function App() {
              ════════════════════════════════════════════════════════════════ */
           <>
             {/* Final KPIs — from this run if available, else from historical data */}
-            <KpiCards kpis={liveKpis} />
+            <KpiCards kpis={liveKpis} onMetricClick={handleMetricClick} />
 
             {/* Workflow Summary — override kpis with live/completed run data */}
             <WorkflowSummaryCard data={{ ...data, kpis: liveKpis }} />
@@ -273,6 +376,24 @@ function App() {
                 ? ['Requirement', ...data.agents.map(a => a.name)]
                 : ['Requirement', 'Planner', 'Designer', 'Generator', 'Execution', 'RCA', 'Healing']
             } />
+
+            {/* ── Token Optimization Center ──────────────────────────────── */}
+            <TokenOptimizationCenter
+              data={tokenOptimization}
+              onMetricClick={handleMetricClick}
+            />
+
+            <SelfHealingMemoryCenter
+              data={healingMemory}
+              onMetricClick={handleMetricClick}
+            />
+
+            <AutonomousRecoveryCenter
+              events={scopedRecoveryEvents}
+              healingRunning={isHealingRunning}
+              onMetricClick={handleMetricClick}
+            />
+
             <VisualizationPanel data={useSuiteForReport ? {
               ...data.visualizations,
               testTrend: [
@@ -320,6 +441,28 @@ function App() {
         )}
 
       </main>
+
+      {/* Metric Details Drawer */}
+      <MetricDetailsDrawer
+        isOpen={drawerOpen}
+        metricType={selectedMetric}
+        dashboardData={data}
+        workflowStatus={workflowStatus}
+        healingAnalyticsRecords={healingAnalyticsRecords}
+        rcaSummaryRecords={rcaSummaryRecords}
+        testsPassed={liveKpis.testsPassed}
+        testsFailed={liveKpis.testsFailed}
+        healEvents={liveKpis.healEvents}
+        successfulHeals={liveKpis.successfulHeals ?? liveKpis.healEvents}
+        executionDurationMs={liveKpis.executionDurationMs}
+        tokenStats={tokenOptimization.tokenStats}
+        cacheStats={tokenOptimization.cacheStats}
+        templateStats={tokenOptimization.templateStats}
+        costStats={tokenOptimization.costStats}
+        healingMemoryData={healingMemory}
+        recoveryEvents={scopedRecoveryEvents}
+        onClose={handleDrawerClose}
+      />
     </div>
   );
 }

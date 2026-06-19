@@ -6,6 +6,12 @@ import {
   registerLocator,
   resolveLocator,
 } from './locatorRegistry';
+import {
+  lookupHealPattern,
+  publishHealMemorySession,
+  recordHealMemorySearch,
+  recordHealPatternLearning,
+} from '../src/ai/selfHealingMemory';
 
 // ---------------------------------------------------------------------------
 // Live heal-log targets — written on every heal event so the dashboard can
@@ -98,6 +104,8 @@ export async function healLocator(
   let firstFailedIndex = -1;
   let firstFailedStrategy: LocatorStrategy | undefined;
   let lastError: unknown;
+  let memorySearched = false;
+  const searchStartedAt = Date.now();
 
   for (let i = 0; i < strategies.length; i++) {
     const strategy = strategies[i];
@@ -108,6 +116,10 @@ export async function healLocator(
 
       if (i > 0 && firstFailedStrategy) {
         // A fallback healed the locator — record and optionally promote
+        const failedLocator = strategyLocatorValue(firstFailedStrategy) || key;
+        const recoveredLocator = strategyLocatorValue(strategy) || key;
+        const recoveryStrategy = strategyLabel(strategy);
+
         const event: HealEvent = {
           key,
           failedStrategyIndex: firstFailedIndex,
@@ -121,6 +133,24 @@ export async function healLocator(
         healLog.push(event);
         flushHealLog([...healLog]);
         onHeal?.(event);
+
+        await recordHealPatternLearning({
+          failedLocator,
+          recoveredLocator,
+          recoveryStrategy,
+        }).catch(() => undefined);
+
+        await publishHealMemorySession({
+          failedLocator,
+          searchingMemory: 'Recovery pattern learned',
+          memoryHitStatus: memorySearched ? 'MISS' : 'SEARCHING',
+          strategySelected: recoveryStrategy,
+          recoveryApplied: recoveredLocator,
+          retestStatus: 'PASS',
+          updatedAt: new Date().toISOString(),
+        }).catch(() => undefined);
+
+        await publishHealMemorySession(null).catch(() => undefined);
 
         console.warn(
           `[healer] HEALED "${key}": strategy[${firstFailedIndex}] (${firstFailedStrategy.type}) ` +
@@ -143,9 +173,156 @@ export async function healLocator(
       if (firstFailedIndex === -1) {
         firstFailedIndex = i;
         firstFailedStrategy = strategy;
+
+        const failedLocator = strategyLocatorValue(strategy) || key;
+
+        await publishHealMemorySession({
+          failedLocator,
+          searchingMemory: 'Searching known recovery patterns',
+          memoryHitStatus: 'SEARCHING',
+          strategySelected: 'Pending',
+          recoveryApplied: 'Pending',
+          retestStatus: 'Pending',
+          updatedAt: new Date().toISOString(),
+        }).catch(() => undefined);
+
+        const knownPattern = await lookupHealPattern(failedLocator).catch(() => null);
+        memorySearched = true;
+
+        if (knownPattern) {
+          const memoryIndex = strategies.findIndex(s => strategyLocatorValue(s) === knownPattern.recoveredLocator);
+          const memoryStrategy = memoryIndex >= 0 ? strategies[memoryIndex] : null;
+
+          if (memoryStrategy) {
+            await publishHealMemorySession({
+              failedLocator,
+              searchingMemory: 'Pattern located in self-healing memory',
+              memoryHitStatus: 'HIT',
+              strategySelected: knownPattern.recoveryStrategy,
+              recoveryApplied: knownPattern.recoveredLocator,
+              retestStatus: 'Running retest',
+              updatedAt: new Date().toISOString(),
+            }).catch(() => undefined);
+
+            const memoryLocator = buildLocator(page, memoryStrategy);
+            try {
+              await memoryLocator.waitFor({ state: 'visible', timeout: strategyTimeout });
+
+              const event: HealEvent = {
+                key,
+                failedStrategyIndex: firstFailedIndex,
+                failedStrategy: firstFailedStrategy,
+                healedStrategyIndex: memoryIndex,
+                healedStrategy: memoryStrategy,
+                timestamp: new Date().toISOString(),
+                pageUrl: page.url(),
+              };
+
+              healLog.push(event);
+              flushHealLog([...healLog]);
+              onHeal?.(event);
+
+              const recoveryTimeMs = Date.now() - searchStartedAt;
+              await recordHealMemorySearch({
+                failedLocator,
+                hit: true,
+                patternUsed: knownPattern.recoveryStrategy,
+                recoveredLocator: knownPattern.recoveredLocator,
+                recoveryTimeMs,
+              }).catch(() => undefined);
+
+              await recordHealPatternLearning({
+                failedLocator,
+                recoveredLocator: knownPattern.recoveredLocator,
+                recoveryStrategy: knownPattern.recoveryStrategy,
+              }).catch(() => undefined);
+
+              await publishHealMemorySession({
+                failedLocator,
+                searchingMemory: 'Pattern reused successfully',
+                memoryHitStatus: 'HIT',
+                strategySelected: knownPattern.recoveryStrategy,
+                recoveryApplied: knownPattern.recoveredLocator,
+                retestStatus: 'PASS',
+                updatedAt: new Date().toISOString(),
+              }).catch(() => undefined);
+
+              if (promoteOnHeal && memoryIndex > 0) {
+                const promoted = [
+                  memoryStrategy,
+                  ...strategies.slice(0, memoryIndex),
+                  ...strategies.slice(memoryIndex + 1),
+                ];
+                registerLocator(key, promoted);
+              }
+
+              await publishHealMemorySession(null).catch(() => undefined);
+              return memoryLocator;
+            } catch {
+              await recordHealMemorySearch({
+                failedLocator,
+                hit: false,
+              }).catch(() => undefined);
+
+              await publishHealMemorySession({
+                failedLocator,
+                searchingMemory: 'Pattern lookup completed',
+                memoryHitStatus: 'HIT',
+                strategySelected: knownPattern.recoveryStrategy,
+                recoveryApplied: knownPattern.recoveredLocator,
+                retestStatus: 'FAILED - continuing fallback strategies',
+                updatedAt: new Date().toISOString(),
+              }).catch(() => undefined);
+            }
+          } else {
+            await recordHealMemorySearch({
+              failedLocator,
+              hit: false,
+            }).catch(() => undefined);
+
+            await publishHealMemorySession({
+              failedLocator,
+              searchingMemory: 'Pattern found but not compatible with current strategies',
+              memoryHitStatus: 'MISS',
+              strategySelected: 'Fallback strategy search',
+              recoveryApplied: 'Not applied',
+              retestStatus: 'Running fallback',
+              updatedAt: new Date().toISOString(),
+            }).catch(() => undefined);
+          }
+        } else {
+          await recordHealMemorySearch({
+            failedLocator,
+            hit: false,
+          }).catch(() => undefined);
+
+          await publishHealMemorySession({
+            failedLocator,
+            searchingMemory: 'No known pattern found',
+            memoryHitStatus: 'MISS',
+            strategySelected: 'Trying fallback locator strategies',
+            recoveryApplied: 'Pending',
+            retestStatus: 'Running fallback',
+            updatedAt: new Date().toISOString(),
+          }).catch(() => undefined);
+        }
       }
       lastError = err;
     }
+  }
+
+  if (memorySearched && firstFailedStrategy) {
+    await publishHealMemorySession({
+      failedLocator: strategyLocatorValue(firstFailedStrategy) || key,
+      searchingMemory: 'Recovery attempt finished',
+      memoryHitStatus: 'MISS',
+      strategySelected: 'No successful strategy',
+      recoveryApplied: 'Not applied',
+      retestStatus: 'FAILED',
+      updatedAt: new Date().toISOString(),
+    }).catch(() => undefined);
+
+    await publishHealMemorySession(null).catch(() => undefined);
   }
 
   throw new Error(
@@ -225,4 +402,20 @@ function buildLocator(page: Page, strategy: LocatorStrategy): Locator {
     case 'testid':
       return page.getByTestId(strategy.value);
   }
+}
+
+function strategyLocatorValue(strategy: LocatorStrategy): string {
+  switch (strategy.type) {
+    case 'css':
+      return strategy.selector;
+    case 'role':
+      return strategy.role;
+    default:
+      return strategy.value;
+  }
+}
+
+function strategyLabel(strategy: LocatorStrategy): string {
+  const value = strategyLocatorValue(strategy);
+  return `${strategy.type}:${value}`;
 }
