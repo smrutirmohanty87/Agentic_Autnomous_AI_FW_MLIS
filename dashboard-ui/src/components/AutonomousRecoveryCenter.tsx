@@ -1,4 +1,8 @@
+import { useState } from 'react';
 import type { RecoveryEvent, RecoveryMetricType } from '../types/recoveryEvents';
+import { useRecoveryReplay } from '../hooks/useRecoveryReplay';
+import { RecoveryJourneyReplay } from './RecoveryJourneyReplay';
+import type { RecoveryReplayData } from '../types/recoveryReplay';
 
 interface AutonomousRecoveryCenterProps {
   events: RecoveryEvent[];
@@ -126,70 +130,126 @@ export function AutonomousRecoveryCenter({ events, healingRunning, onMetricClick
   const activeEvent = events.find(e => e.finalStatus === 'RUNNING') ?? events[0] ?? null;
   const timeline = activeEvent ? buildTimeline(activeEvent) : [];
 
+  // Convert active event to replay data
+  const replayData = activeEvent
+    ? ({
+        recoveryId: activeEvent.recoveryId ?? '',
+        testName: activeEvent.testName ?? '',
+        failureType: activeEvent.failureType ?? '',
+        failedLocator: activeEvent.failedLocator ?? '',
+        memoryHit: activeEvent.memoryHit ?? '',
+        confidenceScore: activeEvent.confidenceScore ?? 0,
+        recoveryStrategy: activeEvent.recoveryStrategy ?? '',
+        recoveryStartTime: activeEvent.recoveryStartTime ?? new Date().toISOString(),
+        recoveryEndTime: activeEvent.recoveryEndTime,
+        recoveryDuration: activeEvent.recoveryDuration,
+        retestResult: activeEvent.retestResult ?? 'PENDING',
+        finalStatus: activeEvent.finalStatus ?? 'PENDING',
+      } as RecoveryReplayData)
+    : null;
+
+  const {
+    replayState,
+    openReplay,
+    closeReplay,
+    play,
+    pause,
+    nextStep,
+    previousStep,
+    replay,
+    setSpeed,
+  } = useRecoveryReplay(replayData);
+
   return (
-    <section className="rounded-2xl border border-white/10 bg-slate-950/50 p-6 shadow-[0_20px_40px_rgba(2,10,26,0.40)]" aria-label="Autonomous Recovery Center">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold text-slate-100">Autonomous Recovery Center</h2>
-            <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${healingRunning ? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-300' : 'border-slate-600/30 bg-slate-700/20 text-slate-400'}`}>
-              {healingRunning ? 'Live Recovery' : 'Recovery Summary'}
-            </span>
+    <>
+      <section className="rounded-2xl border border-white/10 bg-slate-950/50 p-6 shadow-[0_20px_40px_rgba(2,10,26,0.40)]" aria-label="Autonomous Recovery Center">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-semibold text-slate-100">Autonomous Recovery Center</h2>
+              <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${healingRunning ? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-300' : 'border-slate-600/30 bg-slate-700/20 text-slate-400'}`}>
+                {healingRunning ? 'Live Recovery' : 'Recovery Summary'}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-slate-400">
+              Visualizes failure to recovery journey across healing, memory search, and retest outcomes.
+            </p>
           </div>
-          <p className="mt-1 text-xs text-slate-400">
-            Visualizes failure to recovery journey across healing, memory search, and retest outcomes.
-          </p>
+          {attempts > 0 && (
+            <button
+              onClick={openReplay}
+              className="flex items-center gap-2 rounded-lg bg-violet-500/20 px-4 py-2 text-sm font-medium text-violet-300 ring-1 ring-violet-400/30 transition-all hover:bg-violet-500/30 whitespace-nowrap"
+              title="Replay the recovery journey"
+            >
+              <span>▶</span>
+              Replay Journey
+            </button>
+          )}
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {metricCard('Recovery Attempts', String(attempts), 'recoveryAttempts', 'bg-cyan-500/10 ring-1 ring-cyan-400/35', onMetricClick)}
-        {metricCard('Successful Recoveries', String(successful), 'successfulRecoveries', 'bg-emerald-500/10 ring-1 ring-emerald-400/35', onMetricClick)}
-        {metricCard('Failed Recoveries', String(failed), 'failedRecoveries', 'bg-rose-500/10 ring-1 ring-rose-400/35', onMetricClick)}
-        {metricCard('Average Recovery Time', formatDuration(avgRecoveryMs), 'averageRecoveryTimeRecovery', 'bg-amber-500/10 ring-1 ring-amber-400/35', onMetricClick)}
-        {metricCard('Recovery Success Rate', `${successRate}%`, 'recoverySuccessRate', 'bg-violet-500/10 ring-1 ring-violet-400/35', onMetricClick)}
-      </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {metricCard('Recovery Attempts', String(attempts), 'recoveryAttempts', 'bg-cyan-500/10 ring-1 ring-cyan-400/35', onMetricClick)}
+          {metricCard('Successful Recoveries', String(successful), 'successfulRecoveries', 'bg-emerald-500/10 ring-1 ring-emerald-400/35', onMetricClick)}
+          {metricCard('Failed Recoveries', String(failed), 'failedRecoveries', 'bg-rose-500/10 ring-1 ring-rose-400/35', onMetricClick)}
+          {metricCard('Average Recovery Time', formatDuration(avgRecoveryMs), 'averageRecoveryTimeRecovery', 'bg-amber-500/10 ring-1 ring-amber-400/35', onMetricClick)}
+          {metricCard('Recovery Success Rate', `${successRate}%`, 'recoverySuccessRate', 'bg-violet-500/10 ring-1 ring-violet-400/35', onMetricClick)}
+        </div>
 
-      {healingRunning && activeEvent ? (
-        <div className="mt-6 rounded-xl border border-cyan-400/30 bg-cyan-500/5 p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-medium text-cyan-200">Live Recovery Visualization</h3>
-            <p className="text-xs text-cyan-300">{activeEvent.testName}</p>
-          </div>
-          <div className="space-y-2">
-            {timeline.map(step => (
-              <div key={step.label} className="flex items-start gap-3 rounded-lg border border-white/5 bg-slate-900/40 px-3 py-2">
-                <span className={`mt-1 inline-flex h-2.5 w-2.5 rounded-full ${pointTone(step.status)}`} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm text-slate-100">{step.label}</p>
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badgeTone(step.status)}`}>
-                      {step.status}
-                    </span>
+        {healingRunning && activeEvent ? (
+          <div className="mt-6 rounded-xl border border-cyan-400/30 bg-cyan-500/5 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-medium text-cyan-200">Live Recovery Visualization</h3>
+              <p className="text-xs text-cyan-300">{activeEvent.testName}</p>
+            </div>
+            <div className="space-y-2">
+              {timeline.map(step => (
+                <div key={step.label} className="flex items-start gap-3 rounded-lg border border-white/5 bg-slate-900/40 px-3 py-2">
+                  <span className={`mt-1 inline-flex h-2.5 w-2.5 rounded-full ${pointTone(step.status)}`} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm text-slate-100">{step.label}</p>
+                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badgeTone(step.status)}`}>
+                        {step.status}
+                      </span>
+                    </div>
+                    {step.detail ? <p className="mt-1 break-words text-xs text-slate-400">{step.detail}</p> : null}
                   </div>
-                  {step.detail ? <p className="mt-1 break-words text-xs text-slate-400">{step.detail}</p> : null}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      ) : activeEvent ? (
-        <div className="mt-6 rounded-xl border border-white/10 bg-slate-900/50 p-4">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-medium text-slate-200">Final Recovery Journey</h3>
-            <p className="text-xs text-slate-400">{activeEvent.testName}</p>
+        ) : activeEvent ? (
+          <div className="mt-6 rounded-xl border border-white/10 bg-slate-900/50 p-4">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-medium text-slate-200">Final Recovery Journey</h3>
+              <p className="text-xs text-slate-400">{activeEvent.testName}</p>
+            </div>
+            <p className="text-xs text-slate-400">
+              Final Status: <span className={activeEvent.finalStatus === 'RECOVERED' ? 'text-emerald-300' : activeEvent.finalStatus === 'FAILED' ? 'text-rose-300' : 'text-cyan-300'}>{activeEvent.finalStatus}</span>
+              {' '}· Retest: <span className="text-slate-200">{activeEvent.retestResult}</span>
+              {' '}· Duration: <span className="text-slate-200">{formatDuration(activeEvent.recoveryDuration)}</span>
+            </p>
           </div>
-          <p className="text-xs text-slate-400">
-            Final Status: <span className={activeEvent.finalStatus === 'RECOVERED' ? 'text-emerald-300' : activeEvent.finalStatus === 'FAILED' ? 'text-rose-300' : 'text-cyan-300'}>{activeEvent.finalStatus}</span>
-            {' '}· Retest: <span className="text-slate-200">{activeEvent.retestResult}</span>
-            {' '}· Duration: <span className="text-slate-200">{formatDuration(activeEvent.recoveryDuration)}</span>
-          </p>
-        </div>
-      ) : (
-        <div className="mt-6 rounded-xl border border-white/10 bg-slate-900/50 p-4 text-sm text-slate-500">
-          No recovery attempts recorded for this run.
-        </div>
-      )}
-    </section>
+        ) : (
+          <div className="mt-6 rounded-xl border border-white/10 bg-slate-900/50 p-4 text-sm text-slate-500">
+            No recovery attempts recorded for this run.
+          </div>
+        )}
+      </section>
+
+      {/* Recovery Journey Replay Modal */}
+      <RecoveryJourneyReplay
+        isOpen={replayState.isOpen}
+        recoveryEvent={replayData}
+        replayState={replayState}
+        onClose={closeReplay}
+        onPlay={play}
+        onPause={pause}
+        onNextStep={nextStep}
+        onPreviousStep={previousStep}
+        onReplay={replay}
+        onSpeedChange={setSpeed}
+      />
+    </>
   );
 }

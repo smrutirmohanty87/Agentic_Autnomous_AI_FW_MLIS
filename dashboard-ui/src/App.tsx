@@ -30,6 +30,10 @@ import { useHealingMemory } from './hooks/useHealingMemory';
 import type { SelfHealingMemoryMetricType } from './types/selfHealingMemory';
 import { useRecoveryEvents } from './hooks/useRecoveryEvents';
 import type { RecoveryMetricType } from './types/recoveryEvents';
+import { useDemo } from './hooks/useDemo';
+import { DemoModeControlPanel } from './components/DemoModeControlPanel';
+import { DemoModeToggleButton } from './components/DemoModeToggleButton';
+import { DemoSummaryPanel } from './components/DemoSummaryPanel';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LIVE MODE  — suite-progress.json has running > 0 (npx playwright test active)
@@ -46,6 +50,15 @@ function App() {
   const optimizationTracker = useOptimizationTracker();
   const healingMemory = useHealingMemory();
   const recoveryEvents = useRecoveryEvents();
+
+  // Demo mode state
+  const {
+    demoState,
+    toggleDemoMode,
+    toggleExecutiveMode,
+    startDemo,
+    stopDemo,
+  } = useDemo();
 
   // Metric details drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -249,15 +262,22 @@ function App() {
                   : `Generated: ${new Date(data.generatedAt).toLocaleString()}`}
               </p>
             </div>
-            {isTestRunning && (
-              <span className="flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-500/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-cyan-300">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
+            <div className="flex flex-wrap items-center gap-2">
+              <DemoModeToggleButton
+                isEnabled={demoState.enabled}
+                isRunning={demoState.isRunning}
+                onClick={toggleDemoMode}
+              />
+              {isTestRunning && (
+                <span className="flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-500/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-cyan-300">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
+                  </span>
+                  LIVE
                 </span>
-                LIVE
-              </span>
-            )}
+              )}
+            </div>
           </div>
         </header>
 
@@ -463,6 +483,36 @@ function App() {
         recoveryEvents={scopedRecoveryEvents}
         onClose={handleDrawerClose}
       />
+
+      {/* Demo Mode Control Panel */}
+      {demoState.enabled && !demoState.executiveMode && (
+        <DemoModeControlPanel
+          demoState={demoState}
+          onToggle={toggleDemoMode}
+          onToggleExecutiveMode={toggleExecutiveMode}
+          onStart={startDemo}
+          onStop={stopDemo}
+        />
+      )}
+
+      {/* Executive Mode Fullscreen */}
+      {demoState.executiveMode && (
+        <DemoModeControlPanel
+          demoState={demoState}
+          onToggle={toggleDemoMode}
+          onToggleExecutiveMode={toggleExecutiveMode}
+          onStart={startDemo}
+          onStop={stopDemo}
+        />
+      )}
+
+      {/* Demo Summary Panel */}
+      {demoState.summary && !demoState.isRunning && (
+        <DemoSummaryPanel
+          summary={demoState.summary}
+          isVisible={!demoState.isRunning && demoState.enabled}
+        />
+      )}
     </div>
   );
 }
