@@ -1,60 +1,83 @@
 {
   "title": "Agentic QA Platform",
-  "generatedAt": "2026-06-15T10:39:38.069Z",
-  "requirement": "CNR Live Demo Workflow",
-  "generatedTestName": "[TC_CNR_001] Create base policy and initiate CNR flow (live demo)",
+  "generatedAt": "2026-06-19T04:48:41.497Z",
+  "requirement": "Commercial England & Wales 7-Product Live Demo",
+  "generatedTestName": "[TC_COMM_7P_001] Create Commercial England & Wales policy with exactly 7 products",
   "kpis": {
     "workflowStatus": "FAILED",
+    "compressionStatus": "ENABLED",
+    "originalTokens": 10,
+    "compressedTokens": 3,
+    "compressionRatio": 70,
+    "cacheStatus": "MISS",
+    "templateStatus": "MISS",
     "testsPassed": 0,
     "testsFailed": 1,
     "healEvents": 1,
+    "successfulHeals": 0,
+    "healingActivity": "Healing retry exhausted (1 attempt)",
     "rcaEvents": 1,
-    "executionDurationMs": 109810
+    "executionDurationMs": 70145
   },
   "agents": [
     {
+      "name": "Compression",
+      "status": "SUCCESS",
+      "durationMs": 8
+    },
+    {
+      "name": "Cache",
+      "status": "SUCCESS",
+      "durationMs": 18
+    },
+    {
+      "name": "TemplateLibrary",
+      "status": "SUCCESS",
+      "durationMs": 30
+    },
+    {
       "name": "Planner",
       "status": "SUCCESS",
-      "durationMs": 3
+      "durationMs": 27
     },
     {
       "name": "Designer",
       "status": "SUCCESS",
-      "durationMs": 18
+      "durationMs": 32
     },
     {
       "name": "Generator",
       "status": "SUCCESS",
-      "durationMs": 4
+      "durationMs": 24
     },
     {
       "name": "Execution",
       "status": "FAILED",
-      "durationMs": 109810
+      "durationMs": 70145
     },
     {
       "name": "RCA",
       "status": "FAILED",
-      "durationMs": 18
+      "durationMs": 8
     },
     {
       "name": "Healing",
       "status": "SUCCESS",
-      "durationMs": 10992
+      "durationMs": 66928
     }
   ],
   "rcaSummary": [
     {
-      "testName": "Create base policy and initiate CNR flow (live demo)",
+      "testName": "Create Commercial England & Wales policy with exactly 7 products",
       "elementKey": "unhealed-failure",
-      "failureType": "Unknown",
-      "affectedElement": "error=\"page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://dualgroup--durqa.san\"",
-      "rootCause": "An unexpected error occurred at \"https://dualgroup--durqa.sandbox.my.site.com/mlisportal/\": page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://dualgroup--durqa.sandbox.my.site.com/mlisportal/\", waiting until \"load\"\u001b[22m\n",
-      "recoveryAction": "Inspect the full error stack and page snapshot for additional context.",
+      "failureType": "Timeout",
+      "affectedElement": "error=\"page.goto: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://dualgroup--durqa.sandbox.my.site.com/mlisp\"",
+      "rootCause": "The test timed out waiting for an element or navigation at \"https://dualgroup--durqa.sandbox.my.site.com/mlisportal/\". Likely causes: slow network on the demo environment, a missing waitFor, or a selector that never matched.",
+      "recoveryAction": "Increase test/action timeout and add explicit waitFor before the failing step.",
       "recoveryStatus": "FAILED",
-      "confidence": 40,
-      "recommendation": "Review error details and the page snapshot. Add the element to locatorRegistry.ts with multiple fallback strategies to prevent future unhealed failures.",
-      "timestamp": "2026-06-15T10:39:36.206Z",
+      "confidence": 80,
+      "recommendation": "Profile the page load time in the CI environment. Consider raising `navigationTimeout` in playwright.config.ts and switching `waitForLoadState` from 'networkidle' to 'domcontentloaded'.",
+      "timestamp": "2026-06-19T04:48:40.644Z",
       "pageUrl": "https://dualgroup--durqa.sandbox.my.site.com/mlisportal/"
     }
   ],
@@ -62,14 +85,18 @@
     {
       "key": "postExecutionSelfHealRetry",
       "failedLocator": "Execution failures after initial run",
-      "recoveredLocator": "1 test(s) still failing",
-      "recoveryTimeMs": 10992,
+      "recoveredLocator": "0 test(s) recovered",
+      "recoveryTimeMs": 66928,
       "recoveryStatus": "FAILED",
-      "timestamp": "2026-06-15T10:39:38.069Z"
+      "timestamp": "2026-06-19T04:48:41.495Z",
+      "pageUrl": "https://dualgroup--durqa.sandbox.my.site.com/mlisportal/"
     }
   ],
   "workflowTimeline": [
     "Requirement",
+    "Compression",
+    "Cache",
+    "TemplateLibrary",
     "Planner",
     "Designer",
     "Generator",
@@ -81,7 +108,7 @@
   "visualizations": {
     "testTrend": [
       {
-        "run": "TC_CNR_001",
+        "run": "TC_COMM_7P_001",
         "passed": 0,
         "failed": 1
       }
@@ -89,7 +116,7 @@
     "eventDistribution": [
       {
         "name": "Heal",
-        "value": 1
+        "value": 0
       },
       {
         "name": "RCA",
@@ -102,28 +129,40 @@
     ],
     "agentDurations": [
       {
+        "agent": "Compression",
+        "durationMs": 8
+      },
+      {
+        "agent": "Cache",
+        "durationMs": 18
+      },
+      {
+        "agent": "TemplateLibrary",
+        "durationMs": 30
+      },
+      {
         "agent": "Planner",
-        "durationMs": 3
+        "durationMs": 27
       },
       {
         "agent": "Designer",
-        "durationMs": 18
+        "durationMs": 32
       },
       {
         "agent": "Generator",
-        "durationMs": 4
+        "durationMs": 24
       },
       {
         "agent": "Execution",
-        "durationMs": 109810
+        "durationMs": 70145
       },
       {
         "agent": "RCA",
-        "durationMs": 18
+        "durationMs": 8
       },
       {
         "agent": "Healing",
-        "durationMs": 10992
+        "durationMs": 66928
       }
     ]
   }

@@ -1,0 +1,44 @@
+{
+  "hits": 17,
+  "misses": 31,
+  "total": 48,
+  "hitRate": 35,
+  "details": [
+    {
+      "requirement": "Create Commercial Quote",
+      "templateUsed": "commercial-quote",
+      "templateName": "Commercial Quote",
+      "confidenceScore": 0.5,
+      "timestamp": "2026-06-15T10:00:00.000Z"
+    },
+    {
+      "requirement": "Broker Search Flow",
+      "templateUsed": "broker-search",
+      "templateName": "Broker Search",
+      "confidenceScore": 0.71,
+      "timestamp": "2026-06-15T11:00:00.000Z"
+    },
+    {
+      "requirement": "User Login Verification",
+      "templateUsed": "user-verification",
+      "templateName": "User Verification",
+      "confidenceScore": 0.68,
+      "timestamp": "2026-06-16T08:45:00.000Z"
+    },
+    {
+      "requirement": "Residential Quote Journey",
+      "templateUsed": "residential-quote",
+      "templateName": "Residential Quote",
+      "confidenceScore": 0.6,
+      "timestamp": "2026-06-16T10:30:00.000Z"
+    },
+    {
+      "requirement": "Policy Cancellation Request",
+      "templateUsed": "policy-cancellation",
+      "templateName": "Policy Cancellation",
+      "confidenceScore": 0.72,
+      "timestamp": "2026-06-17T14:10:00.000Z"
+    }
+  ],
+  "updatedAt": "2026-06-19T04:48:41.504Z"
+}

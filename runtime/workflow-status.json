@@ -1,54 +1,75 @@
 {
-  "workflowId": "run-1781519841073",
-  "startedAt": "2026-06-15T10:37:21.073Z",
+  "workflowId": "run-1781844333926",
+  "startedAt": "2026-06-19T04:45:33.926Z",
   "overallStatus": "FAILED",
   "currentAgent": null,
-  "requirement": "CNR Live Demo Workflow",
-  "generatedTestName": "[TC_CNR_001] Create base policy and initiate CNR flow (live demo)",
+  "requirement": "Workflow: GenericWorkflow\nSteps: \nKeywords: commercial, england, &, wales, 7-product, live, demo",
+  "generatedTestName": "[TC_COMM_7P_001] Create Commercial England & Wales policy with exactly 7 products",
   "currentStep": "Completed: re-execution still has failures",
   "agents": [
     {
+      "name": "Compression",
+      "state": "SUCCESS",
+      "startedAt": "2026-06-19T04:45:33.945Z",
+      "finishedAt": "2026-06-19T04:45:33.951Z",
+      "durationMs": 6
+    },
+    {
+      "name": "Cache",
+      "state": "SUCCESS",
+      "startedAt": "2026-06-19T04:45:41.966Z",
+      "finishedAt": "2026-06-19T04:45:41.985Z",
+      "durationMs": 19
+    },
+    {
+      "name": "TemplateLibrary",
+      "state": "SUCCESS",
+      "startedAt": "2026-06-19T04:45:50.024Z",
+      "finishedAt": "2026-06-19T04:45:50.055Z",
+      "durationMs": 31
+    },
+    {
       "name": "Planner",
       "state": "SUCCESS",
-      "startedAt": "2026-06-15T10:37:21.093Z",
-      "finishedAt": "2026-06-15T10:37:21.096Z",
-      "durationMs": 3
+      "startedAt": "2026-06-19T04:45:58.110Z",
+      "finishedAt": "2026-06-19T04:45:58.142Z",
+      "durationMs": 32
     },
     {
       "name": "Designer",
       "state": "SUCCESS",
-      "startedAt": "2026-06-15T10:37:26.113Z",
-      "finishedAt": "2026-06-15T10:37:26.131Z",
-      "durationMs": 18
+      "startedAt": "2026-06-19T04:46:06.199Z",
+      "finishedAt": "2026-06-19T04:46:06.227Z",
+      "durationMs": 28
     },
     {
       "name": "Generator",
       "state": "SUCCESS",
-      "startedAt": "2026-06-15T10:37:31.156Z",
-      "finishedAt": "2026-06-15T10:37:31.160Z",
-      "durationMs": 4
+      "startedAt": "2026-06-19T04:46:14.277Z",
+      "finishedAt": "2026-06-19T04:46:14.307Z",
+      "durationMs": 31
     },
     {
       "name": "Execution",
       "state": "FAILED",
-      "startedAt": "2026-06-15T10:39:27.049Z",
-      "finishedAt": "2026-06-15T10:39:38.028Z",
-      "durationMs": 10979
+      "startedAt": "2026-06-19T04:47:34.541Z",
+      "finishedAt": "2026-06-19T04:48:41.446Z",
+      "durationMs": 66905
     },
     {
       "name": "RCA",
       "state": "FAILED",
-      "startedAt": "2026-06-15T10:39:27.017Z",
-      "finishedAt": "2026-06-15T10:39:38.047Z",
-      "durationMs": 11030
+      "startedAt": "2026-06-19T04:47:34.526Z",
+      "finishedAt": "2026-06-19T04:48:41.470Z",
+      "durationMs": 66944
     },
     {
       "name": "Healing",
       "state": "SUCCESS",
-      "startedAt": "2026-06-15T10:39:27.040Z",
-      "finishedAt": "2026-06-15T10:39:38.032Z",
-      "durationMs": 10992
+      "startedAt": "2026-06-19T04:47:34.523Z",
+      "finishedAt": "2026-06-19T04:48:41.453Z",
+      "durationMs": 66930
     }
   ],
-  "completedAt": "2026-06-15T10:39:38.063Z"
+  "completedAt": "2026-06-19T04:48:41.486Z"
 }

@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "key": "postExecutionSelfHealRetry",
+    "failedLocator": "Execution failures after initial run",
+    "recoveredLocator": "0 test(s) recovered",
+    "recoveryTimeMs": 66928,
+    "recoveryStatus": "FAILED",
+    "timestamp": "2026-06-19T04:48:41.495Z",
+    "pageUrl": "https://dualgroup--durqa.sandbox.my.site.com/mlisportal/"
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "costPerThousandTokens": 0.002,
+  "estimatedCostWithoutOptimization": 0.07512,
+  "estimatedCurrentCost": 0,
+  "estimatedSavings": 102.34008399999996,
+  "currency": "USD",
+  "breakdown": {
+    "compressionSavings": 36.900084,
+    "cacheSavings": 50.4,
+    "templateSavings": 15.04
+  },
+  "updatedAt": "2026-06-19T04:48:41.504Z"
+}

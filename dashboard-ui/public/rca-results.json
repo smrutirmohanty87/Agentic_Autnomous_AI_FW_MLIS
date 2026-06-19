@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "testName": "Create Commercial England & Wales policy with exactly 7 products",
+    "elementKey": "unhealed-failure",
+    "failureType": "Timeout",
+    "affectedElement": "error=\"page.goto: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://dualgroup--durqa.sandbox.my.site.com/mlisp\"",
+    "rootCause": "The test timed out waiting for an element or navigation at \"https://dualgroup--durqa.sandbox.my.site.com/mlisportal/\". Likely causes: slow network on the demo environment, a missing waitFor, or a selector that never matched.",
+    "recoveryAction": "Increase test/action timeout and add explicit waitFor before the failing step.",
+    "recoveryStatus": "FAILED",
+    "confidence": 80,
+    "recommendation": "Profile the page load time in the CI environment. Consider raising `navigationTimeout` in playwright.config.ts and switching `waitForLoadState` from 'networkidle' to 'domcontentloaded'.",
+    "timestamp": "2026-06-19T04:48:40.644Z",
+    "pageUrl": "https://dualgroup--durqa.sandbox.my.site.com/mlisportal/"
+  }
+]

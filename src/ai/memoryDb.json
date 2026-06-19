@@ -49,9 +49,9 @@
       "input[name*='email' i]",
       "[placeholder*='email' i]"
     ],
-    "successCount": 73,
+    "successCount": 83,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:03.887Z"
+    "lastUsed": "2026-06-19T04:23:32.240Z"
   },
   "MLIS Password": {
     "primary": "role=textbox[name=/Password/i]",
@@ -60,9 +60,9 @@
       "input[name*='pass' i]",
       "[placeholder*='password' i]"
     ],
-    "successCount": 73,
+    "successCount": 83,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:03.965Z"
+    "lastUsed": "2026-06-19T04:23:32.313Z"
   },
   "MLIS Login": {
     "primary": "role=link[name=/^Login$/i]",
@@ -70,9 +70,9 @@
       "role=button[name=/^Login$/i]",
       "text=/^Login$/i"
     ],
-    "successCount": 72,
+    "successCount": 82,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:04.078Z"
+    "lastUsed": "2026-06-19T04:23:32.550Z"
   },
   "MLIS Commercial England & Wales Start quote": {
     "primary": "role=link[name=/England\\s*&\\s*Wales\\s*Start quote/i]",
@@ -125,9 +125,9 @@
       "text=/England\\s*&\\s*Wales\\s*Start quote/i",
       "role=button[name=/England\\s*&\\s*Wales\\s*Start quote/i]"
     ],
-    "successCount": 25,
+    "successCount": 35,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:12.256Z"
+    "lastUsed": "2026-06-19T04:23:37.656Z"
   },
   "MLIS Land register number": {
     "primary": "role=textbox[name=/(Land\\s*register|Land\\s*registry|Title\\s*(number|no\\.?))/i]",
@@ -504,9 +504,9 @@
       "input[name*='case' i]",
       "input[placeholder*='case' i]"
     ],
-    "successCount": 43,
+    "successCount": 53,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:14.962Z"
+    "lastUsed": "2026-06-19T04:23:39.329Z"
   },
   "MLIS Commercial Limit of indemnity": {
     "primary": "role=spinbutton[name=/Limit of indemnity/i]",
@@ -514,9 +514,9 @@
       "input[name*='limit' i]",
       "xpath=//*[contains(normalize-space(.), 'Limit of indemnity')]/following::input[1]"
     ],
-    "successCount": 43,
+    "successCount": 53,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:15.065Z"
+    "lastUsed": "2026-06-19T04:23:39.409Z"
   },
   "MLIS Commercial Product Select": {
     "primary": "role=button[name=/^Select$/i]",
@@ -524,9 +524,9 @@
       "text=/^Select$/i",
       "button:has-text('Select')"
     ],
-    "successCount": 105,
+    "successCount": 125,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:15.280Z"
+    "lastUsed": "2026-06-19T04:23:39.933Z"
   },
   "MLIS Commercial Proceed": {
     "primary": "role=button[name=/^Proceed$/i]",
@@ -534,9 +534,9 @@
       "text=/^Proceed$/i",
       "button:has-text('Proceed')"
     ],
-    "successCount": 112,
+    "successCount": 142,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:43.211Z"
+    "lastUsed": "2026-06-19T04:24:02.227Z"
   },
   "MLIS Commercial Statements Confirm": {
     "primary": "role=button[name=/^Confirm$/i]",
@@ -544,9 +544,9 @@
       "text=/^Confirm$/i",
       "button:has-text('Confirm')"
     ],
-    "successCount": 304,
+    "successCount": 364,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:25.568Z"
+    "lastUsed": "2026-06-19T04:23:47.515Z"
   },
   "MLIS Commercial Select quote": {
     "primary": "role=button[name=/Select quote/i]",
@@ -554,9 +554,9 @@
       "text=/Select quote/i",
       "button:has-text('Select quote')"
     ],
-    "successCount": 35,
+    "successCount": 45,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:39.023Z"
+    "lastUsed": "2026-06-19T04:23:58.778Z"
   },
   "MLIS Commercial Final details required input": {
     "primary": "input[required]",
@@ -564,9 +564,9 @@
       "input[aria-required='true']",
       "xpath=//input[@required]"
     ],
-    "successCount": 140,
+    "successCount": 180,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:43.101Z"
+    "lastUsed": "2026-06-19T04:24:02.101Z"
   },
   "MLIS Commercial Enter manually": {
     "primary": "role=button[name=/enter manually/i]",
@@ -574,9 +574,9 @@
       "role=link[name=/enter manually/i]",
       "text=/enter manually/i"
     ],
-    "successCount": 35,
+    "successCount": 45,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:42.901Z"
+    "lastUsed": "2026-06-19T04:24:01.981Z"
   },
   "MLIS Commercial Proceed to order": {
     "primary": "role=button[name=/Proceed to order/i]",
@@ -584,9 +584,9 @@
       "text=/Proceed to order/i",
       "button:has-text('Proceed to order')"
     ],
-    "successCount": 29,
+    "successCount": 34,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:52.042Z"
+    "lastUsed": "2026-06-19T04:24:06.318Z"
   },
   "MLIS Commercial Confirm policy commencement": {
     "primary": "role=textbox[name=/Confirm policy commencement/i]",
@@ -594,9 +594,9 @@
       "text=/Confirm policy commencement/i",
       "input[aria-label*='commencement' i]"
     ],
-    "successCount": 29,
+    "successCount": 34,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:53.565Z"
+    "lastUsed": "2026-06-19T04:24:07.821Z"
   },
   "MLIS Commercial Today": {
     "primary": "role=button[name=/^Today$/i]",
@@ -604,9 +604,9 @@
       "text=/^Today$/i",
       "button:has-text('Today')"
     ],
-    "successCount": 29,
+    "successCount": 34,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:53.689Z"
+    "lastUsed": "2026-06-19T04:24:07.903Z"
   },
   "MLIS Commercial Order now": {
     "primary": "role=button[name=/Order now/i]",
@@ -614,9 +614,9 @@
       "text=/Order now/i",
       "button:has-text('Order now')"
     ],
-    "successCount": 29,
+    "successCount": 34,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:38:53.817Z"
+    "lastUsed": "2026-06-19T04:24:08.013Z"
   },
   "MLIS Commercial Back to quote manager": {
     "primary": "role=button[name=/Back to quote manager/i]",
@@ -624,8 +624,8 @@
       "text=/Back to quote manager/i",
       "button:has-text('Back to quote manager')"
     ],
-    "successCount": 29,
+    "successCount": 34,
     "failureCount": 0,
-    "lastUsed": "2026-06-15T10:39:11.536Z"
+    "lastUsed": "2026-06-19T04:24:17.296Z"
   }
 }

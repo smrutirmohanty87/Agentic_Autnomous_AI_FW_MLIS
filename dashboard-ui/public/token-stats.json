@@ -1,0 +1,132 @@
+{
+  "totalOriginalTokens": 37560,
+  "totalCompressedTokens": 19068,
+  "totalSavedTokens": 18492,
+  "compressionRatio": 49,
+  "trend": [
+    {
+      "day": "Mon",
+      "saved": 1200
+    },
+    {
+      "day": "Tue",
+      "saved": 1800
+    },
+    {
+      "day": "Wed",
+      "saved": 2500
+    },
+    {
+      "day": "Thu",
+      "saved": 3200
+    },
+    {
+      "day": "Fri",
+      "saved": 4100
+    },
+    {
+      "day": "Fri",
+      "saved": 7
+    },
+    {
+      "day": "Fri",
+      "saved": 7
+    },
+    {
+      "day": "Fri",
+      "saved": 7
+    },
+    {
+      "day": "Fri",
+      "saved": 7
+    },
+    {
+      "day": "Fri",
+      "saved": 7
+    },
+    {
+      "day": "Fri",
+      "saved": 7
+    }
+  ],
+  "details": [
+    {
+      "requirement": "Create Commercial Quote",
+      "originalTokens": 850,
+      "compressedTokens": 420,
+      "reductionPercent": 51,
+      "timestamp": "2026-06-15T10:00:00.000Z"
+    },
+    {
+      "requirement": "CNR Live Demo Workflow",
+      "originalTokens": 920,
+      "compressedTokens": 480,
+      "reductionPercent": 48,
+      "timestamp": "2026-06-15T14:09:38.000Z"
+    },
+    {
+      "requirement": "Residential 3-Party Quote",
+      "originalTokens": 780,
+      "compressedTokens": 390,
+      "reductionPercent": 50,
+      "timestamp": "2026-06-16T09:30:00.000Z"
+    },
+    {
+      "requirement": "Policy Cancellation Flow",
+      "originalTokens": 660,
+      "compressedTokens": 310,
+      "reductionPercent": 53,
+      "timestamp": "2026-06-16T11:45:00.000Z"
+    },
+    {
+      "requirement": "MTA Live Demo 003",
+      "originalTokens": 710,
+      "compressedTokens": 345,
+      "reductionPercent": 51,
+      "timestamp": "2026-06-17T13:20:00.000Z"
+    },
+    {
+      "requirement": "Live workflow optimization",
+      "originalTokens": 10,
+      "compressedTokens": 3,
+      "reductionPercent": 70,
+      "timestamp": "2026-06-19T03:46:00.247Z"
+    },
+    {
+      "requirement": "Live workflow optimization",
+      "originalTokens": 10,
+      "compressedTokens": 3,
+      "reductionPercent": 70,
+      "timestamp": "2026-06-19T04:16:28.886Z"
+    },
+    {
+      "requirement": "Live workflow optimization",
+      "originalTokens": 10,
+      "compressedTokens": 3,
+      "reductionPercent": 70,
+      "timestamp": "2026-06-19T04:19:57.422Z"
+    },
+    {
+      "requirement": "Live workflow optimization",
+      "originalTokens": 10,
+      "compressedTokens": 3,
+      "reductionPercent": 70,
+      "timestamp": "2026-06-19T04:21:05.808Z"
+    },
+    {
+      "requirement": "Live workflow optimization",
+      "originalTokens": 10,
+      "compressedTokens": 3,
+      "reductionPercent": 70,
+      "timestamp": "2026-06-19T04:24:18.298Z"
+    },
+    {
+      "requirement": "Live workflow optimization",
+      "originalTokens": 10,
+      "compressedTokens": 3,
+      "reductionPercent": 70,
+      "timestamp": "2026-06-19T04:48:41.504Z"
+    }
+  ],
+  "updatedAt": "2026-06-19T04:48:41.504Z"
+}

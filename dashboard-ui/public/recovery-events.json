@@ -1,0 +1,19 @@
+[
+  {
+    "recoveryId": "run-1781844333926:TC_COMM_7P_001:retry-1",
+    "workflowId": "run-1781844333926",
+    "testName": "Create Commercial England & Wales policy with exactly 7 products",
+    "failureType": "ExecutionFailure",
+    "failedLocator": "Execution failures after initial run",
+    "memoryHit": "MISS",
+    "confidenceScore": 80,
+    "recoveryStrategy": "Healing retry with aggressive locator recovery",
+    "recoveryStartTime": "2026-06-19T04:47:34.528Z",
+    "retestResult": "FAILED",
+    "finalStatus": "FAILED",
+    "updatedAt": "2026-06-19T04:48:41.442Z",
+    "failureReason": "page.goto: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://dualgroup--durqa.sandbox.my.site.com/mlisportal/\", waiting until \"load\"\u001b[22m\n",
+    "recoveryEndTime": "2026-06-19T04:48:41.441Z",
+    "recoveryDuration": 66913
+  }
+]
