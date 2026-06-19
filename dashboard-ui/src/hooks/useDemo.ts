@@ -158,17 +158,33 @@ export function useDemo(initialEnabled = false) {
 
   // Auto-advance phases during demo
   useEffect(() => {
-    if (!demoState.isRunning || demoState.currentPhaseIndex >= demoState.phases.length) {
+    if (!demoState.isRunning || demoState.currentPhaseIndex >= DEFAULT_PHASES.length) {
       return;
     }
 
-    const currentPhaseConfig = demoState.phases[demoState.currentPhaseIndex];
+    const currentPhaseConfig = DEFAULT_PHASES[demoState.currentPhaseIndex];
     const timer = setTimeout(() => {
-      nextPhase();
+      setDemoState(prev => {
+        if (prev.currentPhaseIndex < DEFAULT_PHASES.length - 1) {
+          const nextIndex = prev.currentPhaseIndex + 1;
+          const nextPhaseConfig = DEFAULT_PHASES[nextIndex];
+          return {
+            ...prev,
+            currentPhaseIndex: nextIndex,
+            currentPhase: nextPhaseConfig.phase,
+            completedPhases: [...prev.completedPhases, prev.currentPhase],
+          };
+        }
+        return {
+          ...prev,
+          isRunning: false,
+          completedPhases: [...prev.completedPhases, prev.currentPhase],
+        };
+      });
     }, currentPhaseConfig.duration);
 
     return () => clearTimeout(timer);
-  }, [demoState.isRunning, demoState.currentPhaseIndex, demoState.phases, nextPhase]);
+  }, [demoState.isRunning, demoState.currentPhaseIndex]);
 
   return {
     demoState,
