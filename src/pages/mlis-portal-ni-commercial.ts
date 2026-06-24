@@ -154,6 +154,35 @@ export class NiCommercialFinalPolicyDetailsPage {
     await requiredInputs.nth(3).fill('London');
   }
 
+  async fillRequiredDetailsWithLongAddress() {
+    let requiredInputs = this.page.locator('input[required]');
+
+    await requiredInputs.nth(0).fill('E2E Test Client');
+
+    const postcodeInput = requiredInputs.nth(1);
+    await postcodeInput.fill('EC3A 2BJ');
+    await postcodeInput.press('Tab').catch(() => {});
+
+    const enterManually = this.page
+      .getByRole('button', { name: /enter manually/i })
+      .or(this.page.getByRole('link', { name: /enter manually/i }))
+      .first();
+
+    if (await enterManually.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await enterManually.click();
+    }
+
+    requiredInputs = this.page.locator('input[required]');
+    await expect(requiredInputs.nth(2)).toBeVisible({ timeout: 20000 });
+    
+    // Create a 255 character address for validation
+    const longAddress = '52-54 Leadenhall Street Extended Address Building Tower Complex Manor Estate Gardens Park View Road Suite 100 Unit 2 District Centre Commercial Area Industrial Zone Business Park Location Name Place Reference Number Additional Details Information Text London England 12345';
+    const addressLine1Value = longAddress.substring(0, 255);
+    
+    await requiredInputs.nth(2).fill(addressLine1Value);
+    await requiredInputs.nth(3).fill('London');
+  }
+
   async proceed() {
     await this.page.getByRole('button', { name: 'Proceed' }).click();
   }
@@ -172,6 +201,16 @@ export class NiCommercialSummaryPage {
     await expect(this.page.getByText('£500,000.00')).toBeVisible();
     await expect(this.page.getByText('E2E Test Client')).toBeVisible();
     await expect(this.page.getByText('52-54 Leadenhall Street')).toBeVisible();
+    await expect(this.page.getByText('Premium: £')).toBeVisible();
+  }
+
+  async expectSummaryDataWithLongAddress(caseRef: string) {
+    await expect(this.page.getByText(caseRef)).toBeVisible();
+    await expect(this.page.getByText('£500,000.00')).toBeVisible();
+    await expect(this.page.getByText('E2E Test Client')).toBeVisible();
+    // Long address - check that it contains at least the beginning part
+    const addressElements = this.page.locator('text=/52-54 Leadenhall Street/i');
+    await expect(addressElements.first()).toBeVisible();
     await expect(this.page.getByText('Premium: £')).toBeVisible();
   }
 
