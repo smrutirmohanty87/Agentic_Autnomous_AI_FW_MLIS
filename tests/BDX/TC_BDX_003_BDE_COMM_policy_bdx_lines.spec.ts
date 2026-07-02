@@ -12,7 +12,7 @@ import {
 } from '../../src/pages/mlis-portal';
 import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
-import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
+import { getBrokerCredentialsForProfile, getSalesforceCredentials } from '../../src/config/env';
 
 declare const require: (moduleName: string) => any;
 const policyData = require('../test-data/policy-creation-bde-comm.json') as {
@@ -21,12 +21,20 @@ const policyData = require('../test-data/policy-creation-bde-comm.json') as {
   legalOfIndemnity: string;
 };
 
-test.describe('@sanity | E2E | BDX | BDE_COMM', () => {
-  test('TC_BDX_003_BDE_COMM | Verify BDX lines generated', async ({ page }) => {
+test.describe('@sanity | E2E | BDX | MLIS Policy | BDE Commission | NB>MTA>CNR', () => {
+  test('TC_BDX_003_BDE_COMM | Create Residential NB policy, MTA (350.67), CNR with reason and verify BDX lines', async ({ page }) => {
     test.setTimeout(900000);
     test.slow();
 
     const caseRef = `E2E-BDX-BDECOMM-${Date.now()}`;
+
+    const dateA = new Date();
+    dateA.setDate(dateA.getDate() + 5);
+    const mtaDateA = dateA.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
 
     const brokerLogin = new LoginPage(page);
     const quoteManager = new QuoteManagerPage(page);
@@ -43,7 +51,7 @@ test.describe('@sanity | E2E | BDX | BDE_COMM', () => {
 
     // Create a fresh policy in Broker Portal.
     await brokerLogin.goto();
-    const brokerCreds = getBrokerCredentials();
+    const brokerCreds = getBrokerCredentialsForProfile('BDE_COMM');
     await brokerLogin.login(brokerCreds.username, brokerCreds.password);
     await quoteManager.expectLoaded();
     await quoteManager.acceptCookiesIfVisible();
@@ -99,7 +107,40 @@ test.describe('@sanity | E2E | BDX | BDE_COMM', () => {
     // Step 8-9: Scroll to Insurance Policy section & open the record
     await salesforce.openInsurancePolicyFromRelated(policyNumber);
 
-    // Step 10: Related tab → BDX → View All → assert lines generated
+    // MTA - Date A (future date) with premium increase 350.67
+    await salesforce.openCreateMTADialog();
+    await salesforce.fillMTAReasonAndSave(
+      'Limit Increase',
+      `MTA Date A premium increase 350.67 for ${policyNumber}`,
+    );
+    await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
+    await salesforce.editMTAPremium('350.67');
+    await salesforce.bindMTA(mtaDateA);
+
+    // Start Cancel and Reissue (new flow)
+    await salesforce.openCancelAndReissueDialog();
+    await salesforce.completeCancelAndReissueDialog({
+      reasonForCR: 'User Error Correction',
+      description: `Cancel and reissue after MTA test (${policyNumber})`,
+    });
+
+    // Required flow change: once on Final policy details, wait, return to submission, then bind MTA.
+    await expect(page.getByRole('heading', { name: /Quote Journey/i })).toBeVisible({ timeout: 120000 });
+    await expect(page.getByRole('heading', { name: /Final policy details/i })).toBeVisible({ timeout: 120000 });
+    await page.waitForTimeout(5000);
+
+    const returnToSubmission = page
+      .getByRole('button', { name: /Return to submission/i })
+      .or(page.getByRole('link', { name: /Return to submission/i }))
+      .first();
+    await expect(returnToSubmission).toBeVisible({ timeout: 60000 });
+    await returnToSubmission.click();
+    await page.waitForTimeout(5000);
+
+    // Bind from the returned submission in CnR new flow
+    await salesforce.bindMTA(mtaDateA);
+
+    // Related tab → BDX → View All → assert lines generated
     await salesforce.openRelatedTab();
 
     const bdxCard = page.locator('article:visible').filter({ hasText: /\bBDX\b/i }).first();

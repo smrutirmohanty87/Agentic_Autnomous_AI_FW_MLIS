@@ -107,6 +107,7 @@ test.describe('@sanity | E2E | Salesforce Quote Journey | Residential E&W', () =
     // 1. Login to Salesforce.
     await page.goto(getSalesforceLightningUrl(), { waitUntil: 'domcontentloaded' });
     await page.getByRole('textbox', { name: /username/i }).fill(sfCreds.username);
+    await clickWhenReady(page.getByRole('button', { name: /log in to sandbox|log in/i }).first(), page);
     await page.getByRole('textbox', { name: /password/i }).fill(sfCreds.password);
     await clickWhenReady(page.getByRole('button', { name: /log in to sandbox|log in/i }).first(), page);
     await expect(page.getByRole('link', { name: 'Quote Journey' })).toBeVisible({ timeout: 120000 });

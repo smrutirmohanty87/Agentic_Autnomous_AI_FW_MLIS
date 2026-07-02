@@ -209,6 +209,29 @@ export class QuotesPage {
 export class FinalPolicyDetailsPage {
   constructor(private readonly page: Page) {}
 
+  private async fillAddressLine1Reliable(value: string) {
+    const line1ByLabel = this.page.getByRole('textbox', { name: /Address\s*line\s*1/i }).first();
+    if (await line1ByLabel.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await line1ByLabel.scrollIntoViewIfNeeded();
+      await line1ByLabel.fill(value);
+      const current = (await line1ByLabel.inputValue().catch(() => '')).trim();
+      if (current.length > 0) return;
+    }
+
+    const requiredInputs = this.page.locator('input[required]');
+    await expect(requiredInputs.nth(2)).toBeVisible({ timeout: 20000 });
+    await requiredInputs.nth(2).fill(value);
+
+    const current = (await requiredInputs.nth(2).inputValue().catch(() => '')).trim();
+    if (current.length === 0) {
+      // Last fallback: first visible address textbox-like input after postcode.
+      const fallback = this.page
+        .locator('input[required]:visible, input[aria-required="true"]:visible')
+        .nth(2);
+      await fallback.fill(value);
+    }
+  }
+
   async expectLoaded() {
     await expect(this.page.getByText('Loading...').first()).toBeHidden({ timeout: 20000 });
     await expect(this.page.getByRole('heading', { name: 'Final policy details' })).toBeVisible({ timeout: 20000 });
@@ -239,9 +262,15 @@ export class FinalPolicyDetailsPage {
     }
 
     requiredInputs = this.page.locator('input[required]');
-    await expect(requiredInputs.nth(2)).toBeVisible({ timeout: 20000 });
-    await requiredInputs.nth(2).fill(data?.addressLine1 ?? '52-54 Leadenhall Street');
-    await requiredInputs.nth(3).fill(data?.town ?? 'London');
+    await this.fillAddressLine1Reliable(data?.addressLine1 ?? '52-54 Leadenhall Street');
+
+    const townByLabel = this.page.getByRole('textbox', { name: /Town\s*\/\s*City|Town|City/i }).first();
+    if (await townByLabel.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await townByLabel.fill(data?.town ?? 'London');
+    } else {
+      await expect(requiredInputs.nth(3)).toBeVisible({ timeout: 20000 });
+      await requiredInputs.nth(3).fill(data?.town ?? 'London');
+    }
 
     if (data?.landRegisterNumber) {
       const landRegisterInput = this.page

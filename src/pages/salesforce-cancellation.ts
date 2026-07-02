@@ -208,9 +208,26 @@ export class SalesforcePortalPage {
   }
 
   async login(username: string, password: string) {
-    await this.page.getByRole('textbox', { name: 'Username' }).fill(username);
-    await this.page.getByRole('textbox', { name: 'Password' }).fill(password);
-    await this.page.getByRole('button', { name: 'Log In' }).click();
+    const usernameField = this.page.getByRole('textbox', { name: 'Username' }).first();
+    const passwordField = this.page.getByRole('textbox', { name: 'Password' }).first();
+    const loginButton = this.page.getByRole('button', { name: 'Log In' }).first();
+
+    await expect(usernameField).toBeVisible({ timeout: 60000 });
+    await usernameField.fill(username);
+
+    const passwordVisibleOnFirstStep = await passwordField.isVisible({ timeout: 1500 }).catch(() => false);
+    if (passwordVisibleOnFirstStep) {
+      // Backward-compatible flow: username and password on the same screen.
+      await passwordField.fill(password);
+      await loginButton.click();
+    } else {
+      // New flow: submit username first, then password appears.
+      await loginButton.click();
+      await expect(passwordField).toBeVisible({ timeout: 60000 });
+      await passwordField.fill(password);
+      await loginButton.click();
+    }
+
     await this.expectAppLoaded();
     await this.expectUnderwritingNavigation();
   }
@@ -1705,9 +1722,12 @@ export class SalesforcePortalPage {
 
   private async waitForLightningIdle() {
     await this.page.waitForLoadState('domcontentloaded');
+
+    // In some Salesforce views, an assistive "Loading..." node can remain visible
+    // even when the page is otherwise interactive. Treat it as best-effort only.
     const textSpinner = this.page.getByText('Loading...').first();
     if (await textSpinner.isVisible({ timeout: 1500 }).catch(() => false)) {
-      await expect(textSpinner).toBeHidden({ timeout: 60000 });
+      await expect(textSpinner).toBeHidden({ timeout: 5000 }).catch(() => undefined);
     }
 
     const lightningSpinner = this.page.locator('.slds-spinner_container:visible, lightning-spinner:visible').first();

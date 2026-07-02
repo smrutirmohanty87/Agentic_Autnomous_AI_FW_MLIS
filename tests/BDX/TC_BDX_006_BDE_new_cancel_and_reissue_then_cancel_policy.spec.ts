@@ -12,7 +12,7 @@ import {
 } from '../../src/pages/mlis-portal';
 import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
-import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
+import { getBrokerCredentialsForProfile, getSalesforceCredentials } from '../../src/config/env';
 
 test.describe('@sanity | E2E | BDX | BDE | Cancel and Reissue | Cancellation', () => {
   test('TC_BDX_006_BDE | BDE - Create new policy then cancel and reissue then cancel the policy', async ({ page }) => {
@@ -36,7 +36,7 @@ test.describe('@sanity | E2E | BDX | BDE | Cancel and Reissue | Cancellation', (
 
     // Create a fresh policy in Broker Portal
     await brokerLogin.goto();
-    const brokerCreds = getBrokerCredentials();
+    const brokerCreds = getBrokerCredentialsForProfile('BDE_COMM');
     await brokerLogin.login(brokerCreds.username, brokerCreds.password);
     await quoteManager.expectLoaded();
     await quoteManager.acceptCookiesIfVisible();

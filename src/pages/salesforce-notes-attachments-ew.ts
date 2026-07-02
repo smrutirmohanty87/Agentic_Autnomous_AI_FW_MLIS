@@ -23,9 +23,25 @@ export class SalesforceNotesAttachmentsEwPage {
   }
 
   async login(username: string, password: string) {
-    await this.page.getByRole('textbox', { name: 'Username' }).fill(username);
-    await this.page.getByRole('textbox', { name: 'Password' }).fill(password);
-    await this.page.getByRole('button', { name: 'Log In' }).click();
+    const usernameField = this.page.getByRole('textbox', { name: 'Username' }).first();
+    const passwordField = this.page.getByRole('textbox', { name: 'Password' }).first();
+    const loginButton = this.page.getByRole('button', { name: 'Log In' }).first();
+
+    await expect(usernameField).toBeVisible({ timeout: 60000 });
+    await usernameField.fill(username);
+
+    const passwordVisibleOnFirstStep = await passwordField.isVisible({ timeout: 1500 }).catch(() => false);
+    if (passwordVisibleOnFirstStep) {
+      // Backward-compatible flow: username and password on the same screen.
+      await passwordField.fill(password);
+      await loginButton.click();
+    } else {
+      // New flow: submit username first, then password appears.
+      await loginButton.click();
+      await expect(passwordField).toBeVisible({ timeout: 60000 });
+      await passwordField.fill(password);
+      await loginButton.click();
+    }
 
     const appHeading = this.page.getByRole('heading', { name: /MLIS Underwriting/i }).first();
     const navBar = this.page.locator('one-app-nav-bar, .slds-global-header').first();

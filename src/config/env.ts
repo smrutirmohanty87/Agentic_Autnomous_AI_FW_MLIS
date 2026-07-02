@@ -1,6 +1,7 @@
 import { getEnvConfig as getManagedEnvConfig } from './envManager';
 
 type Credentials = { username: string; password: string };
+type BrokerProfile = 'NO_COMM' | 'INTER_COMM' | 'BDE_COMM' | 'INTRO_COMM';
 
 type EnvConfig = {
   mlisPortalUrl: string;
@@ -27,6 +28,28 @@ export function getEnvConfig(): EnvConfig {
 
 export function getBrokerCredentials(): Credentials {
   return getEnvConfig().broker;
+}
+
+function normalizeEnvName(value: string | undefined): string {
+  const env = (value ?? '').trim();
+  return env ? env.toUpperCase() : 'SIT1';
+}
+
+export function getBrokerCredentialsForProfile(profile: BrokerProfile): Credentials {
+  const envName = normalizeEnvName(process.env.TEST_ENV);
+  const normalizedProfile = profile.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+
+  const usernameVar = `SALEFORCE_${envName}_${normalizedProfile}_BROKERUSER`;
+  const passwordVar = `SALEFORCE_${envName}_${normalizedProfile}_BROKERPASSWORD`;
+
+  const username = process.env[usernameVar];
+  const password = process.env[passwordVar];
+
+  if (username && password) {
+    return { username, password };
+  }
+
+  return getBrokerCredentials();
 }
 
 export function getSalesforceCredentials(): Credentials {

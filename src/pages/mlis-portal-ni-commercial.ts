@@ -125,6 +125,22 @@ export class NiCommercialQuotesPage {
 export class NiCommercialFinalPolicyDetailsPage {
   constructor(private readonly page: Page) {}
 
+  private buildAddressText(prefix: string) {
+    const maxLength = 255;
+    const filler = `${prefix} AUTOMATION ADDRESS VALIDATION BLOCK `;
+    return filler.repeat(Math.ceil(maxLength / filler.length)).slice(0, maxLength);
+  }
+
+  private async fillFieldIfVisible(labelPattern: RegExp, value: string) {
+    const field = this.page.getByRole('textbox', { name: labelPattern }).first();
+    if (await field.isVisible({ timeout: 2500 }).catch(() => false)) {
+      await field.scrollIntoViewIfNeeded();
+      await field.fill(value);
+      return true;
+    }
+    return false;
+  }
+
   async expectLoaded() {
     await expect(this.page.getByText('Loading...').first()).toBeHidden({ timeout: 20000 });
     await expect(this.page.getByRole('heading', { name: 'Final policy details' })).toBeVisible({ timeout: 20000 });
@@ -183,6 +199,74 @@ export class NiCommercialFinalPolicyDetailsPage {
     await requiredInputs.nth(3).fill('London');
   }
 
+  async fillRequiredDetailsWithAllAddressLinesMax255() {
+    let requiredInputs = this.page.locator('input[required]');
+
+    await requiredInputs.nth(0).fill('E2E Test Client');
+
+    const postcodeInput = requiredInputs.nth(1);
+    await postcodeInput.fill('EC3A 2BJ');
+    await postcodeInput.press('Tab').catch(() => {});
+
+    const enterManually = this.page
+      .getByRole('button', { name: /enter manually/i })
+      .or(this.page.getByRole('link', { name: /enter manually/i }))
+      .first();
+
+    if (await enterManually.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await enterManually.click();
+    }
+
+    const addressLine1 = this.buildAddressText('ADDRESS LINE 1');
+    const addressLine2 = this.buildAddressText('ADDRESS LINE 2');
+    const addressLine3 = this.buildAddressText('ADDRESS LINE 3');
+    const addressLine4 = this.buildAddressText('ADDRESS LINE 4');
+    const cityValue = this.buildAddressText('CITY');
+
+    requiredInputs = this.page.locator('input[required]');
+    await expect(requiredInputs.nth(2)).toBeVisible({ timeout: 20000 });
+    // Address line 1 is the first manual address field in this NI Commercial flow.
+    await requiredInputs.nth(2).fill(addressLine1);
+
+    const tryFillByRequiredIndex = async (index: number, value: string) => {
+      requiredInputs = this.page.locator('input[required]');
+      const count = await requiredInputs.count();
+      if (count > index) {
+        const input = requiredInputs.nth(index);
+        if (await input.isVisible({ timeout: 1500 }).catch(() => false)) {
+          await input.fill(value);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const line2Filled = await this.fillFieldIfVisible(/Address\s*line\s*2/i, addressLine2);
+    if (!line2Filled) await tryFillByRequiredIndex(3, addressLine2);
+
+    const line3Filled = await this.fillFieldIfVisible(/Address\s*line\s*3/i, addressLine3);
+    if (!line3Filled) await tryFillByRequiredIndex(4, addressLine3);
+
+    const line4Filled = await this.fillFieldIfVisible(/Address\s*line\s*4/i, addressLine4);
+    if (!line4Filled) await tryFillByRequiredIndex(5, addressLine4);
+
+    const cityFilled = await this.fillFieldIfVisible(/Town\s*\/\s*city|Town|City/i, cityValue);
+    if (!cityFilled) {
+      // City is usually the next required field after address lines.
+      const cityByIndexFilled = await tryFillByRequiredIndex(3, cityValue)
+        || await tryFillByRequiredIndex(4, cityValue)
+        || await tryFillByRequiredIndex(5, cityValue)
+        || await tryFillByRequiredIndex(6, cityValue);
+      if (!cityByIndexFilled) {
+        requiredInputs = this.page.locator('input[required]');
+        const requiredCount = await requiredInputs.count();
+        if (requiredCount > 0) {
+          await requiredInputs.nth(requiredCount - 1).fill(cityValue);
+        }
+      }
+    }
+  }
+
   async proceed() {
     await this.page.getByRole('button', { name: 'Proceed' }).click();
   }
@@ -208,8 +292,8 @@ export class NiCommercialSummaryPage {
     await expect(this.page.getByText(caseRef)).toBeVisible();
     await expect(this.page.getByText('£500,000.00')).toBeVisible();
     await expect(this.page.getByText('E2E Test Client')).toBeVisible();
-    // Long address - check that it contains at least the beginning part
-    const addressElements = this.page.locator('text=/52-54 Leadenhall Street/i');
+    // Long address - check for the generated long-address pattern prefix.
+    const addressElements = this.page.locator('text=/ADDRESS LINE 1|AUTOMATION ADDRESS VALIDATION BLOCK/i');
     await expect(addressElements.first()).toBeVisible();
     await expect(this.page.getByText('Premium: £')).toBeVisible();
   }

@@ -88,7 +88,7 @@ test.describe('@regression | E2E | MTA | Cancel and Reissue | Cancellation', () 
     await salesforce.openCreateMTADialog();
     await salesforce.fillMTAReasonAndSave('Non Material Amendment', 'MTA Description - mandatory field update');
     await salesforce.fillIntermediaryReference(`MTA-REF-${Date.now()}`);
-    await salesforce.editMTAPremium('100');
+    await salesforce.editMTAPremium('200');
     await salesforce.bindMTA();
 
     // // Re-open the policy record after binding MTA, then run the Cancel and Reissue dialog.

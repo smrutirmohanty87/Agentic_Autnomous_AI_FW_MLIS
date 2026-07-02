@@ -16,7 +16,7 @@ let didLog = false;
 
 function normalizeEnvName(value: string | undefined): string {
   const env = (value ?? '').trim();
-  return env ? env.toUpperCase() : 'SIT2';
+  return env ? env.toUpperCase() : 'SIT1';
 }
 
 function resolveEnvVarName(envName: string, baseName: string): string {

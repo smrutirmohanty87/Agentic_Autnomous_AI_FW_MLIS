@@ -319,6 +319,80 @@ export class CommercialFinalPolicyDetailsPage {
     await requiredInputs.nth(3).fill('London');
   }
 
+  async fillRequiredDetailsWithAllAddressLinesMax255() {
+    const buildAddressText = (prefix: string) => {
+      const maxLength = 255;
+      const filler = `${prefix} AUTOMATION ADDRESS VALIDATION BLOCK `;
+      return filler.repeat(Math.ceil(maxLength / filler.length)).slice(0, maxLength);
+    };
+
+    let requiredInputs = this.page.locator('input[required]');
+    await requiredInputs.nth(0).fill('E2E Test Client');
+
+    const postcodeInput = requiredInputs.nth(1);
+    await postcodeInput.fill('EC3A 2BJ');
+    await postcodeInput.press('Tab').catch(() => {});
+
+    const enterManually = this.page
+      .getByRole('button', { name: /enter manually/i })
+      .or(this.page.getByRole('link', { name: /enter manually/i }))
+      .or(this.page.getByText(/^enter manually$/i))
+      .first();
+
+    if (await enterManually.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await enterManually.click();
+    }
+
+    const addressLine1 = buildAddressText('ADDRESS LINE 1');
+    const addressLine2 = buildAddressText('ADDRESS LINE 2');
+    const addressLine3 = buildAddressText('ADDRESS LINE 3');
+    const addressLine4 = buildAddressText('ADDRESS LINE 4');
+    const cityValue = buildAddressText('CITY');
+
+    requiredInputs = this.page.locator('input[required]');
+    await expect(requiredInputs.nth(2)).toBeVisible({ timeout: 20000 });
+    await requiredInputs.nth(2).fill(addressLine1);
+
+    const tryFillByRequiredIndex = async (index: number, value: string) => {
+      requiredInputs = this.page.locator('input[required]');
+      const count = await requiredInputs.count();
+      if (count > index) {
+        const input = requiredInputs.nth(index);
+        if (await input.isVisible({ timeout: 1500 }).catch(() => false)) {
+          await input.fill(value);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const fillByLabel = async (labelRegExp: RegExp, value: string) => {
+      const field = this.page.getByRole('textbox', { name: labelRegExp }).first();
+      if (await field.isVisible({ timeout: 1500 }).catch(() => false)) {
+        await field.fill(value);
+        return true;
+      }
+      return false;
+    };
+
+    const line2Filled = await fillByLabel(/Address\s*line\s*2/i, addressLine2);
+    if (!line2Filled) await tryFillByRequiredIndex(3, addressLine2);
+
+    const line3Filled = await fillByLabel(/Address\s*line\s*3/i, addressLine3);
+    if (!line3Filled) await tryFillByRequiredIndex(4, addressLine3);
+
+    const line4Filled = await fillByLabel(/Address\s*line\s*4/i, addressLine4);
+    if (!line4Filled) await tryFillByRequiredIndex(5, addressLine4);
+
+    const cityFilled = await fillByLabel(/Town\s*\/\s*city|Town|City/i, cityValue);
+    if (!cityFilled) {
+      await tryFillByRequiredIndex(3, cityValue)
+        || await tryFillByRequiredIndex(4, cityValue)
+        || await tryFillByRequiredIndex(5, cityValue)
+        || await tryFillByRequiredIndex(6, cityValue);
+    }
+  }
+
   async proceed() {
     await this.page.getByRole('button', { name: 'Proceed' }).click();
   }
@@ -337,6 +411,14 @@ export class CommercialSummaryPage {
     await expect(this.page.getByText('£500,000.00')).toBeVisible();
     await expect(this.page.getByText('E2E Test Client')).toBeVisible();
     await expect(this.page.getByText('52-54 Leadenhall Street')).toBeVisible();
+    await expect(this.page.getByText('Premium: £')).toBeVisible();
+  }
+
+  async expectSummaryDataWithLongAddress(caseRef: string) {
+    await expect(this.page.getByText(caseRef)).toBeVisible();
+    await expect(this.page.getByText('£500,000.00')).toBeVisible();
+    await expect(this.page.getByText('E2E Test Client')).toBeVisible();
+    await expect(this.page.getByText(/ADDRESS LINE 1 AUTOMATION ADDRESS VALIDATION BLOCK/i).first()).toBeVisible();
     await expect(this.page.getByText('Premium: £')).toBeVisible();
   }
 
