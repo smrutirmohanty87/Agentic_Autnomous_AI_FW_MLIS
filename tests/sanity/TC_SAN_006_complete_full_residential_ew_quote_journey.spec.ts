@@ -1,4 +1,4 @@
-// spec: tests/sf-quote-journey.plan.md
+// spec: docs/test-plans/sf-quote-journey.plan.md
 // seed: tests/seed.spec.ts
 
 import { expect, Locator, Page, test } from '@playwright/test';

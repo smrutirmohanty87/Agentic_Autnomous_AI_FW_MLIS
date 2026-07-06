@@ -51,6 +51,6 @@ const csvLines = rows.map(r => r.map(escape).join(','));
 
 // UTF-8 BOM so Excel auto-detects encoding
 const output = '\uFEFF' + csvLines.join('\r\n');
-const outPath = path.resolve(__dirname, '..', 'Test_Cases_Documentation.csv');
+const outPath = path.resolve(__dirname, '..', 'docs', 'test-plans', 'Test_Cases_Documentation.csv');
 fs.writeFileSync(outPath, output, 'utf8');
 console.log('Generated: ' + outPath);

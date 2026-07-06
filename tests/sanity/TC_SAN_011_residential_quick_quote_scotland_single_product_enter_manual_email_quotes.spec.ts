@@ -1,4 +1,4 @@
-// spec: tests/residential-quick-quote.plan.md
+// spec: docs/test-plans/residential-quick-quote.plan.md
 // seed: tests/seed.spec.ts
 
 import { expect, test } from '@playwright/test';

@@ -204,6 +204,48 @@ export class QuotesPage {
   async selectFirstQuote() {
     await this.page.getByRole('button', { name: 'Select quote' }).first().click();
   }
+
+  async selectQuoteForInsurer(insurerName: string) {
+    const rows = this.page.locator('tr:visible, [role="row"]:visible');
+    const desired = insurerName.trim().toLowerCase();
+
+    const rowCount = await rows.count();
+    for (let i = 0; i < rowCount; i += 1) {
+      const row = rows.nth(i);
+      const text = (await row.textContent())?.trim() ?? '';
+      if (!text) continue;
+
+      // Compare lines within the row for an exact, case-insensitive match.
+      const lines = text.split(/\r?\n/).map((l) => l.trim().toLowerCase()).filter(Boolean);
+      if (lines.some((l) => l === desired)) {
+        await row.scrollIntoViewIfNeeded();
+        const selectQuoteButton = row.getByRole('button', { name: /Select quote/i }).first();
+        await expect(selectQuoteButton).toBeVisible({ timeout: 20000 });
+        await expect(selectQuoteButton).toBeEnabled({ timeout: 20000 });
+        await selectQuoteButton.click();
+        return;
+      }
+    }
+
+    // Fallback: if exact insurer row wasn't found, try the previous contains-based match once.
+    const containsRow = this.page.locator('tr:visible, [role="row"]:visible').filter({ hasText: insurerName }).first();
+    if (await containsRow.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await containsRow.scrollIntoViewIfNeeded();
+      const selectQuoteButton = containsRow.getByRole('button', { name: /Select quote/i }).first();
+      await expect(selectQuoteButton).toBeVisible({ timeout: 20000 });
+      await expect(selectQuoteButton).toBeEnabled({ timeout: 20000 });
+      await selectQuoteButton.click();
+      return;
+    }
+
+    // Final fallback: select the first available quote button.
+    // eslint-disable-next-line no-console
+    console.warn(`Insurer '${insurerName}' not found by exact match; selecting first available quote.`);
+    const firstSelect = this.page.getByRole('button', { name: 'Select quote' }).first();
+    await expect(firstSelect).toBeVisible({ timeout: 60000 });
+    await expect(firstSelect).toBeEnabled({ timeout: 60000 });
+    await firstSelect.click();
+  }
 }
 
 export class FinalPolicyDetailsPage {

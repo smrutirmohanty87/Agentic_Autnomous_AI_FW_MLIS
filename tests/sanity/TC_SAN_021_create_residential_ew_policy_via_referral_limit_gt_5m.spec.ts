@@ -1,4 +1,4 @@
-// spec: tests/mlis-policy-creation.plan.md
+// spec: docs/test-plans/mlis-policy-creation.plan.md
 // seed: tests/seed.spec.ts
 
 import { expect, test } from '@playwright/test';

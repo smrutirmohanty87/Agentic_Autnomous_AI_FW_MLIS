@@ -177,9 +177,10 @@ Agentic-AI-MLIS-Framework/
 ├── .env                            # Local secrets (NOT in source control)
 ├── azure-pipelines.yml             # Azure DevOps pipeline
 ├── Jenkinsfile                     # Jenkins pipeline
-├── TEST-SUITES-GUIDE.md            # Detailed test suite documentation
-├── BDX-TESTS-GUIDE.md              # BDX test documentation
-└── PIPELINE.md                     # CI/CD pipeline setup guide
+├── docs/                           # Framework documentation and test-plans
+│   ├── guides/                     # User-facing documentation
+│   └── test-plans/                 # Test case and plan documents
+└── README.md                       # Main project overview
 ```
 
 ---
@@ -394,7 +395,7 @@ npm run autonomous:run            # Autonomous test orchestrator
 node scripts/generate-test-doc.js
 ```
 
-This regenerates `Test_Cases_Documentation.csv` from the source data in the script.
+This regenerates `docs/test-plans/Test_Cases_Documentation.csv` from the source data in the script.
 
 ---
 
@@ -549,10 +550,10 @@ $env:NO_PROXY = 'localhost,127.0.0.1'
 
 | Document | Purpose |
 |----------|---------|
-| [TEST-SUITES-GUIDE.md](TEST-SUITES-GUIDE.md) | Detailed per-test documentation and expected outcomes |
-| [BDX-TESTS-GUIDE.md](BDX-TESTS-GUIDE.md) | BDX bordereau test deep-dive |
-| [PIPELINE.md](PIPELINE.md) | Full CI/CD pipeline setup for Azure DevOps, Jenkins, GitHub Actions |
-| [PIPELINE-SETUP-SUMMARY.md](PIPELINE-SETUP-SUMMARY.md) | Quick-reference pipeline summary |
+| [TEST-SUITES-GUIDE.md](docs/guides/TEST-SUITES-GUIDE.md) | Detailed per-test documentation and expected outcomes |
+| [BDX-TESTS-GUIDE.md](docs/guides/BDX-TESTS-GUIDE.md) | BDX bordereau test deep-dive |
+| [PIPELINE.md](docs/guides/PIPELINE.md) | Full CI/CD pipeline setup for Azure DevOps, Jenkins, GitHub Actions |
+| [PIPELINE-SETUP-SUMMARY.md](docs/guides/PIPELINE-SETUP-SUMMARY.md) | Quick-reference pipeline summary |
 5. Wait for CI/CD validation
 
 ## Support

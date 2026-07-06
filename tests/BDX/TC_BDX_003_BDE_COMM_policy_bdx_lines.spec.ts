@@ -67,7 +67,7 @@ test.describe('@sanity | E2E | BDX | MLIS Policy | BDE Commission | NB>MTA>CNR',
     await statements.proceed();
 
     await quotes.expectLoaded();
-    await quotes.selectFirstQuote();
+    await quotes.selectQuoteForInsurer('Accredited Insurance (UK) Limited');
 
     await finalDetails.expectLoaded();
     await finalDetails.fillRequiredDetails({
