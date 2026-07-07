@@ -1445,8 +1445,19 @@ export class SalesforcePortalPage {
     await this.waitForLightningIdle();
     await this.page.getByRole('button', { name: 'Next' }).click();
 
-    // Verify Step 2 loaded
-    await expect(this.page.getByRole('heading', { name: 'Enter Premiums' })).toBeVisible({ timeout: 60000 });
+    // Some org variants render the premium step without the exact heading text.
+    // Accept either the heading or the Calculate Tax action as the step-ready signal.
+    const enterPremiumsHeading = this.page.getByRole('heading', { name: /Enter Premiums/i }).first();
+    const calculateTaxButton = this.page.getByRole('button', { name: /Calculate Tax/i }).first();
+
+    await expect
+      .poll(async () => {
+        await this.waitForLightningIdle();
+        const hasHeading = await enterPremiumsHeading.isVisible({ timeout: 500 }).catch(() => false);
+        if (hasHeading) return true;
+        return calculateTaxButton.isVisible({ timeout: 500 }).catch(() => false);
+      }, { timeout: 60000 })
+      .toBeTruthy();
   }
 
 
@@ -1801,6 +1812,46 @@ export class SalesforcePortalPage {
         .toBeTruthy();
     }
   }
+
+  async expectQuotesTabUnderwriterUplift() {
+    await this.openQuotesTab();
+
+    const upliftCard = this.page
+      .locator('article:visible, section:visible, div:visible')
+      .filter({ hasText: /Has Underwriter Uplift/i })
+      .first();
+
+    await expect(upliftCard).toBeVisible({ timeout: 120000 });
+
+    const cardText = await upliftCard.innerText();
+    const originalPremium = this.extractMoneyFromText(
+      cardText,
+      /Original Premium\s*\(inc\. IPT\)\s*£?\s*([\d,]+\.\d{2})/i,
+    );
+    const overriddenPremium = this.extractMoneyFromText(
+      cardText,
+      /Overridden Premium\s*\(inc\. IPT\)\s*£?\s*([\d,]+\.\d{2})/i,
+    );
+
+    const expectedOverridden = Number((originalPremium * 1.2).toFixed(2));
+
+    expect(overriddenPremium).toBeGreaterThan(0);
+    expect(originalPremium).toBeGreaterThan(0);
+    expect(overriddenPremium).toBeCloseTo(expectedOverridden, 2);
+  }
+
+  private extractMoneyFromText(text: string, regex: RegExp): number {
+    const match = text.match(regex);
+    if (!match || !match[1]) {
+      throw new Error(`Unable to extract money value using regex ${regex}`);
+    }
+    return this.parseMoney(match[1]);
+  }
+
+  private parseMoney(value: string): number {
+    return Number(value.replace(/,/g, ''));
+  }
+
   async fillLightningComboboxDirect(label: string, value: string) {
   const field = this.page.getByRole('combobox', { name: label });
 

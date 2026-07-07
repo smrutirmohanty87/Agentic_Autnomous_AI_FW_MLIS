@@ -118,6 +118,110 @@ export class ProductSelectionPage {
     const withCommas = digitsOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     await expect(limitInput).toHaveValue(new RegExp(`(${withCommas}|${digitsOnly})(\\.00)?`));
   }
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  async selectProductByName(productName: string) {
+    const escapedName = this.escapeRegex(productName.trim());
+
+    const clickMatchingProduct = async () => {
+      const productCard = this.page
+        .locator('article:visible, section:visible, div:visible')
+        .filter({ hasText: new RegExp(escapedName, 'i') })
+        .filter({ hasText: /Select/i })
+        .first();
+
+      if (!(await productCard.isVisible({ timeout: 5000 }).catch(() => false))) {
+        return false;
+      }
+
+      const selectButton = productCard.getByRole('button', { name: /^Select$/i }).first();
+      if (!(await selectButton.isVisible({ timeout: 5000 }).catch(() => false))) {
+        return false;
+      }
+
+      await selectButton.click();
+      return true;
+    };
+
+    const clickByExactLabel = async () => {
+      const exactPattern = new RegExp(`^\\s*${escapedName}\\s*$`, 'i');
+      const productLabel = this.page.locator('p, span, h2, h3, div').filter({ hasText: exactPattern }).first();
+      if (!(await productLabel.isVisible({ timeout: 5000 }).catch(() => false))) {
+        return false;
+      }
+
+      let selectButton = productLabel
+        .locator('xpath=ancestor::*[self::article or self::tr or self::li or self::section or self::div][1]')
+        .getByRole('button', { name: /^Select$/i })
+        .first();
+
+      if (!(await selectButton.isVisible({ timeout: 2000 }).catch(() => false))) {
+        selectButton = this.page
+          .locator(`xpath=//*[normalize-space(.)="${productName.replace(/"/g, '\\"')}"]/following::button[normalize-space()="Select"][1]`)
+          .first();
+      }
+
+      if (!(await selectButton.isVisible({ timeout: 5000 }).catch(() => false))) {
+        return false;
+      }
+
+      await selectButton.click();
+      return true;
+    };
+
+    let filterInput = this.page.getByRole('textbox', { name: /filter this product list/i }).first();
+    if (!(await filterInput.isVisible({ timeout: 2000 }).catch(() => false))) {
+      filterInput = this.page.locator('input[placeholder*="Enter keywords to search for a product" i]').first();
+    }
+    if (!(await filterInput.isVisible({ timeout: 2000 }).catch(() => false))) {
+      filterInput = this.page.locator('input[aria-label*="Filter this product list"]:visible').first();
+    }
+    if (!(await filterInput.isVisible({ timeout: 2000 }).catch(() => false))) {
+      filterInput = this.page.locator('xpath=//label[contains(normalize-space(.), "Filter this product list")]/following::input[1]').first();
+    }
+
+    if (await filterInput.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await filterInput.click();
+      await filterInput.fill('');
+      await filterInput.fill(productName);
+      await filterInput.press('Enter').catch(() => undefined);
+      await filterInput.press('Tab').catch(() => undefined);
+      await this.page.waitForTimeout(1200);
+
+      if (await clickByExactLabel()) {
+        return;
+      }
+
+      const productNamePattern = new RegExp(`^\\s*${escapedName}\\s*$`, 'i');
+      const productLabel = this.page.locator('p, span, div').filter({ hasText: productNamePattern }).first();
+      if (await productLabel.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await productLabel.scrollIntoViewIfNeeded().catch(() => undefined);
+
+        let selectButton = productLabel
+          .locator('xpath=ancestor::*[self::article or self::tr or self::li or self::div][1]')
+          .getByRole('button', { name: /^Select$/i })
+          .first();
+
+        if (!(await selectButton.isVisible({ timeout: 3000 }).catch(() => false))) {
+          selectButton = this.page
+            .locator(`xpath=//*[normalize-space(.)="${productName.replace(/"/g, '\\"')}"]/following::button[normalize-space()="Select"][1]`)
+            .first();
+        }
+
+        await expect(selectButton, `Select button not found for product: ${productName}`).toBeVisible({ timeout: 20000 });
+        await selectButton.click();
+        return;
+      }
+
+      if (await clickMatchingProduct()) {
+        return;
+      }
+    }
+
+    throw new Error(`Product selection failed: typed '${productName}' into 'Filter this product list' but exact product row/select button was not found.`);
+  }
 
   async selectProductsByIndex(indexes: number[]) {
     const selectButtons = this.page.getByRole('button', { name: 'Select' });

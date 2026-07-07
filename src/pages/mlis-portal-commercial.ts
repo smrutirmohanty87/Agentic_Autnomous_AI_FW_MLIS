@@ -56,6 +56,73 @@ export class CommercialProductSelectionPage {
     await expect(limitInput).toHaveValue(/500,000\.00|500000/);
   }
 
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  async selectProductByName(productName: string) {
+    const escapedName = this.escapeRegex(productName.trim());
+
+    const clickMatchingProduct = async () => {
+      const productCard = this.page
+        .locator('article:visible, section:visible, div:visible')
+        .filter({ hasText: new RegExp(escapedName, 'i') })
+        .filter({ hasText: /Select/i })
+        .first();
+
+      if (!(await productCard.isVisible({ timeout: 5000 }).catch(() => false))) {
+        return false;
+      }
+
+      const selectButton = productCard.getByRole('button', { name: /^Select$/i }).first();
+      if (!(await selectButton.isVisible({ timeout: 5000 }).catch(() => false))) {
+        return false;
+      }
+
+      await selectButton.click();
+      return true;
+    };
+
+    if (await clickMatchingProduct()) {
+      return;
+    }
+
+    let searchInput = this.page.getByRole('textbox', { name: /Filter this product list/i }).first();
+    if (!(await searchInput.isVisible({ timeout: 2000 }).catch(() => false))) {
+      searchInput = this.page.locator('input[placeholder*="Enter keywords to search for a product"]:visible').first();
+    }
+    if (!(await searchInput.isVisible({ timeout: 2000 }).catch(() => false))) {
+      searchInput = this.page.locator('input[aria-label*="Filter this product list"]:visible').first();
+    }
+    if (!(await searchInput.isVisible({ timeout: 2000 }).catch(() => false))) {
+      searchInput = this.page.locator('xpath=//label[contains(normalize-space(.), "Filter this product list")]/following::input[1]').first();
+    }
+
+    if (await searchInput.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await searchInput.fill(productName);
+      await searchInput.press('Enter').catch(() => undefined);
+      await this.page.waitForTimeout(1200);
+      if (await clickMatchingProduct()) {
+        return;
+      }
+    }
+
+    const fallbackProductCard = this.page
+      .locator('article:visible, section:visible, div:visible')
+      .filter({ hasText: new RegExp(escapedName, 'i') })
+      .filter({ hasText: /Select/i })
+      .first();
+
+    if (await fallbackProductCard.isVisible({ timeout: 10000 }).catch(() => false)) {
+      const selectButton = fallbackProductCard.getByRole('button', { name: /^Select$/i }).first();
+      await expect(selectButton).toBeVisible({ timeout: 120000 });
+      await selectButton.click();
+      return;
+    }
+
+    throw new Error(`Product selection failed: '${productName}' was not found on the page.`);
+  }
+
   async selectProductsByIndex(indexes: number[]) {
     const selectButtons = this.page.getByRole('button', { name: 'Select' });
     const proceedButton = this.page.getByRole('button', { name: 'Proceed' }).first();
