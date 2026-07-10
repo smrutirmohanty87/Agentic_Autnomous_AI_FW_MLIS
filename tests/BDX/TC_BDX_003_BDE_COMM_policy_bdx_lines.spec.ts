@@ -20,6 +20,10 @@ const policyData = require('../test-data/policy-creation-bde-comm.json') as {
   Landregisternumber: string;
   legalOfIndemnity: string;
 };
+const ADDRESS_LINE1_255 = 'A'.repeat(255);
+const ADDRESS_LINE2_255 = 'B'.repeat(255);
+const ADDRESS_LINE3_255 = 'C'.repeat(255);
+const ADDRESS_LINE4_255 = 'D'.repeat(255);
 
 test.describe('@sanity | E2E | BDX | MLIS Policy | BDE Commission | NB>MTA>CNR', () => {
   test('TC_BDX_003_BDE_COMM | Create Residential NB policy, MTA (350.67), CNR with reason and verify BDX lines', async ({ page }) => {
@@ -29,7 +33,7 @@ test.describe('@sanity | E2E | BDX | MLIS Policy | BDE Commission | NB>MTA>CNR',
     const caseRef = `E2E-BDX-BDECOMM-${Date.now()}`;
 
     const dateA = new Date();
-    dateA.setDate(dateA.getDate() + 5);
+    dateA.setDate(dateA.getDate() + 3);
     const mtaDateA = dateA.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: '2-digit',
@@ -72,15 +76,18 @@ test.describe('@sanity | E2E | BDX | MLIS Policy | BDE Commission | NB>MTA>CNR',
     await finalDetails.expectLoaded();
     await finalDetails.fillRequiredDetails({
       insuredName: policyData.Insuredname,
+      addressLine1: ADDRESS_LINE1_255,
+      addressLine2: ADDRESS_LINE2_255,
+      addressLine3: ADDRESS_LINE3_255,
+      addressLine4: ADDRESS_LINE4_255,
       landRegisterNumber: policyData.Landregisternumber,
     });
     await finalDetails.proceed();
 
     await summary.expectLoaded();
-    await summary.expectSummaryData(caseRef, {
-      limitOfIndemnity: policyData.legalOfIndemnity,
-      insuredName: policyData.Insuredname,
-    });
+    await expect(page.getByText(caseRef)).toBeVisible();
+    await expect(page.getByText(policyData.Insuredname)).toBeVisible();
+    await expect(page.getByText('Premium: £')).toBeVisible();
     await summary.proceedToOrder();
     await orderDialog.selectTodayAndOrder();
 

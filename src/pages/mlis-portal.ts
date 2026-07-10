@@ -387,10 +387,14 @@ export class FinalPolicyDetailsPage {
     insuredName?: string;
     postcode?: string;
     addressLine1?: string;
+    addressLine2?: string;
+    addressLine3?: string;
+    addressLine4?: string;
     town?: string;
     landRegisterNumber?: string;
   }) {
     let requiredInputs = this.page.locator('input[required]');
+    const usedRequiredIndexes = new Set<number>([0, 1, 2]);
 
     await requiredInputs.nth(0).fill(data?.insuredName ?? 'E2E Test Client');
 
@@ -410,12 +414,55 @@ export class FinalPolicyDetailsPage {
     requiredInputs = this.page.locator('input[required]');
     await this.fillAddressLine1Reliable(data?.addressLine1 ?? '52-54 Leadenhall Street');
 
+    const fillByLabel = async (labelRegExp: RegExp, value: string) => {
+      const field = this.page.getByRole('textbox', { name: labelRegExp }).first();
+      if (await field.isVisible({ timeout: 1500 }).catch(() => false)) {
+        await field.fill(value);
+        return true;
+      }
+      return false;
+    };
+
+    const tryFillByRequiredIndex = async (indexes: number[], value: string) => {
+      requiredInputs = this.page.locator('input[required]');
+      const count = await requiredInputs.count();
+      for (const index of indexes) {
+        if (usedRequiredIndexes.has(index)) continue;
+        if (count <= index) continue;
+        const input = requiredInputs.nth(index);
+        if (!(await input.isVisible({ timeout: 1200 }).catch(() => false))) continue;
+        await input.fill(value);
+        usedRequiredIndexes.add(index);
+        return true;
+      }
+      return false;
+    };
+
+    if (data?.addressLine2) {
+      const line2Filled = await fillByLabel(/Address\s*line\s*2/i, data.addressLine2);
+      if (!line2Filled) await tryFillByRequiredIndex([3, 4, 5], data.addressLine2);
+    }
+
+    if (data?.addressLine3) {
+      const line3Filled = await fillByLabel(/Address\s*line\s*3/i, data.addressLine3);
+      if (!line3Filled) await tryFillByRequiredIndex([3, 4, 5], data.addressLine3);
+    }
+
+    if (data?.addressLine4) {
+      const line4Filled = await fillByLabel(/Address\s*line\s*4/i, data.addressLine4);
+      if (!line4Filled) await tryFillByRequiredIndex([3, 4, 5], data.addressLine4);
+    }
+
     const townByLabel = this.page.getByRole('textbox', { name: /Town\s*\/\s*City|Town|City/i }).first();
     if (await townByLabel.isVisible({ timeout: 2000 }).catch(() => false)) {
       await townByLabel.fill(data?.town ?? 'London');
     } else {
-      await expect(requiredInputs.nth(3)).toBeVisible({ timeout: 20000 });
-      await requiredInputs.nth(3).fill(data?.town ?? 'London');
+      const townValue = data?.town ?? 'London';
+      const filled = await tryFillByRequiredIndex([3, 4, 5, 6], townValue);
+      if (!filled) {
+        await expect(requiredInputs.nth(3)).toBeVisible({ timeout: 20000 });
+        await requiredInputs.nth(3).fill(townValue);
+      }
     }
 
     if (data?.landRegisterNumber) {

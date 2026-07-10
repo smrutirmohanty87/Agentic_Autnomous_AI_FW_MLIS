@@ -65,11 +65,11 @@ test.describe('@sanity | E2E | BDX | MLIS Policy | Introducer Commission | EW Co
     await quotes.selectFirstQuote();
 
     await finalDetails.expectLoaded();
-    await finalDetails.fillRequiredDetails();
+    await finalDetails.fillRequiredDetailsWithAllAddressLinesMax255();
     await finalDetails.proceed();
 
     await summary.expectLoaded();
-    await summary.expectSummaryData(caseRef);
+    await summary.expectSummaryDataWithLongAddress(caseRef);
     await summary.proceedToOrder();
     await orderDialog.selectTodayAndOrder();
 

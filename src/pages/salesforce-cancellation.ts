@@ -228,8 +228,42 @@ export class SalesforcePortalPage {
       await loginButton.click();
     }
 
+    // Salesforce MFA/authenticator flow can pause login until a user approves on device.
+    // Wait longer here so tests do not fail while the user is completing authentication.
+    await this.waitForMfaAuthenticationCompletion();
+
     await this.expectAppLoaded();
     await this.expectUnderwritingNavigation();
+  }
+
+  private async waitForMfaAuthenticationCompletion() {
+    const timeoutMs = Number.parseInt(process.env.SALESFORCE_AUTH_TIMEOUT_MS ?? '300000', 10);
+
+    await expect
+      .poll(
+        async () => {
+          await this.waitForLightningIdle().catch(() => undefined);
+
+          const appHeading = this.page.getByRole('heading', { name: 'MLIS Underwriting' }).first();
+          const navBar = this.page.locator('one-app-nav-bar, .slds-global-header').first();
+          const searchButton = this.page.locator('//*[@id="oneHeader"]/div[2]/div[2]/div/div/button').first();
+          const accountsLink = this.page.getByRole('link', { name: 'Accounts' }).first();
+
+          const appReady =
+            await appHeading.isVisible({ timeout: 500 }).catch(() => false)
+            || await navBar.isVisible({ timeout: 500 }).catch(() => false)
+            || await searchButton.isVisible({ timeout: 500 }).catch(() => false)
+            || await accountsLink.isVisible({ timeout: 500 }).catch(() => false);
+
+          return appReady;
+        },
+        {
+          timeout: timeoutMs,
+          intervals: [1000, 2000, 5000],
+          message: `Salesforce login is waiting for authenticator/MFA completion (timeout ${Math.round(timeoutMs / 1000)}s).`,
+        },
+      )
+      .toBe(true);
   }
 
   async expectUnderwritingNavigation() {
