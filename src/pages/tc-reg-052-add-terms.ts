@@ -522,12 +522,9 @@ export class TCReg052AddTermsPage {
         await this.page.waitForLoadState('domcontentloaded');
         await this.page.waitForTimeout(8000);
 
-        const bespokeValue = this.page
-          .getByRole('gridcell', { name: /Bespoke/i })
-          .or(this.page.locator('td:has-text("Bespoke"), [role="gridcell"]:has-text("Bespoke")').first())
-          .first();
-        await expect(bespokeValue).toBeVisible({ timeout: 60000 });
-        console.log('[TC_REG_052] Assertion passed: SOF value "Bespoke" is visible.');
+        await expect(this.page.getByRole('heading', { name: /Submission Statement Of Facts/i }).first()).toBeVisible({ timeout: 60000 });
+        const gridOrTable = this.page.locator('[role="grid"]:visible, table:visible').first();
+        await expect(gridOrTable).toBeVisible({ timeout: 60000 });
         return;
       }
 
@@ -536,5 +533,29 @@ export class TCReg052AddTermsPage {
     }
 
     throw new Error('Submission Statement Of Facts section was not found on Related tab to click View All.');
+  }
+
+  async getSubmissionStatementOfFactsTextColumnValues() {
+    await expect(this.page.getByRole('heading', { name: /Submission Statement Of Facts/i }).first()).toBeVisible({ timeout: 60000 });
+
+    const normalize = (value: string) => value.replace(/\s+/g, ' ').trim();
+    const rows = this.page.getByRole('row');
+    const rowCount = await rows.count();
+    const textValues: string[] = [];
+
+    for (let i = 0; i < rowCount; i += 1) {
+      const rowText = normalize(await rows.nth(i).innerText().catch(() => ''));
+      if (!rowText.includes('Preview') || !rowText.includes('Confirmed')) {
+        continue;
+      }
+
+      const match = rowText.match(/Preview\s+(.+?)\s+Confirmed\b/i);
+      if (match?.[1]) {
+        textValues.push(normalize(match[1]));
+      }
+    }
+
+    expect(textValues.length, 'Expected Submission Statement Of Facts table to contain values under the Text column.').toBeGreaterThan(0);
+    return textValues;
   }
 }

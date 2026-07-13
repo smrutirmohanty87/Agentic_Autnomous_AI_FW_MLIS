@@ -101,6 +101,39 @@ export class NiCommercialStatementsOfFactPage {
     await expect(confirmButtons).toHaveCount(0, { timeout: 10000 });
   }
 
+  async confirmAllStatementsWithClauseAssertions() {
+    const confirmButtons = this.page.getByRole('button', { name: 'Confirm', exact: true });
+    const statementHeadings = this.page.getByRole('heading', { level: 4 });
+    await expect(confirmButtons.first()).toBeVisible({ timeout: 20000 });
+    await expect(statementHeadings.first()).toBeVisible({ timeout: 20000 });
+
+    const capturedClauseTexts: string[] = [];
+    let remaining = await confirmButtons.count();
+    let safety = 0;
+
+    while (remaining > 0 && safety < 50) {
+      const currentConfirm = confirmButtons.first();
+      await currentConfirm.scrollIntoViewIfNeeded();
+      const clauseText = (await statementHeadings.first().innerText().catch(() => ''))
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      expect(clauseText, `Statement of Fact text should be captured before confirm action #${safety + 1}`).toBeTruthy();
+      expect(clauseText.length, `Statement of Fact text should not be truncated before confirm action #${safety + 1}`).toBeGreaterThan(15);
+      console.log(`[Broker SOF] #${safety + 1} ${clauseText}`);
+      capturedClauseTexts.push(clauseText);
+
+      await currentConfirm.click();
+      await expect(confirmButtons).toHaveCount(remaining - 1, { timeout: 10000 });
+      remaining = await confirmButtons.count();
+      safety += 1;
+    }
+
+    await expect(confirmButtons).toHaveCount(0, { timeout: 10000 });
+    expect(capturedClauseTexts.length).toBeGreaterThan(0);
+    return capturedClauseTexts;
+  }
+
   async proceed() {
     await this.page.getByRole('button', { name: 'Proceed' }).click();
   }

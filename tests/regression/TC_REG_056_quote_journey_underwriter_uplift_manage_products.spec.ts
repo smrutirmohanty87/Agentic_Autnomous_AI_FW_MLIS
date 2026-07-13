@@ -3,16 +3,13 @@ import { getSalesforceCredentials } from '../../src/config/env';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
 import { QuoteJourneyUnderwriterUpliftPage } from '../../src/pages/quote-journey-underwriter-uplift';
 
-test.describe('@regression | E2E | Quote Journey | Underwriter Uplift', () => {
-  test('TC_REG_050 | Complete quote journey and verify quote uplift values on Quotes tab', async ({ page }) => {
+test.describe('@regression | E2E | Quote Journey | Underwriter Uplift | Manage Products', () => {
+  test('TC_REG_050 | Complete quote journey, manage products, and verify quote uplift values on Quotes tab', async ({ page }) => {
     test.setTimeout(900000);
     test.slow();
 
-    const caseRef = `REG-QJ-UPLIFT-${Date.now()}`;
+    const caseRef = `REG-QJ-UPLIFT-MANAGE-${Date.now()}`;
     const sfCreds = getSalesforceCredentials();
-    const upliftDate = new Date();
-    upliftDate.setDate(upliftDate.getDate() + 5);
-    const orderDate = upliftDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
     const salesforce = new SalesforcePortalPage(page);
     const quoteJourney = new QuoteJourneyUnderwriterUpliftPage(page);
@@ -41,14 +38,18 @@ test.describe('@regression | E2E | Quote Journey | Underwriter Uplift', () => {
 
     await expect(page.getByRole('heading', { name: /^Summary$/i })).toBeVisible({ timeout: 120000 });
     await quoteJourney.openAndCloseFinalDraft();
-    await page.getByRole('button', { name: /Proceed to order/i }).first().click();
-    await quoteJourney.setCommencementDate(orderDate);
-    await quoteJourney.clickOrderNowIfVisible();
+    await quoteJourney.clickReturnToSubmissionOnSummary();
 
-    await expect(page.getByRole('heading', { name: /Policy issued/i })).toBeVisible({ timeout: 180000 });
-    await page.getByRole('button', { name: /Return to submission/i }).first().click();
+    await quoteJourney.openManageProductsAndAddLeaseProducts([
+      'Absence of easement - Services',
+    ]);
+    await quoteJourney.continueQuote();
+    await quoteJourney.selectQuoteAfterManageProducts();
+    await quoteJourney.fillFinalPolicyDetailsAndProceed();
 
-    await expect(page.getByRole('heading', { name: /Quote Journey|Submissions?/i })).toBeVisible({ timeout: 120000 });
+    await expect(page.getByRole('heading', { name: /^Summary$/i })).toBeVisible({ timeout: 120000 });
+    await quoteJourney.openAndCloseFinalDraft();
+    await quoteJourney.clickReturnToSubmissionOnSummary();
 
     await quoteJourney.openQuotesTab();
     const { original, overridden, cardText } = await quoteJourney.getUnderwriterUpliftPremiums();
