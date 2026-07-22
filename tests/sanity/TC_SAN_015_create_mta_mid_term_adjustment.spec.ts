@@ -97,8 +97,15 @@ test.describe('@sanity | E2E | MTA', () => {
     // Step 3: Edit MTA Premium -> enter value and press OK
     await salesforce.editMTAPremium('111');
 
-    // Step 4: Bind MTA -> insert today's date and click Bind
-    await salesforce.bindMTA();
+    // Step 4: Bind MTA -> use a future date and click Bind
+    const futureBindDate = new Date();
+    futureBindDate.setDate(futureBindDate.getDate() + 5);
+    const futureBindDateValue = futureBindDate.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    await salesforce.bindMTA(futureBindDateValue);
 
     // Wait for policy update and assert top-left Risk ID is shown in expected Salesforce format.
     const riskIdPattern = /\bDAU\/\d{8}\/[A-Z]{4}\/\d{2}\/\d{2}\b/;

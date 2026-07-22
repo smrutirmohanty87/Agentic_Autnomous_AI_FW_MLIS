@@ -19,7 +19,13 @@
     "test:bdx:intro:chrome": "npx playwright test tests/BDX/TC_BDX_001_INTRO_cancel_full_premium_return.spec.ts --project=chrome",
     "test:bdx:rest:chrome": "npx playwright test tests/BDX/TC_BDX_002_INTER_COMM_policy_bdx_lines.spec.ts tests/BDX/TC_BDX_003_BDE_COMM_policy_bdx_lines.spec.ts tests/BDX/TC_BDX_004_NO_COMM_policy_bdx_lines.spec.ts --project=chrome",
     "test:bdx:all:chrome": "npx playwright test tests/BDX/ --project=chrome",
-    "autonomous:run": "node scripts/autonomous-run.js"
+    "autonomous:run": "node scripts/autonomous-run.js",
+    "oliva:install": "npm --prefix oliva-automation/oliva-automation ci",
+    "oliva:test": "npm --prefix oliva-automation/oliva-automation test",
+    "oliva:test:headed": "npm --prefix oliva-automation/oliva-automation run test:headed",
+    "oliva:test:debug": "npm --prefix oliva-automation/oliva-automation run test:debug",
+    "oliva:report": "npm --prefix oliva-automation/oliva-automation run report",
+    "oliva:typecheck": "npm --prefix oliva-automation/oliva-automation run typecheck"
   },
   "keywords": [],
   "author": "",

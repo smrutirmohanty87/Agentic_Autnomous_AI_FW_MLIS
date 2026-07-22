@@ -367,7 +367,18 @@ npm run test:bdx:intro:chrome     # BDX INTRO — Chrome
 npm run test:bdx:rest             # BDX REST scenarios (002–004)
 npm run test:bdx:rest:chrome      # BDX REST — Chrome
 npm run autonomous:run            # Autonomous test orchestrator
+
+# Oliva automation (isolated nested project)
+npm run oliva:install             # Install nested Oliva dependencies
+npm run oliva:test                # Run Oliva tests (headless)
+npm run oliva:test:headed         # Run Oliva tests headed
+npm run oliva:test:debug          # Run Oliva in Playwright debug mode
+npm run oliva:report              # Open Oliva HTML report
+npm run oliva:typecheck           # Type-check Oliva TypeScript
 ```
+
+Oliva commands run only inside `oliva-automation/oliva-automation` and do not change MLIS test discovery/configuration.
+See `docs/guides/OLIVA-AUTOMATION-INTEGRATION.md` for setup details.
 
 ---
 

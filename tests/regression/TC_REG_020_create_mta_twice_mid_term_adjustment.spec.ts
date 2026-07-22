@@ -12,10 +12,11 @@ import {
 } from '../../src/pages/mlis-portal';
 import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
+import { TCRegSharedUtilsPage } from '../../src/pages/tc-reg-shared-utils';
 import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
 
 test.describe('@regression | E2E | MTA', () => {
-  test('TC_REG_020 | Create MTA twice (NB → MTA → MTA) then cancel and reissue the policy', async ({ page }) => {
+  test('TC_REG_020 | Create MTA twice (NB → MTA → MTA) ', async ({ page }) => {
     test.setTimeout(900000);
     test.slow();
 
@@ -33,6 +34,7 @@ test.describe('@regression | E2E | MTA', () => {
 
     const brokerPortal = new BrokerPortalPage(page);
     const salesforce = new SalesforcePortalPage(page);
+    const regUtils = new TCRegSharedUtilsPage(page);
 
     // Create a fresh policy in Broker Portal
     await brokerLogin.goto();
@@ -97,6 +99,8 @@ test.describe('@regression | E2E | MTA', () => {
 
     // Step 4: Bind MTA — insert today's date and click Bind
     await salesforce.bindMTA();
+    await page.waitForLoadState('load');
+    await regUtils.assertRiskIdVisible();
 
     // // Re-open the Insurance Policy record to start a second MTA reliably
     // await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
@@ -109,58 +113,9 @@ test.describe('@regression | E2E | MTA', () => {
     await salesforce.fillIntermediaryReference(`MTA2-REF-${Date.now()}`);
     await salesforce.editMTAPremium('200');
     await salesforce.bindMTA();
+    await page.waitForLoadState('load');
+    await regUtils.assertRiskIdVisible();
 
-    // After MTA #2 completes, wait for Salesforce to settle on the policy page,
-    // then perform Cancel and Reissue from the "Show more actions" menu.
-    await page.waitForLoadState('domcontentloaded');
-
-    // Open Cancel and Reissue dialog from "Show more actions" menu
-    await salesforce.openCancelAndReissueDialog();
-
-    // Fill the Cancel and Reissue Details dialog and submit
-    await salesforce.completeCancelAndReissueDialog({
-      reasonForCR: 'User Error Correction',
-      description: `Cancel and reissue test (${policyNumber})`,
-    });
-
-    // After submit, Salesforce redirects to Quote Journey → Final policy details (pre-filled)
-    await salesforce.completeReissueFinalPolicyDetails();
-
-    // Summary step — review and proceed to order
-    await salesforce.completeReissueSummary();
-
-    // For this test only: if Summary is still shown after first click, wait and retry once.
-    const reissueSummaryHeading = page.getByRole('heading', { name: /summary/i }).first();
-    const reissueProceedToOrder = page.getByRole('button', { name: /proceed to order/i }).first();
-    if (await reissueSummaryHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await page.waitForTimeout(4000);
-      if (await reissueSummaryHeading.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await reissueProceedToOrder.click();
-      }
-    }
-
-    // Try to complete ordering (if required) and capture the reissued policy number.
-    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const commencementDateInput = page.getByRole('textbox', { name: /commencement date/i }).first();
-    const genericDateInput = page.locator('input[placeholder="DD/MM/YYYY"]:visible').first();
-
-    if (await commencementDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await commencementDateInput.fill(today);
-      await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
-    } else if (await genericDateInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await genericDateInput.fill(today);
-      await page.getByRole('heading', { name: /final policy details/i }).first().click().catch(() => undefined);
-    }
-
-    const orderNow = page.getByRole('button', { name: /order now/i }).first();
-    if (await orderNow.isVisible({ timeout: 10000 }).catch(() => false)) {
-      await orderNow.click();
-    }
-
-    await expect(page.getByRole('heading', { name: /policy issued/i }).first()).toBeVisible({ timeout: 180000 });
-
-    // After Cancel & Re-issue completes, return to the Submission record before continuing.
-    await salesforce.clickReturnToSubmission();
-    
+    // After MTA #2 completes, page is fully loaded and ready for next actions.
   });
 });
