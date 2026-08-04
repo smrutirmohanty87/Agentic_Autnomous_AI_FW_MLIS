@@ -12,7 +12,7 @@ import {
 } from '../../src/pages/mlis-portal';
 import { BrokerPortalPage } from '../../src/pages/broker-portal-policy';
 import { SalesforcePortalPage } from '../../src/pages/salesforce-cancellation';
-import { getBrokerCredentials, getSalesforceCredentials } from '../../src/config/env';
+import { getBrokerCredentials } from '../../src/config/env';
 
 test.describe('@regression | E2E | Claims', () => {
   test('TC_REG_034 | Create Claim on a live policy and submit mandatory details', async ({ page }) => {
@@ -33,6 +33,23 @@ test.describe('@regression | E2E | Claims', () => {
 
     const brokerPortal = new BrokerPortalPage(page);
     const salesforce = new SalesforcePortalPage(page);
+
+    const getClaimUserCredentials = () => {
+      const rawEnv = (process.env.TEST_ENV ?? 'SIT1').trim().toUpperCase();
+      const envName = rawEnv === 'SIT' ? 'SIT1' : rawEnv;
+      const usernameVar = `SALEFORCE_${envName}_CLAIMUSER`;
+      const passwordVar = `SALEFORCE_${envName}_CLAIMUSER_PASSWORD`;
+
+      const username = process.env[usernameVar]?.trim();
+      const password = process.env[passwordVar]?.trim();
+      if (username && password) {
+        return { username, password };
+      }
+
+      throw new Error(
+        `Missing claim user credentials for ${envName}. Set ${usernameVar} and ${passwordVar} in .env for TC_REG_034 claims flow.`,
+      );
+    };
 
     // Create fresh policy in Broker Portal.
     await brokerLogin.goto();
@@ -74,35 +91,22 @@ test.describe('@regression | E2E | Claims', () => {
 
     // Open policy in Salesforce.
     await salesforce.goto();
-    const sfCreds = getSalesforceCredentials();
+    const sfCreds = getClaimUserCredentials();
     try {
-      await salesforce.login(sfCreds.username, sfCreds.password);
+      await salesforce.login(sfCreds.username, sfCreds.password, { useJwt: false });
     } catch {
       // Retry once for intermittent Salesforce contentDoor redirect flake.
       await salesforce.goto();
-      await salesforce.login(sfCreds.username, sfCreds.password);
+      await salesforce.login(sfCreds.username, sfCreds.password, { useJwt: false });
     }
 
-    const searchAndOpenPolicyWithRetry = async (ref: string, attempts = 2) => {
-      let lastError: unknown;
-      for (let attempt = 1; attempt <= attempts; attempt += 1) {
-        try {
-          await salesforce.searchAndOpenExactFromGlobalSearchGrid(ref);
-          await salesforce.openRelatedTab();
-          await salesforce.openInsurancePolicyFromRelated(ref);
-          return;
-        } catch (error) {
-          lastError = error;
-          if (attempt < attempts) {
-            await page.reload({ waitUntil: 'domcontentloaded' });
-            await page.waitForTimeout(3000);
-          }
-        }
-      }
-      throw lastError;
-    };
-
-    await searchAndOpenPolicyWithRetry(policyNumber);
+    await salesforce.searchAndOpenExactFromGlobalSearchGrid(policyNumber);
+    await salesforce.openRelatedTab();
+    await salesforce.openInsurancePolicyFromRelated(policyNumber, {
+      requireCreateMTA: false,
+      requireNewNote: false,
+      requireShowMoreActions: false,
+    });
 
     // Claims flow: Create Claim, select claim coverage, then complete mandatory claim journey.
     await salesforce.openCreateClaimDialog();

@@ -5,7 +5,10 @@ export class TCReg041DebitNotePage {
 
   async openAndCloseDebitNote(): Promise<void> {
     const previewWaitMs = 2500;
-    const debitNoteRow = this.page.locator('table tbody tr:visible').filter({ hasText: /Debit\s*Note/i }).first();
+    const debitNoteRow = this.page
+      .locator('table tbody tr:visible')
+      .filter({ hasText: /(Debit\s*Note|POL[_-]?DBT_)/i })
+      .first();
     await expect(debitNoteRow).toBeVisible({ timeout: 120000 });
 
     const debitNoteLink = debitNoteRow

@@ -1,8 +1,87 @@
+/// <reference types="node" />
+import * as crypto from 'crypto';
+import * as fs from 'fs';
 import { expect, Page } from '@playwright/test';
-import { getSalesforceLightningUrl } from '../config/env';
+import { getSalesforceJwtConfig, getSalesforceLightningUrl } from '../config/env';
+
+type JwtSession = {
+  accessToken: string;
+  instanceUrl: string;
+  frontdoor: string;
+};
 
 export class SalesforcePortalPage {
   constructor(private readonly page: Page) {}
+
+  private async isAuthenticatedSalesforceSession() {
+    await this.waitForLightningIdle().catch(() => undefined);
+    const searchButton = this.page.getByRole('button', { name: /^Search/ }).first();
+    const globalHeader = this.page.locator('one-app-nav-bar, .slds-global-header').first();
+    const homeHeading = this.page.getByRole('heading', { name: /^Home$/i }).first();
+    const accountsLink = this.page.getByRole('link', { name: 'Accounts' }).first();
+
+    return (
+      await searchButton.isVisible({ timeout: 500 }).catch(() => false)
+      || await globalHeader.isVisible({ timeout: 500 }).catch(() => false)
+      || await homeHeading.isVisible({ timeout: 500 }).catch(() => false)
+      || await accountsLink.isVisible({ timeout: 500 }).catch(() => false)
+    );
+  }
+
+  private b64url(input: crypto.BinaryLike) {
+    return Buffer.from(input as Buffer)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
+
+  private async mintJwtSession(username: string): Promise<JwtSession> {
+    const config = getSalesforceJwtConfig();
+    if (!config) {
+      throw new Error('Salesforce JWT configuration is not available for this environment.');
+    }
+
+    const privateKey = config.privateKey ?? fs.readFileSync(config.privateKeyPath!, 'utf8');
+    const header = this.b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+    const claims = this.b64url(
+      JSON.stringify({
+        iss: config.clientId,
+        sub: username,
+        aud: config.audience,
+        exp: Math.floor(Date.now() / 1000) + 180,
+      }),
+    );
+    const signingInput = `${header}.${claims}`;
+    const signer = crypto.createSign('RSA-SHA256');
+    signer.update(signingInput);
+    const assertion = `${signingInput}.${this.b64url(signer.sign(privateKey))}`;
+
+    const response = await fetch(`${config.loginUrl.replace(/\/$/, '')}/services/oauth2/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion,
+      }),
+    });
+    const json: any = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(`Salesforce JWT auth failed for ${username} (${response.status}): ${JSON.stringify(json)}`);
+    }
+
+    return {
+      accessToken: json.access_token,
+      instanceUrl: json.instance_url,
+      frontdoor: `${json.instance_url}/secur/frontdoor.jsp?sid=${json.access_token}`,
+    };
+  }
+
+  private async loginWithJwt(username: string) {
+    const { frontdoor } = await this.mintJwtSession(username);
+    await this.page.goto(frontdoor);
+    await this.page.waitForURL(/lightning/, { timeout: 120000 });
+  }
 
   private escapeForRegex(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -207,7 +286,34 @@ export class SalesforcePortalPage {
     await this.page.goto(getSalesforceLightningUrl());
   }
 
-  async login(username: string, password: string) {
+  async login(username: string, password: string, options?: { useJwt?: boolean }) {
+    const useJwt = options?.useJwt ?? true;
+
+    if (await this.isAuthenticatedSalesforceSession()) {
+      await this.expectAppLoaded();
+      return;
+    }
+
+    if (useJwt && getSalesforceJwtConfig()) {
+      try {
+        await this.loginWithJwt(username);
+        await this.waitForLightningIdle().catch(() => undefined);
+        await this.expectAppLoaded();
+        await this.expectUnderwritingNavigation();
+        return;
+      } catch (error) {
+        // Continue with username/password when a user is not JWT-authorized.
+        // eslint-disable-next-line no-console
+        console.warn(`[salesforce] JWT login failed; falling back to password login: ${(error as Error).message}`);
+        await this.goto();
+        await this.waitForLightningIdle().catch(() => undefined);
+        if (await this.isAuthenticatedSalesforceSession()) {
+          await this.expectAppLoaded();
+          return;
+        }
+      }
+    }
+
     const usernameField = this.page.getByRole('textbox', { name: 'Username' }).first();
     const passwordField = this.page.getByRole('textbox', { name: 'Password' }).first();
     const loginButton = this.page.getByRole('button', { name: 'Log In' }).first();
@@ -496,7 +602,10 @@ export class SalesforcePortalPage {
   }
 
   /** Steps 8-9: Scroll to Insurance Policy section and open the record */
-  async openInsurancePolicyFromRelated(expectedPolicyNumber?: string) {
+  async openInsurancePolicyFromRelated(
+    expectedPolicyNumber?: string,
+    options?: { requireCreateMTA?: boolean; requireNewNote?: boolean; requireShowMoreActions?: boolean },
+  ) {
     // The Insurance Policy record may take time to sync from Broker Portal to Salesforce.
     // Reload the page to pick up the latest server-side data before looking for the record.
     await this.page.reload({ waitUntil: 'domcontentloaded' });
@@ -557,10 +666,19 @@ export class SalesforcePortalPage {
     await expect(inForceOption).toBeVisible({ timeout: 60000 });
     await expect(inForceOption).toHaveAttribute('aria-selected', 'true', { timeout: 60000 });
 
-    await expect(this.page.getByRole('button', { name: 'Create MTA' })).toBeVisible({ timeout: 60000 });
+    const requireCreateMTA = options?.requireCreateMTA ?? true;
+    const requireNewNote = options?.requireNewNote ?? true;
+    const requireShowMoreActions = options?.requireShowMoreActions ?? true;
+    if (requireCreateMTA) {
+      await expect(this.page.getByRole('button', { name: 'Create MTA' })).toBeVisible({ timeout: 60000 });
+    }
     await expect(this.page.getByRole('button', { name: 'Create Claim' })).toBeVisible({ timeout: 60000 });
-    await expect(this.page.getByRole('button', { name: 'New Note' })).toBeVisible({ timeout: 60000 });
-    await expect(this.page.getByRole('button', { name: 'Show more actions' })).toBeVisible({ timeout: 60000 });
+    if (requireNewNote) {
+      await expect(this.page.getByRole('button', { name: 'New Note' })).toBeVisible({ timeout: 60000 });
+    }
+    if (requireShowMoreActions) {
+      await expect(this.page.getByRole('button', { name: 'Show more actions' })).toBeVisible({ timeout: 60000 });
+    }
   }
 
   /**

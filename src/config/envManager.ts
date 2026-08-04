@@ -15,8 +15,10 @@ let cached: EnvConfig | null = null;
 let didLog = false;
 
 function normalizeEnvName(value: string | undefined): string {
-  const env = (value ?? '').trim();
-  return env ? env.toUpperCase() : 'SIT1';
+  const env = (value ?? '').trim().toUpperCase();
+  if (!env) return 'SIT1';
+  if (env === 'SIT') return 'SIT1';
+  return env;
 }
 
 function resolveEnvVarName(envName: string, baseName: string): string {
