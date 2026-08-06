@@ -286,8 +286,9 @@ export class SalesforcePortalPage {
     await this.page.goto(getSalesforceLightningUrl());
   }
 
-  async login(username: string, password: string, options?: { useJwt?: boolean }) {
+  async login(username: string, password: string, options?: { useJwt?: boolean; fast?: boolean }) {
     const useJwt = options?.useJwt ?? true;
+    const fast = options?.fast ?? false;
 
     if (await this.isAuthenticatedSalesforceSession()) {
       await this.expectAppLoaded();
@@ -297,6 +298,9 @@ export class SalesforcePortalPage {
     if (useJwt && getSalesforceJwtConfig()) {
       try {
         await this.loginWithJwt(username);
+        if (fast) {
+          return;
+        }
         await this.waitForLightningIdle().catch(() => undefined);
         await this.expectAppLoaded();
         await this.expectUnderwritingNavigation();
@@ -336,6 +340,16 @@ export class SalesforcePortalPage {
 
     // Salesforce MFA/authenticator flow can pause login until a user approves on device.
     // Wait longer here so tests do not fail while the user is completing authentication.
+    if (fast) {
+      await this.page.waitForLoadState('domcontentloaded').catch(() => undefined);
+      await this.waitForLightningIdle().catch(() => undefined);
+      if (!(await this.isAuthenticatedSalesforceSession())) {
+        await this.waitForMfaAuthenticationCompletion();
+      }
+      await this.expectAppLoaded();
+      return;
+    }
+
     await this.waitForMfaAuthenticationCompletion();
 
     await this.expectAppLoaded();
@@ -772,13 +786,6 @@ export class SalesforcePortalPage {
     const searchLauncher = this.page.locator('//*[@id="oneHeader"]/div[2]/div[2]/div/div/button').first();
     const searchButtonFallback = this.page.getByRole('button', { name: /^Search/ }).first();
 
-    if (await searchLauncher.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await this.clickWhenUiReady(searchLauncher);
-    } else {
-      await expect(searchButtonFallback).toBeVisible({ timeout: 15000 });
-      await this.clickWhenUiReady(searchButtonFallback);
-    }
-
     const dialogSearchInput = this.page
       .locator('[role="dialog"] input[type="search"]:visible, [role="dialog"] input[placeholder*="Search"]:visible')
       .first();
@@ -787,9 +794,36 @@ export class SalesforcePortalPage {
       .first();
 
     let activeSearchInput = dialogSearchInput;
-    if (!(await dialogSearchInput.isVisible({ timeout: 5000 }).catch(() => false))) {
-      await expect(headerSearchInput).toBeVisible({ timeout: 15000 });
-      activeSearchInput = headerSearchInput;
+    let searchInputVisible = false;
+
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      if (await dialogSearchInput.isVisible({ timeout: 1500 }).catch(() => false)) {
+        searchInputVisible = true;
+        activeSearchInput = dialogSearchInput;
+        break;
+      }
+
+      if (await headerSearchInput.isVisible({ timeout: 1500 }).catch(() => false)) {
+        searchInputVisible = true;
+        activeSearchInput = headerSearchInput;
+        break;
+      }
+
+      if (await searchLauncher.isVisible({ timeout: 1500 }).catch(() => false)) {
+        await this.clickWhenUiReady(searchLauncher);
+      } else {
+        await expect(searchButtonFallback).toBeVisible({ timeout: 15000 });
+        await this.clickWhenUiReady(searchButtonFallback);
+      }
+
+      await this.waitForLightningIdle().catch(() => undefined);
+    }
+
+    if (!searchInputVisible) {
+      await expect(headerSearchInput.or(dialogSearchInput).first()).toBeVisible({ timeout: 15000 });
+      activeSearchInput = await dialogSearchInput.isVisible({ timeout: 500 }).catch(() => false)
+        ? dialogSearchInput
+        : headerSearchInput;
     }
 
     await activeSearchInput.fill(reference);
@@ -1310,6 +1344,345 @@ export class SalesforcePortalPage {
 
     // No post-submit claim-id assertion: if submit succeeds without UI errors, flow is complete.
     await this.page.waitForTimeout(1200);
+
+    return await this.readGeneratedClaimNumber().catch(() => '');
+  }
+
+  async openClaimInformationTab() {
+    const claimInfoTab = this.page.getByRole('tab', { name: /Claim Information/i }).first();
+    if (await claimInfoTab.isVisible({ timeout: 6000 }).catch(() => false)) {
+      await this.clickWhenUiReady(claimInfoTab);
+      await this.waitForLightningIdle();
+      return;
+    }
+
+    const claimInfoLink = this.page.getByRole('link', { name: /Claim Information/i }).first();
+    if (await claimInfoLink.isVisible({ timeout: 6000 }).catch(() => false)) {
+      await this.clickWhenUiReady(claimInfoLink);
+      await this.waitForLightningIdle();
+      return;
+    }
+
+    const claimInfoButton = this.page.getByRole('button', { name: /Claim Information/i }).first();
+    if (await claimInfoButton.isVisible({ timeout: 6000 }).catch(() => false)) {
+      await this.clickWhenUiReady(claimInfoButton);
+      await this.waitForLightningIdle();
+      return;
+    }
+
+    const claimInfoToggle = this.page.locator('xpath=//span[contains(normalize-space(.), "Claim Information")]/ancestor::a[1] | //span[contains(normalize-space(.), "Claim Information")]/ancestor::button[1]').first();
+    if (await claimInfoToggle.isVisible({ timeout: 6000 }).catch(() => false)) {
+      await this.clickWhenUiReady(claimInfoToggle);
+      await this.waitForLightningIdle();
+      return;
+    }
+
+    const lossField = this.page.getByRole('textbox', { name: /Loss Narrative/i }).first();
+    if (await lossField.isVisible({ timeout: 4000 }).catch(() => false)) {
+      return;
+    }
+
+    const sectionHeader = this.page.locator('xpath=//h2[contains(normalize-space(.), "Claim Classification") or contains(normalize-space(.), "Claim Dates")][1]');
+    if (await sectionHeader.isVisible({ timeout: 4000 }).catch(() => false)) {
+      return;
+    }
+
+    throw new Error('Unable to locate Claim Information tab or section.');
+  }
+
+  async fillClaimInformationAndSave(lossNarrative = 'Automated Loss Narrative.') {
+    await this.openClaimInformationTab();
+
+    await this.scrollToSectionByLabel('Claim Classification');
+    await this.clickSectionEditIcon('Claim Classification');
+
+    const lossNarrativeField = this.page.getByRole('textbox', { name: /Loss Narrative/i }).first();
+    await expect(lossNarrativeField).toBeVisible({ timeout: 120000 });
+    await lossNarrativeField.fill(lossNarrative);
+    await this.waitForLightningIdle();
+
+    await this.scrollToSectionByLabel(/Date of FNOL Acknowledgement|FNOL Acknowledgement/i);
+    await this.fillDateFieldWithToday(/Date of FNOL Acknowledgement/i);
+
+    const saveButton = this.page.getByRole('button', { name: /^Save$/i }).first();
+    await expect(saveButton).toBeVisible({ timeout: 60000 });
+    await this.clickWhenUiReady(saveButton);
+    await this.waitForLightningIdle();
+  }
+
+  private async scrollToSectionByLabel(label: string | RegExp) {
+    const locator = typeof label === 'string'
+      ? this.page.getByText(new RegExp(this.escapeForRegex(label), 'i')).first()
+      : this.page.getByText(label).first();
+
+    if (await locator.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await locator.scrollIntoViewIfNeeded();
+      await this.page.waitForTimeout(500);
+      const elementHandle = await locator.elementHandle();
+      if (elementHandle) {
+        await this.page.evaluate((element) => {
+          element.scrollIntoView({ block: 'center', inline: 'nearest' });
+        }, elementHandle);
+      }
+      await this.page.waitForTimeout(300);
+      return;
+    }
+
+    const fallbackLocator = typeof label === 'string'
+      ? this.page.locator(`xpath=//*[contains(normalize-space(.), "${this.escapeForRegex(label)}")][1]`)
+      : this.page.locator(`xpath=//*[contains(normalize-space(.), "${label.source}")][1]`);
+
+    if (await fallbackLocator.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await fallbackLocator.scrollIntoViewIfNeeded();
+      await this.page.waitForTimeout(500);
+      const elementHandle = await fallbackLocator.elementHandle();
+      if (elementHandle) {
+        await this.page.evaluate((element) => {
+          element.scrollIntoView({ block: 'center', inline: 'nearest' });
+        }, elementHandle);
+      }
+      await this.page.waitForTimeout(300);
+      return;
+    }
+
+    const deepLocator = typeof label === 'string'
+      ? this.page.locator(`xpath=//*[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), "${this.escapeForRegex(label).toLowerCase()}")][1]`)
+      : this.page.locator(`xpath=//*[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), "${label.source.toLowerCase()}")][1]`);
+
+    if (await deepLocator.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await deepLocator.scrollIntoViewIfNeeded();
+      await this.page.waitForTimeout(500);
+      const elementHandle = await deepLocator.elementHandle();
+      if (elementHandle) {
+        await this.page.evaluate((element) => {
+          element.scrollIntoView({ block: 'center', inline: 'nearest' });
+        }, elementHandle);
+      }
+      await this.page.waitForTimeout(300);
+    }
+  }
+
+  private async clickSectionEditIcon(sectionHeading: string) {
+    const headingLocator = this.page.getByText(new RegExp(this.escapeForRegex(sectionHeading), 'i')).first();
+    await expect(headingLocator).toBeVisible({ timeout: 20000 });
+    await headingLocator.scrollIntoViewIfNeeded();
+    await this.page.waitForTimeout(400);
+
+    const sectionRoot = headingLocator.locator('xpath=ancestor::div[contains(@class, "slds-section")] | ancestor::div[contains(@class, "section")][1]');
+    const editButton = sectionRoot.locator('xpath=.//button[contains(@title, "Edit") or contains(@aria-label, "Edit") or descendant::svg][1]').first();
+
+    if (await editButton.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await this.clickWhenUiReady(editButton);
+      await this.waitForLightningIdle();
+      return;
+    }
+
+    const alternateButton = headingLocator.locator('xpath=following::button[contains(@title, "Edit") or contains(@aria-label, "Edit") or descendant::svg][1]').first();
+    await expect(alternateButton).toBeVisible({ timeout: 10000 });
+    await this.clickWhenUiReady(alternateButton);
+    await this.waitForLightningIdle();
+  }
+
+  private async clickInlineEditButton(label: string | RegExp, optional = false) {
+    const editButton = this.page
+      .getByRole('button', { name: new RegExp(`Edit.*${typeof label === 'string' ? label : label.source}`, 'i') })
+      .first();
+
+    if (await editButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await this.clickWhenUiReady(editButton);
+      await this.waitForLightningIdle();
+      return;
+    }
+
+    const inlineLabel = this.page.locator(`label:has-text("${typeof label === 'string' ? label : label.source}")`).first();
+    if (await inlineLabel.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await inlineLabel.scrollIntoViewIfNeeded();
+      await this.page.waitForTimeout(300);
+      const fieldRow = inlineLabel.locator('xpath=ancestor::div[contains(@class, "slds-form-element") or contains(@class, "slds-grid") or contains(@class, "uiInput") or contains(@class, "forceInput")][1]');
+      const pencilButton = fieldRow.locator('xpath=.//button[descendant::svg][1]').first();
+      if (await pencilButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await this.clickWhenUiReady(pencilButton);
+        await this.waitForLightningIdle();
+        return;
+      }
+
+      const followingButton = inlineLabel.locator('xpath=following::button[descendant::svg][1]').first();
+      if (await followingButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await this.clickWhenUiReady(followingButton);
+        await this.waitForLightningIdle();
+        return;
+      }
+    }
+
+    const fallbackButton = this.page.locator(`xpath=//button[contains(@title, "Edit") or contains(@aria-label, "Edit") or descendant::svg][contains(normalize-space(.), "${typeof label === 'string' ? label : label.source}")][1]`);
+    if (await fallbackButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await fallbackButton.scrollIntoViewIfNeeded();
+      await this.clickWhenUiReady(fallbackButton);
+      await this.waitForLightningIdle();
+      return;
+    }
+
+    if (optional) {
+      return;
+    }
+
+    throw new Error(`Unable to find inline edit button for '${label.toString()}'.`);
+  }
+
+  async closeClaimAndMarkComplete(optionText?: string) {
+    await this.clickButtonOrLink(/Closed Claim/i);
+
+    const markCompleteButton = this.page.locator('button:visible').filter({
+      hasText: /Mark( as)? (Current Claim Status|Claim Status)?( as Complete)?/i,
+    }).first();
+
+    if (await markCompleteButton.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await markCompleteButton.scrollIntoViewIfNeeded();
+      await this.clickWhenUiReady(markCompleteButton);
+    } else {
+      await this.clickButtonOrLink(/Mark( as)? (Current Claim Status|Claim Status)?( as Complete)?/i);
+    }
+
+    await this.waitForLightningIdle();
+    await this.selectFirstVisibleDropdownOptionByLabel('Claim Sub Status', optionText);
+
+    const doneButton = this.page.getByRole('button', { name: /Done/i }).first();
+    await expect(doneButton).toBeVisible({ timeout: 60000 });
+    await this.clickWhenUiReady(doneButton);
+    await this.waitForLightningIdle();
+  }
+
+  private async clickButtonOrLink(label: RegExp) {
+    const button = this.page.getByRole('button', { name: label }).first();
+    if (await button.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await this.clickWhenUiReady(button);
+      return;
+    }
+
+    const link = this.page.getByRole('link', { name: label }).first();
+    if (await link.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await this.clickWhenUiReady(link);
+      return;
+    }
+
+    const menuItem = this.page.getByRole('menuitem', { name: label }).first();
+    if (await menuItem.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await this.clickWhenUiReady(menuItem);
+      return;
+    }
+
+    const fallback = this.page.locator('button:visible, a:visible, [role="button"]:visible, [role="menuitem"]:visible')
+      .filter({ hasText: label })
+      .first();
+    await expect(fallback).toBeVisible({ timeout: 15000 });
+    await this.clickWhenUiReady(fallback);
+  }
+
+  private async selectFirstVisibleDropdownOption(optionText?: string) {
+    const combobox = this.page.locator('[role="combobox"]:visible, [role="button"][aria-haspopup="listbox"]:visible, .slds-combobox__input:visible, .slds-form-element__control .slds-combobox__input:visible').first();
+    if (await combobox.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await combobox.scrollIntoViewIfNeeded();
+      await combobox.click({ timeout: 10000 });
+      await this.waitForLightningIdle();
+      await this.page.waitForTimeout(500);
+
+      const options = this.page.locator('[role="listbox"] [role="option"], lightning-base-combobox-item, .slds-listbox__option, .slds-combobox__item, .slds-dropdown__item').filter({ hasText: /\S+/ });
+      const visibleOptions = options.filter({ hasNotText: /select|choose|none|--none--/i });
+
+      const option = optionText
+        ? visibleOptions.filter({ hasText: new RegExp(this.escapeForRegex(optionText), 'i') }).first()
+        : visibleOptions.first();
+
+      if (await option.isVisible({ timeout: 15000 }).catch(() => false)) {
+        await option.scrollIntoViewIfNeeded();
+        await option.click({ timeout: 10000 });
+        await this.waitForLightningIdle();
+        return;
+      }
+
+      const firstOption = options.filter({ hasNotText: /select|choose|none|--none--/i }).first();
+      await expect(firstOption).toBeVisible({ timeout: 15000 });
+      await firstOption.scrollIntoViewIfNeeded();
+      await firstOption.click({ timeout: 10000 });
+      await this.waitForLightningIdle();
+      return;
+    }
+
+    const select = this.page.locator('select:visible').first();
+    if (await select.isVisible({ timeout: 5000 }).catch(() => false)) {
+      if (optionText) {
+        const option = select.locator('option').filter({ hasText: new RegExp(this.escapeForRegex(optionText), 'i') }).first();
+        await expect(option).toBeVisible({ timeout: 15000 });
+        const value = await option.getAttribute('value');
+        if (!value) throw new Error(`Unable to select option '${optionText}' from visible select.`);
+        await select.selectOption(value);
+      } else {
+        const option = select.locator('option:not([disabled])').filter({ hasNotText: /select|choose|none|--none--/i }).first();
+        await expect(option).toBeVisible({ timeout: 15000 });
+        const value = await option.getAttribute('value');
+        if (!value) throw new Error('Unable to select first available option from visible select.');
+        await select.selectOption(value);
+      }
+      await this.waitForLightningIdle();
+      return;
+    }
+
+    throw new Error('Unable to locate a visible dropdown to select an option.');
+  }
+
+  private async selectFirstVisibleDropdownOptionByLabel(label: string, optionText?: string) {
+    const dialog = this.page.locator('[role="dialog"]:visible').first();
+    const dialogCombobox = dialog.getByRole('combobox', { name: label }).first();
+
+    if (await dialogCombobox.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await dialogCombobox.scrollIntoViewIfNeeded();
+      await dialogCombobox.click({ timeout: 10000 });
+      await this.waitForLightningIdle();
+      await this.page.waitForTimeout(500);
+
+      const dialogOptions = dialog.locator('[role="listbox"] [role="option"], lightning-base-combobox-item, .slds-listbox__option, .slds-combobox__item, .slds-dropdown__item').filter({ hasText: /\S+/ });
+      const option = optionText
+        ? dialogOptions.filter({ hasText: new RegExp(this.escapeForRegex(optionText), 'i') }).first()
+        : dialogOptions.filter({ hasNotText: /select|choose|none|--none--/i }).first();
+
+      await expect(option).toBeVisible({ timeout: 15000 });
+      await option.scrollIntoViewIfNeeded();
+      await option.click({ timeout: 10000 });
+      await this.waitForLightningIdle();
+      return;
+    }
+
+    const labelLocator = dialog.locator(`xpath=(//label[contains(normalize-space(.), "${label}")])[1] | (//span[contains(normalize-space(.), "${label}")])[1] | (//div[contains(normalize-space(.), "${label}")])[1]`);
+    if (!(await labelLocator.isVisible({ timeout: 10000 }).catch(() => false))) {
+      throw new Error(`Unable to locate dropdown label '${label}' in the visible dialog.`);
+    }
+
+    const fieldContainer = labelLocator.locator('xpath=ancestor::div[contains(@class, "slds-form-element") or contains(@class, "forceInput") or contains(@class, "uiInput") or contains(@class, "slds-grid") or contains(@class, "uiMenu")][1]');
+    const dropdownButton = fieldContainer.locator('xpath=.//button[contains(@aria-haspopup, "listbox") or contains(@class, "slds-combobox__input") or contains(@class, "slds-button") or contains(., "▼") or contains(., "▾")][1]').first();
+    if (!(await dropdownButton.isVisible({ timeout: 10000 }).catch(() => false))) {
+      const fallbackButton = fieldContainer.locator('xpath=.//span[contains(normalize-space(.), "▼") or contains(normalize-space(.), "▾") or contains(@class, "slds-combobox__form-element")][1]').first();
+      if (!(await fallbackButton.isVisible({ timeout: 5000 }).catch(() => false))) {
+        throw new Error(`Unable to locate Claim Sub Status dropdown button in the visible dialog.`);
+      }
+      await fallbackButton.scrollIntoViewIfNeeded();
+      await fallbackButton.click({ timeout: 10000 });
+    } else {
+      await dropdownButton.scrollIntoViewIfNeeded();
+      await dropdownButton.click({ timeout: 10000 });
+    }
+
+    await this.waitForLightningIdle();
+    await this.page.waitForTimeout(500);
+
+    const dialogOptions = dialog.locator('[role="listbox"] [role="option"], lightning-base-combobox-item, .slds-listbox__option, .slds-combobox__item, .slds-dropdown__item').filter({ hasText: /\S+/ });
+    const option = optionText
+      ? dialogOptions.filter({ hasText: new RegExp(this.escapeForRegex(optionText), 'i') }).first()
+      : dialogOptions.filter({ hasNotText: /select|choose|none|--none--/i }).first();
+
+    await expect(option).toBeVisible({ timeout: 15000 });
+    await option.scrollIntoViewIfNeeded();
+    await option.click({ timeout: 10000 });
+    await this.waitForLightningIdle();
   }
 
   /**
@@ -1897,6 +2270,41 @@ export class SalesforcePortalPage {
     if (await lightningSpinner.isVisible({ timeout: 1500 }).catch(() => false)) {
       await expect(lightningSpinner).toBeHidden({ timeout: 60000 });
     }
+  }
+
+  async closeAllWorkspaceTabs() {
+    await this.waitForLightningIdle().catch(() => undefined);
+    await this.page.waitForTimeout(1500);
+
+    let misses = 0;
+    for (let attempt = 0; attempt < 40 && misses < 3; attempt += 1) {
+      const closeButton = this.page
+        .locator(
+          'button[title^="Close"]:visible, button[aria-label^="Close"]:visible, [role="button"][title^="Close"]:visible, [role="button"][aria-label^="Close"]:visible',
+        )
+        .first();
+
+      if (!(await closeButton.isVisible().catch(() => false))) {
+        misses += 1;
+        await this.page.waitForTimeout(600);
+        continue;
+      }
+
+      misses = 0;
+      await closeButton.click().catch(() => undefined);
+
+      const discardButton = this.page
+        .getByRole('button', { name: /Don.?t Save|Discard|Leave|No, /i })
+        .filter({ visible: true })
+        .first();
+      if (await discardButton.isVisible({ timeout: 800 }).catch(() => false)) {
+        await discardButton.click().catch(() => undefined);
+      }
+
+      await this.page.waitForTimeout(400);
+    }
+
+    await this.waitForLightningIdle().catch(() => undefined);
   }
 
   // ── Insurance Policy: Quotes tab assertions (opt-in) ──────────────────────
